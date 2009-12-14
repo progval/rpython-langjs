@@ -3,12 +3,13 @@ from __future__ import division
 import py
 from pypy.rlib.parsing.ebnfparse import parse_ebnf, make_parse_function
 from pypy.rlib.parsing.parsing import Rule
-from pypy.lang.js.astbuilder import FakeParseError
 from pypy.rlib.parsing.tree import RPythonVisitor
-from pypy.lang.js.jsobj import W_Object, global_context, ThrowException, empty_context
-from pypy.lang.js.astbuilder import ASTBuilder
-from pypy.lang.js.jscode import JsCode
 from pypy import conftest
+
+from js.astbuilder import FakeParseError
+from js.jsobj import W_Object, global_context, ThrowException, empty_context
+from js.astbuilder import ASTBuilder
+from js.jscode import JsCode
 import sys
 
 GFILE = py.magic.autopath().dirpath().dirpath().join("jsgrammar.txt")

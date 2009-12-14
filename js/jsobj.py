@@ -1,7 +1,7 @@
 # encoding: utf-8
 from pypy.rlib.rarithmetic import r_uint, intmask, isnan, isinf,\
      ovfcheck_float_to_int, NAN, formatd_overflow
-from pypy.lang.js.execution import ThrowException, JsTypeError,\
+from js.execution import ThrowException, JsTypeError,\
      RangeError, ReturnException
 import string
 DE = 1

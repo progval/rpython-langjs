@@ -1,5 +1,5 @@
 
-from pypy.lang.js.test.test_interp import assertv
+from js.test.test_interp import assertv
 
 def test_infinity_nan():
     assertv('1/0', 'Infinity')

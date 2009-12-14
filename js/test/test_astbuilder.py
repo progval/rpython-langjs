@@ -1,7 +1,7 @@
-from pypy.lang.js.jsparser import parse
-from pypy.lang.js.astbuilder import ASTBuilder
-from pypy.lang.js import operations
-from pypy.lang.js.operations import Call
+from js.jsparser import parse
+from js.astbuilder import ASTBuilder
+from js import operations
+from js.operations import Call
 
 def to_ast(s):
     print s

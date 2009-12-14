@@ -1,12 +1,12 @@
 
-from pypy.lang.js.jsobj import W_IntNumber, W_FloatNumber, W_String,\
+from js.jsobj import W_IntNumber, W_FloatNumber, W_String,\
      W_Array, W_PrimitiveObject, ActivationObject,\
      create_object, W_Object, w_Undefined, newbool,\
      w_True, w_False, W_List, w_Null, W_Iterator, W_Root
-import pypy.lang.js.jsobj as jsobj
-from pypy.lang.js.execution import JsTypeError, ReturnException, ThrowException
+import js.jsobj as jsobj
+from js.execution import JsTypeError, ReturnException, ThrowException
 from pypy.rlib.unroll import unrolling_iterable
-from pypy.lang.js.baseop import plus, sub, compare, AbstractEC, StrictEC,\
+from js.baseop import plus, sub, compare, AbstractEC, StrictEC,\
      compare_e, increment, commonnew, mult, division, uminus, mod
 from pypy.rlib.jit import hint
 from pypy.rlib.rarithmetic import intmask

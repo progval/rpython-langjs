@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import autopath
 from py import path
 import py
 import os

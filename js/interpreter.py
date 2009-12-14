@@ -1,16 +1,17 @@
 
 import math
-from pypy.lang.js.jsparser import parse, ParseError
-from pypy.lang.js.astbuilder import ASTBuilder
-from pypy.lang.js.jsobj import global_context, W_Object,\
+from js.jsparser import parse, ParseError
+from js.astbuilder import ASTBuilder
+from js.jsobj import global_context, W_Object,\
      w_Undefined, W_NewBuiltin, W_IntNumber, w_Null, create_object, W_Boolean,\
      W_FloatNumber, W_String, W_Builtin, W_Array, w_Null, newbool,\
      isnull_or_undefined, W_PrimitiveObject, W_ListObject, W_BaseNumber,\
      DE, DD, RO, IT
-from pypy.lang.js.execution import ThrowException, JsTypeError
+from js.execution import ThrowException, JsTypeError
+from js.jscode import JsCode
+
 from pypy.rlib.objectmodel import we_are_translated
 from pypy.rlib.streamio import open_file_as_stream
-from pypy.lang.js.jscode import JsCode
 from pypy.rlib.rarithmetic import NAN, INFINITY, isnan, isinf, r_uint
 from pypy.rlib.objectmodel import specialize
 from pypy.rlib.listsort import TimSort

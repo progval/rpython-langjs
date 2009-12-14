@@ -1,11 +1,11 @@
 
 import py
-from pypy.lang.js import interpreter
-from pypy.lang.js.operations import IntNumber, FloatNumber, Position, Plus
-from pypy.lang.js.jsobj import W_Object, ExecutionContext, W_Root, w_Null
-from pypy.lang.js.execution import ThrowException
-from pypy.lang.js.jscode import JsCode, POP
-from pypy.lang.js.baseop import AbstractEC
+from js import interpreter
+from js.operations import IntNumber, FloatNumber, Position, Plus
+from js.jsobj import W_Object, ExecutionContext, W_Root, w_Null
+from js.execution import ThrowException
+from js.jscode import JsCode, POP
+from js.baseop import AbstractEC
 
 def test_simple():
     bytecode = JsCode()

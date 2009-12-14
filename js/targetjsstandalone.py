@@ -3,8 +3,8 @@ A simple standalone target for the javascript interpreter.
 """
 
 import sys
-from pypy.lang.js.interpreter import *
-from pypy.lang.js.jsobj import ExecutionReturned
+from js.interpreter import *
+from js.jsobj import ExecutionReturned
 
 # __________  Entry point  __________
 

@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 
-import autopath
 import os, sys
-from pypy.lang.js.interpreter import load_source, Interpreter, load_file
-from pypy.lang.js.jsparser import parse, ParseError
-from pypy.lang.js.jsobj import W_NewBuiltin, W_String, ThrowException, w_Undefined
+from js.interpreter import load_source, Interpreter, load_file
+from js.jsparser import parse, ParseError
+from js.jsobj import W_NewBuiltin, W_String, ThrowException, w_Undefined
 from pypy.rlib.streamio import open_file_as_stream
 
 def printmessage(msg):

@@ -1,11 +1,12 @@
 import py
-from pypy.lang.js.interpreter import *
-from pypy.lang.js.jsobj import W_Array, W_String
+from py.impl.test.outcome import Failed
+
+from js.interpreter import *
+from js.jsobj import W_Array, W_String
+from js import interpreter
+from js.execution import JsBaseExcept
 from pypy.rlib.parsing.parsing import ParseError
-from py.__.test.outcome import Failed, ExceptionFailure
-import pypy.lang.js as js
-from pypy.lang.js import interpreter
-from pypy.lang.js.execution import JsBaseExcept
+import js
 
 interpreter.TEST = True
 
@@ -36,7 +37,7 @@ class EcmatestPlugin:
                 py.test.skip("ECMA tests disabled, run with --ecma")
             return JSTestFile(path, parent=parent)
 
-ConftestPlugin = EcmatestPlugin
+#ConftestPlugin = EcmatestPlugin # XXX fix me
 
 class JSTestFile(py.test.collect.File):
     def init_interp(cls):

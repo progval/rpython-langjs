@@ -1,8 +1,8 @@
 from pypy.rlib.parsing.ebnfparse import parse_ebnf, make_parse_function
 from pypy.rlib.parsing.parsing import ParseError, Rule
 from pypy.rlib.parsing.tree import RPythonVisitor, Symbol
-from pypy.lang.js.jsobj import W_Number
-from pypy.lang.js import operations
+from js.jsobj import W_Number
+from js import operations
 import sys
 
 ##try:

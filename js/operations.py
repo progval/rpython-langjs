@@ -4,13 +4,13 @@ operations.py
 Implements the javascript operations nodes for the interpretation tree
 """
 
-from pypy.lang.js.jsobj import W_IntNumber, W_FloatNumber, W_Object,\
+from js.jsobj import W_IntNumber, W_FloatNumber, W_Object,\
      w_Undefined, W_NewBuiltin, W_String, create_object, W_List,\
      W_PrimitiveObject, ActivationObject, W_Array, W_Boolean,\
      w_Null, W_BaseNumber, isnull_or_undefined
 from pypy.rlib.parsing.ebnfparse import Symbol, Nonterminal
-from pypy.lang.js.execution import JsTypeError, ThrowException
-from pypy.lang.js.jscode import JsCode, JsFunction
+from js.execution import JsTypeError, ThrowException
+from js.jscode import JsCode, JsFunction
 from constants import unescapedict
 from pypy.rlib.unroll import unrolling_iterable
 

@@ -1,7 +1,8 @@
 from pypy.rlib.rarithmetic import intmask, ovfcheck, ovfcheck_float_to_int
 from pypy.rlib.parsing.tree import RPythonVisitor, Symbol, Nonterminal
-from pypy.lang.js import operations
 from pypy.rlib.parsing.parsing import ParseError
+
+from js import operations
 
 class FakeParseError(Exception):
     def __init__(self, pos, msg):
@@ -166,7 +167,7 @@ class ASTBuilder(RPythonVisitor):
         return self.UNOP_TO_CLS[op.additional_info](pos, child)
 
     def _dispatch_assignment(self, pos, left, atype, prepost):
-        from pypy.lang.js.operations import Identifier, Member, MemberDot,\
+        from js.operations import Identifier, Member, MemberDot,\
              VariableIdentifier
 
         if isinstance(left, Identifier):
@@ -335,7 +336,7 @@ class ASTBuilder(RPythonVisitor):
         return left
         
     def visit_assignmentexpression(self, node):
-        from pypy.lang.js.operations import Identifier, Member, MemberDot,\
+        from js.operations import Identifier, Member, MemberDot,\
              VariableIdentifier
         pos = self.get_pos(node)
         left = self.dispatch(node.children[0])
@@ -408,7 +409,7 @@ class ASTBuilder(RPythonVisitor):
     visit_regularvarfor = visit_regularfor
     
     def visit_infor(self, node):
-        from pypy.lang.js.operations import Identifier
+        from js.operations import Identifier
         pos = self.get_pos(node)
         left = self.dispatch(node.children[1])
         right = self.dispatch(node.children[2])
