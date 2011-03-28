@@ -44,7 +44,7 @@ def parse_func(start=None):
             assert tree.symbol == "hacked_first_symbol"
             tree = tree.children[0]
         tree = tree.visit(ToAST())[0]
-        if conftest.option.view:
+        if conftest.option and conftest.option.view:
             tree.view()
         return tree
     return methodparse
