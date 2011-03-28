@@ -298,7 +298,7 @@ class TestToASTExpr(BaseTestToAST):
         cls.parse = parse_func('expression')
     
     def test_get_pos(self):
-        from pypy.lang.js import operations
+        from js import operations
         from pypy.rlib.parsing.tree import Symbol
         astb = ASTBuilder()
         t = self.parse('6')
@@ -505,8 +505,8 @@ class TestToAstFunction(BaseTestToAST):
                     'STORE_MEMBER_SUB',
                     'POP'])
 
-from pypy.lang.js.jsparser import parse
-    
+from js.jsparser import parse
+
 def test_simplesemicolon():
     yield parse, 'x'
     yield parse, 'if(1){x}'

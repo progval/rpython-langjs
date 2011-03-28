@@ -1,5 +1,5 @@
 
-from pypy.lang.js.test.test_interp import assertv
+from js.test.test_interp import assertv
 
 def test_variable_deletion():
     assertv("var x = 3; delete this.x;", False)
