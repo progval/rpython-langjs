@@ -1,6 +1,6 @@
 
 class JsBaseExcept(Exception):
-    pass    
+    pass
 
 #XXX Just an idea for now
 class JsRuntimeExcept(Exception):

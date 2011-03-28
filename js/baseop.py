@@ -169,13 +169,13 @@ def AbstractEC(ctx, x, y):
             type1 == "object":
             return AbstractEC(ctx, x.ToPrimitive(ctx), y)
         return False
-            
-        
+
+
     objtype = x.GetValue().type()
     if objtype == y.GetValue().type():
         if objtype == "undefined" or objtype == "null":
             return True
-        
+
     if isinstance(x, W_String) and isinstance(y, W_String):
         r = x.ToString(ctx) == y.ToString(ctx)
     else:

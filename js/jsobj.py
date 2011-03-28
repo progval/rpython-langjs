@@ -37,60 +37,60 @@ class W_Root(object):
 
     def ToString(self, ctx):
         return ''
-    
+
     def ToObject(self, ctx):
         # XXX should raise not implemented
         return self
 
     def ToNumber(self, ctx):
         return 0.0
-    
+
     def ToInteger(self, ctx):
         return int(self.ToNumber(ctx))
-    
+
     def ToInt32(self, ctx):
         return int(self.ToNumber(ctx))
-    
+
     def ToUInt32(self, ctx):
         return r_uint(0)
-    
+
     def Get(self, ctx, P):
         raise NotImplementedError(self.__class__)
-    
+
     def Put(self, ctx, P, V, flags = 0):
         raise NotImplementedError(self.__class__)
-    
+
     def PutValue(self, w, ctx):
         pass
-    
+
     def Call(self, ctx, args=[], this=None):
         raise NotImplementedError(self.__class__)
 
     def __str__(self):
         return self.ToString(ctx=None)
-    
+
     def type(self):
         raise NotImplementedError(self.__class__)
-        
+
     def GetPropertyName(self):
         raise NotImplementedError(self.__class__)
 
 class W_Undefined(W_Root):
     def __str__(self):
         return "w_undefined"
-    
+
     def ToInteger(self, ctx):
         return 0
-    
+
     def ToNumber(self, ctx):
         return NAN
 
     def ToBoolean(self):
         return False
-    
+
     def ToString(self, ctx):
         return "undefined"
-    
+
     def type(self):
         return 'undefined'
 
@@ -122,7 +122,7 @@ class W_PrimitiveObject(W_Root):
         self.Class = Class
         self.callfunc = callfunc
         if callfunc is not None:
-            self.Scope = ctx.scope[:] 
+            self.Scope = ctx.scope[:]
         else:
             self.Scope = None
         self.Value = Value
@@ -145,7 +145,7 @@ class W_PrimitiveObject(W_Root):
         newctx = function_context(self.Scope, act, this)
         val = self.callfunc.run(ctx=newctx)
         return val
-    
+
     def Construct(self, ctx, args=[]):
         obj = W_Object(Class='Object')
         prot = self.Get(ctx, 'prototype')
@@ -159,7 +159,7 @@ class W_PrimitiveObject(W_Root):
             return obj
         except ReturnException, e:
             return e.value
-        
+
     def Get(self, ctx, P):
         try:
             return self.propdict[P].value
@@ -167,7 +167,7 @@ class W_PrimitiveObject(W_Root):
             if self.Prototype is None:
                 return w_Undefined
         return self.Prototype.Get(ctx, P) # go down the prototype chain
-    
+
     def CanPut(self, P):
         if P in self.propdict:
             if self.propdict[P].flags & RO: return False
@@ -176,7 +176,7 @@ class W_PrimitiveObject(W_Root):
         return self.Prototype.CanPut(P)
 
     def Put(self, ctx, P, V, flags = 0):
-        
+
         if not self.CanPut(P): return
         if P in self.propdict:
             prop = self.propdict[P]
@@ -184,12 +184,12 @@ class W_PrimitiveObject(W_Root):
             prop.flags |= flags
         else:
             self.propdict[P] = Property(P, V, flags = flags)
-    
+
     def HasProperty(self, P):
         if P in self.propdict: return True
         if self.Prototype is None: return False
-        return self.Prototype.HasProperty(P) 
-    
+        return self.Prototype.HasProperty(P)
+
     def Delete(self, P):
         if P in self.propdict:
             if self.propdict[P].flags & DD:
@@ -216,7 +216,7 @@ class W_PrimitiveObject(W_Root):
             return self.internal_def_value(ctx, "toString", "valueOf")
         else: # hint can only be empty, String or Number
             return self.internal_def_value(ctx, "valueOf", "toString")
-    
+
     ToPrimitive = DefaultValue
 
     def ToBoolean(self):
@@ -228,7 +228,7 @@ class W_PrimitiveObject(W_Root):
         except JsTypeError:
             return "[object %s]"%(self.Class,)
         return res.ToString(ctx)
-    
+
     def __str__(self):
         return "<Object class: %s>" % self.Class
 
@@ -243,7 +243,7 @@ class W_Primitive(W_Root):
     """unifying parent for primitives"""
     def ToPrimitive(self, ctx, hint=""):
         return self
-    
+
 def str_builtin(ctx, args, this):
     return W_String(this.ToString(ctx))
 
@@ -265,7 +265,7 @@ class W_NewBuiltin(W_PrimitiveObject):
             Prototype = proto
 
         W_PrimitiveObject.__init__(self, ctx, Prototype, Class, Value, callfunc)
-        
+
         if self.length != -1:
             self.Put(ctx, 'length', W_IntNumber(self.length), flags = DE|DD|RO)
 
@@ -278,10 +278,10 @@ class W_NewBuiltin(W_PrimitiveObject):
 
 class W_Builtin(W_PrimitiveObject):
     def __init__(self, builtin=None, ctx=None, Prototype=None, Class='function',
-                 Value=w_Undefined, callfunc=None):        
+                 Value=w_Undefined, callfunc=None):
         W_PrimitiveObject.__init__(self, ctx, Prototype, Class, Value, callfunc)
         self.set_builtin_call(builtin)
-    
+
     def set_builtin_call(self, callfuncbi):
         self.callfuncbi = callfuncbi
 
@@ -290,7 +290,7 @@ class W_Builtin(W_PrimitiveObject):
 
     def Construct(self, ctx, args=[]):
         return self.callfuncbi(ctx, args, None)
-        
+
     def type(self):
         return self.Class
 
@@ -300,7 +300,7 @@ class W_ListObject(W_PrimitiveObject):
         for i in range(self.length):
             l.append(self.propdict[str(i)].value)
         return l
-        
+
 class W_Arguments(W_ListObject):
     def __init__(self, callee, args):
         W_PrimitiveObject.__init__(self, Class='Arguments')
@@ -320,7 +320,7 @@ class ActivationObject(W_PrimitiveObject):
 
     def __repr__(self):
         return str(self.propdict)
-    
+
 class W_Array(W_ListObject):
     def __init__(self, ctx=None, Prototype=None, Class='Array',
                  Value=w_Undefined, callfunc=None):
@@ -336,7 +336,7 @@ class W_Array(W_ListObject):
                 if key in self.propdict:
                     del self.propdict[key]
                 i += 1
-        
+
         self.length = newlength
         self.propdict['length'].value = W_FloatNumber(newlength)
 
@@ -351,15 +351,15 @@ class W_Array(W_ListObject):
                 length = V.ToUInt32(ctx)
                 if length != V.ToNumber(ctx):
                     raise RangeError()
-                
+
                 self.set_length(length)
                 return
-                
+
         try:
             arrayindex = r_uint(to_array_index(P))
         except ValueError:
             return
-        
+
         if (arrayindex < self.length) or (arrayindex != float(P)):
             return
         else:
@@ -370,7 +370,7 @@ class W_Array(W_ListObject):
 class W_Boolean(W_Primitive):
     def __init__(self, boolval):
         self.boolval = bool(boolval)
-    
+
     def ToObject(self, ctx):
         return create_object(ctx, 'Boolean', Value=self)
 
@@ -378,18 +378,18 @@ class W_Boolean(W_Primitive):
         if self.boolval == True:
             return "true"
         return "false"
-    
+
     def ToNumber(self, ctx):
         if self.boolval:
             return 1.0
         return 0.0
-    
+
     def ToBoolean(self):
         return self.boolval
 
     def type(self):
         return 'boolean'
-        
+
     def __repr__(self):
         return "<W_Bool "+str(self.boolval)+" >"
 
@@ -408,7 +408,7 @@ class W_String(W_Primitive):
 
     def ToString(self, ctx=None):
         return self.strval
-    
+
     def ToBoolean(self):
         if len(self.strval) == 0:
             return False
@@ -485,7 +485,7 @@ class W_FloatNumber(W_BaseNumber):
     def __init__(self, floatval):
         W_BaseNumber.__init__(self)
         self.floatval = float(floatval)
-    
+
     def ToString(self, ctx = None):
         # XXX incomplete, this doesn't follow the 9.8.1 recommendation
         if isnan(self.floatval):
@@ -506,7 +506,7 @@ class W_FloatNumber(W_BaseNumber):
             assert cut >= 0
             res = res[:cut] + res[-1]
         return res
-    
+
     def ToBoolean(self):
         if isnan(self.floatval):
             return False
@@ -518,17 +518,17 @@ class W_FloatNumber(W_BaseNumber):
     def ToInteger(self, ctx):
         if isnan(self.floatval):
             return 0
-        
+
         if self.floatval == 0 or isinf(self.floatval):
             return self.floatval
-        
+
         return intmask(self.floatval)
 
     def ToInt32(self, ctx):
         if isnan(self.floatval) or isinf(self.floatval):
-            return 0           
+            return 0
         return intmask(self.floatval)
-    
+
     def ToUInt32(self, ctx):
         if isnan(self.floatval) or isinf(self.floatval):
             return r_uint(0)
@@ -536,7 +536,7 @@ class W_FloatNumber(W_BaseNumber):
 
     def __repr__(self):
         return 'W_FloatNumber(%s)' % (self.floatval,)
-            
+
 class W_List(W_Root):
     def __init__(self, list_w):
         self.list_w = list_w
@@ -546,7 +546,7 @@ class W_List(W_Root):
 
     def ToBoolean(self):
         return bool(self.list_w)
-    
+
     def get_args(self):
         return self.list_w
 
@@ -555,9 +555,9 @@ class W_List(W_Root):
 
     def __repr__(self):
         return 'W_List(%s)' % (self.list_w,)
-    
+
 class ExecutionContext(object):
-    def __init__(self, scope, this=None, variable=None, 
+    def __init__(self, scope, this=None, variable=None,
                     debug=False, jsproperty=None):
         assert scope is not None
         self.scope = scope
@@ -575,10 +575,10 @@ class ExecutionContext(object):
             self.property = Property('',w_Undefined)
         else:
             self.property = jsproperty
-    
+
     def __str__(self):
         return "<ExCtx %s, var: %s>"%(self.scope, self.variable)
-        
+
     def assign(self, name, value):
         assert name is not None
         for i in range(len(self.scope)-1, -1, -1):
@@ -610,17 +610,17 @@ class ExecutionContext(object):
 
     def get_global(self):
         return self.scope[0]
-            
+
     def push_object(self, obj):
         """push object into scope stack"""
         assert isinstance(obj, W_PrimitiveObject)
         self.scope.append(obj)
         self.variable = obj
-    
+
     def pop_object(self):
         """remove the last pushed object"""
         return self.scope.pop()
-        
+
     def resolve_identifier(self, ctx, identifier):
         for i in range(len(self.scope)-1, -1, -1):
             obj = self.scope[i]
@@ -640,7 +640,7 @@ def global_context(w_global):
 def function_context(scope, activation, this=None):
     newscope = scope[:]
     ctx = ExecutionContext(newscope,
-                            this = this, 
+                            this = this,
                             jsproperty = Property('', w_Undefined, flags = DD))
     ctx.push_object(activation)
     return ctx
@@ -670,7 +670,7 @@ class W_Iterator(W_Root):
 
     def empty(self):
         return len(self.elements_w) == 0
-    
+
 def create_object(ctx, prototypename, callfunc=None, Value=w_Undefined):
     proto = ctx.get_global().Get(ctx, prototypename).Get(ctx, 'prototype')
     obj = W_Object(ctx, callfunc = callfunc,Prototype=proto,
@@ -688,17 +688,17 @@ def to_array_index(s):
     ValueError is raised if conversion is not possible.
     '''
     length = len(s)
-    
+
     if length == 0 or length > 10: # len(str(2 ** 32))
         raise ValueError
-    
+
     # '0' is only valid if no characters follow it
     if s[0] == '0':
         if length == 1:
             return 0
         else:
             raise ValueError
-    
+
     arrayindex = 0
     for i in range(length):
         if s[i] not in string.digits:

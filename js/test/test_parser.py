@@ -53,7 +53,7 @@ def parse_func(start=None):
 class CountingVisitor(RPythonVisitor):
     def __init__(self):
         self.counts = {}
-    
+
     def general_nonterminal_visit(self, node):
         print node.symbol
         self.counts[node.symbol] = self.counts.get(node.symbol, 0) + 1
@@ -66,7 +66,7 @@ class CountingVisitor(RPythonVisitor):
 class BaseGrammarTest(object):
     def setup_class(cls):
         cls.parse = parse_func()
-            
+
 class TestLiterals(BaseGrammarTest):
     def setup_class(cls):
         cls.parse = parse_func('literal')
@@ -93,7 +93,7 @@ class IntEvaluationVisitor(RPythonVisitor):
                 r = self.evalop(int(code.pop(0)), code.pop(0), int(code.pop(0)))
                 code.insert(0, r)
             return code[0]
-    
+
     def visit_unaryexpression(self, node):
         if len(node.children) == 1:
             return self.dispatch(node.children[0])
@@ -101,7 +101,7 @@ class IntEvaluationVisitor(RPythonVisitor):
             arg1 = self.dispatch(node.children[1])
             op = self.dispatch(node.children[0])
             return self.evalop(arg1,op)
-        
+
     opmap = {'+': lambda x,y: x+y,
             '-': lambda x,y: x-y,
             '*': lambda x,y: x*y,
@@ -117,10 +117,10 @@ class IntEvaluationVisitor(RPythonVisitor):
             '^': lambda x,y: x^y,
             '%': lambda x,y: x%y,
     }
-    
+
     def evalop(self, arg1, op, arg2=None):
         return self.opmap[op](arg1, arg2)
-        
+
 
 
 class TestExpressions(BaseGrammarTest):
@@ -134,7 +134,7 @@ class TestExpressions(BaseGrammarTest):
         result2 = eval(s)
         assert result1 == result2
         return tree
-    
+
     def parse_and_compare(self, s, n):
         tree = self.parse(s)
         result1 = self.evaluator.dispatch(tree)
@@ -160,7 +160,7 @@ class TestExpressions(BaseGrammarTest):
         self.parse_and_compare("~3", -4)
         self.parse("x = 3")
         self.parse("x")
-        
+
     def test_chained(self):
         self.parse_and_eval_all(["1 + 2 * 3",
                         "1 * 2 + 3",
@@ -169,50 +169,50 @@ class TestExpressions(BaseGrammarTest):
                         "2 << 4 << 4",
                         "30 | 3 & 5",
         ])
-    
+
     def test_primary(self):
         self.parse('this')
         self.parse('(x)')
         self.parse('((((x))))')
         self.parse('(x * (x * x)) + x - x')
-    
+
     def test_array_literal(self):
         self.parse('[1,2,3,4]')
         self.parse('[1,2,]')
         self.parse('[1]')
-    
+
     def test_object_literal(self):
         self.parse('{}')
         self.parse('{x:1}') #per spec {x:1,} should not be supported
         self.parse('{x:1,y:2}')
-    
+
 class TestStatements(BaseGrammarTest):
     def setup_class(cls):
         cls.parse = parse_func('statement')
-    
+
     def parse_count(self, s):
         "parse the expression and return the CountingVisitor"
         cv = CountingVisitor()
         self.parse(s).visit(cv)
         return cv.counts
-    
+
     def test_block(self):
         r = self.parse_count("{x;return;true;if(x);}")
         assert r['block'] == 1
-    
+
     def test_vardecl(self):
         r = self.parse_count("var x;")
         assert r['variablestatement'] == 1
-        
+
         r = self.parse_count("var x = 2;")
         assert r['variablestatement'] == 1
-    
+
     def test_empty(self):
         self.parse(";")
         for i in range(1,10):
             r = self.parse_count('{%s}'%(';'*i))
             assert r['emptystatement'] == i
-    
+
     def test_if(self):
         r = self.parse_count("if(x)return;")
         assert r['ifstatement'] == 1
@@ -232,7 +232,7 @@ class TestStatements(BaseGrammarTest):
         self.parse('for(var x in z);')
         self.parse('while(1);')
         self.parse('do ; while(1)')
-    
+
     def test_continue_return_break_throw(self):
         self.parse('return;')
         self.parse('return x+y;')
@@ -241,20 +241,20 @@ class TestStatements(BaseGrammarTest):
         self.parse('break label;')
         self.parse('continue label;')
         self.parse('throw (5+5);')
-    
+
     def test_with(self):
         self.parse('with(x);')
-        
+
     def test_labeled(self):
         self.parse('label: x+y;')
-    
+
     def test_switch(self):
         self.parse("""switch(x) {
             case 1: break;
             case 2: break;
             default: ;
         }
-        
+
         """)
         self.parse("""switch(x) {
             case 1: break;
@@ -262,7 +262,7 @@ class TestStatements(BaseGrammarTest):
             default: ;
             case 3: break;
         }
-        
+
         """)
     def test_try(self):
         self.parse('try {x;} catch (e) {x;}')
@@ -272,16 +272,16 @@ class TestStatements(BaseGrammarTest):
 class TestFunctionDeclaration(BaseGrammarTest):
     def setup_class(cls):
         cls.parse = parse_func('functiondeclaration')
-    
+
     def test_simpledecl(self):
         self.parse('function x () {;}')
         self.parse('function z (a,b,c,d,e) {;}')
-    
+
 
 class BaseTestToAST(BaseGrammarTest):
     def to_ast(self, s):
         return ASTBuilder().dispatch(self.parse(s))
-    
+
     def compile(self, s):
         ast = self.to_ast(s)
         bytecode = JsCode()
@@ -296,7 +296,7 @@ class BaseTestToAST(BaseGrammarTest):
 class TestToASTExpr(BaseTestToAST):
     def setup_class(cls):
         cls.parse = parse_func('expression')
-    
+
     def test_get_pos(self):
         from js import operations
         from pypy.rlib.parsing.tree import Symbol
@@ -340,7 +340,7 @@ class TestToASTExpr(BaseTestToAST):
 
     def test_raising(self):
         py.test.raises(FakeParseError, self.check, '1=2', [])
-    
+
     def test_expression(self):
         self.check('1 - 1 - 1', [
             'LOAD_INTCONSTANT 1',
@@ -384,7 +384,7 @@ class TestToAstStatement(BaseTestToAST):
         bytecode = self.check(s, expected)
         bytecode.remove_labels()
         assert bytecode == expected_after_rl
-    
+
     def test_control_flow(self):
         self.check_remove_label('while (i>1) {x}',
                    ['LABEL 0',

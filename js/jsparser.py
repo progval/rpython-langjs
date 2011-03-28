@@ -15,7 +15,6 @@ except ParseError,e:
     raise
 
 parsef = make_parse_function(regexs, rules, eof=True)
-
 def parse(code):
     t = parsef(code)
     return ToAST().transform(t)

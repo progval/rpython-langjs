@@ -21,7 +21,7 @@ def run_bytecode(opcodes, ctx, stack, check_stack=True, retlast=False):
         if isinstance(opcodes[-1], POP):
             opcodes.pop()
             popped = True
-    
+
     i = 0
     to_pop = 0
     try:
@@ -67,7 +67,7 @@ def run_bytecode(opcodes, ctx, stack, check_stack=True, retlast=False):
 #    try:
 #        run_bytecode(opcodes, ctx, stack, check_stack, retlast)
 #    except ThrowException:
-#        print 
+#        print
 #        raise
 
 class T(list):
@@ -97,7 +97,7 @@ class JsCode(object):
         num = self.emit_label()
         self.startlooplabel.append(num)
         return num
-    
+
     def emit_startloop_label(self):
         num = self.emit_label()
         self.startlooplabel.append(num)
@@ -151,7 +151,7 @@ class JsCode(object):
     def emit_store_member(self, operation):
         opcode = store_member_opcodes[operation]()
         self.opcodes.append(opcode)
-        return opcode        
+        return opcode
 
     def run(self, ctx, check_stack=True, retlast=False):
         if self.has_labels:
@@ -218,7 +218,7 @@ class JsFunction(object):
 class Opcode(object):
     def __init__(self):
         pass
-    
+
     def eval(self, ctx, stack):
         """ Execute in context ctx
         """
@@ -394,7 +394,7 @@ class LOAD_FUNCTION(Opcode):
 class LOAD_OBJECT(Opcode):
     def __init__(self, counter):
         self.counter = counter
-    
+
     def eval(self, ctx, stack):
         w_obj = create_object(ctx, 'Object')
         for _ in range(self.counter):
@@ -602,7 +602,7 @@ class STORE_MEMBER_POSTINCR(BaseStoreMember):
 
 class STORE_MEMBER_PREINCR(BaseStoreMember):
     def operation(self, *args):
-        raise NotImplementedError    
+        raise NotImplementedError
 
 class STORE_MEMBER_SUB(BaseStoreMember):
     def operation(self, *args):
@@ -611,7 +611,7 @@ class STORE_MEMBER_SUB(BaseStoreMember):
 class BaseStore(Opcode):
     def __init__(self, name):
         self.name = name
-    
+
     def eval(self, ctx, stack):
         value = self.process(ctx, self.name, stack)
         ctx.assign(self.name, value)
@@ -676,7 +676,7 @@ class STORE_POSTINCR(BaseStore):
         value = ctx.resolve_identifier(ctx, name)
         num = value.ToNumber(ctx)
         newval = W_FloatNumber(num + 1)
-        
+
         stack.append(W_FloatNumber(num))
         return newval
 
@@ -685,7 +685,7 @@ class STORE_POSTDECR(BaseStore):
         value = ctx.resolve_identifier(ctx, name)
         num = value.ToNumber(ctx)
         newval = W_FloatNumber(num - 1)
-        
+
         stack.append(W_FloatNumber(num))
         return newval
 
@@ -694,7 +694,7 @@ class STORE_PREINCR(BaseStore):
         value = ctx.resolve_identifier(ctx, name)
         num = value.ToNumber(ctx)
         newval = W_FloatNumber(num + 1)
-        
+
         stack.append(newval)
         return newval
 
@@ -703,7 +703,7 @@ class STORE_PREDECR(BaseStore):
         value = ctx.resolve_identifier(ctx, name)
         num = value.ToNumber(ctx)
         newval = W_FloatNumber(num - 1)
-        
+
         stack.append(newval)
         return newval
 
@@ -851,7 +851,7 @@ class TRYCATCHBLOCK(Opcode):
         self.catchcode   = catchcode
         self.catchparam  = catchparam
         self.finallycode = finallycode
-    
+
     def eval(self, ctx, stack):
         try:
             try:
@@ -879,7 +879,7 @@ class TRYCATCHBLOCK(Opcode):
     def __repr__(self):
         return "TRYCATCHBLOCK" # XXX shall we add stuff here???
 
-class NEW(Opcode):        
+class NEW(Opcode):
     def eval(self, ctx, stack):
         y = stack.pop()
         x = stack.pop()
@@ -903,7 +903,7 @@ class LOAD_ITERATOR(Opcode):
 class JUMP_IF_ITERATOR_EMPTY(BaseJump):
     def eval(self, ctx, stack):
         pass
-    
+
     def do_jump(self, stack, pos):
         iterator = stack[-1]
         assert isinstance(iterator, W_Iterator)
