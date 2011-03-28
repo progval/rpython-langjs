@@ -1,6 +1,6 @@
 # encoding: utf-8
 from pypy.rlib.rarithmetic import r_uint, intmask, ovfcheck_float_to_int
-from pypy.rlib.rfloat import isnan, isinf, NAN#, formatd_overflow
+from pypy.rlib.rfloat import isnan, isinf, NAN, formatd
 from js.execution import ThrowException, JsTypeError,\
      RangeError, ReturnException
 import string
@@ -496,10 +496,10 @@ class W_FloatNumber(W_BaseNumber):
             else:
                 return '-Infinity'
         res = ''
-        #try:
-        #    res = formatd_overflow('', 10, 'g', self.floatval)
-        #except OverflowError:
-        #    raise
+        try:
+            res = formatd(self.floatval, 'g', 10)
+        except OverflowError:
+            raise
 
         if len(res) > 3 and (res[-3] == '+' or res[-3] == '-') and res[-2] == '0':
             cut = len(res) - 2
