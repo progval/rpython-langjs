@@ -13,11 +13,11 @@ class ReturnException(Exception):
     def __init__(self, value):
         self.value = value
 
-#class ExecutionReturned(JsBaseExcept):
-#    def __init__(self, type='normal', value=None, identifier=None):
-#        self.type = type
-#        self.value = value
-#        self.identifier = identifier
+class ExecutionReturned(JsBaseExcept):
+    def __init__(self, type='normal', value=None, identifier=None):
+        self.type = type
+        self.value = value
+        self.identifier = identifier
 
 class ThrowException(JsBaseExcept):
     def __init__(self, exception):
