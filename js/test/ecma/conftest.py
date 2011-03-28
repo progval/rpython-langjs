@@ -1,5 +1,6 @@
 import py
-from py.impl.test.outcome import Failed
+
+from _pytest.runner import Failed
 
 from js.interpreter import *
 from js.jsobj import W_Array, W_String
@@ -10,7 +11,7 @@ import js
 
 interpreter.TEST = True
 
-rootdir = py.magic.autopath().dirpath()
+rootdir = py.path.local().dirpath()
 exclusionlist = ['shell.js', 'browser.js']
 
 def overriden_evaljs(ctx, args, this):
