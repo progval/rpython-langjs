@@ -134,7 +134,7 @@ class JsCode(object):
 
     def emit_continue(self):
         if not self.startlooplabel:
-            raise ThrowError(W_String("Continue outside loop"))
+            raise ThrowException(W_String("Continue outside loop"))
         self.emit('JUMP', self.updatelooplabel[-1])
 
     def emit(self, operation, *args):
