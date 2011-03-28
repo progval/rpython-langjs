@@ -5,8 +5,7 @@ import sys
 
 sys.setrecursionlimit(10000)
 
-GFILE = py.magic.autopath().dirpath().join("jsgrammar.txt")
-
+GFILE = py.path.local(__file__).dirpath().join('jsgrammar.txt')
 try:
     t = GFILE.read(mode='U')
     regexs, rules, ToAST = parse_ebnf(t)
