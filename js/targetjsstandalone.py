@@ -4,7 +4,7 @@ A simple standalone target for the javascript interpreter.
 
 import sys
 from js.interpreter import *
-from js.jsobj import ExecutionReturned
+from js.execution import ExecutionReturned
 
 # __________  Entry point  __________
 

@@ -6,8 +6,8 @@ from js.jsobj import W_String, W_IntNumber, W_FloatNumber,\
      W_PrimitiveObject
 from js.execution import ThrowException, JsTypeError
 
-from pypy.rlib.rarithmetic import r_uint, intmask, INFINITY, NAN, ovfcheck,\
-     isnan, isinf
+from pypy.rlib.rarithmetic import r_uint, intmask, ovfcheck
+from pypy.rlib.rfloat import  INFINITY, NAN, isnan, isinf
 
 import math
 

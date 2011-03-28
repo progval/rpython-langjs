@@ -12,7 +12,8 @@ from js.jscode import JsCode
 
 from pypy.rlib.objectmodel import we_are_translated
 from pypy.rlib.streamio import open_file_as_stream
-from pypy.rlib.rarithmetic import NAN, INFINITY, isnan, isinf, r_uint
+from pypy.rlib.rarithmetic import r_uint
+from pypy.rlib.rfloat import NAN, INFINITY, isnan, isinf
 from pypy.rlib.objectmodel import specialize
 from pypy.rlib.listsort import TimSort
 
