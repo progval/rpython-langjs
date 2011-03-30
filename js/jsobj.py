@@ -527,7 +527,7 @@ class W_FloatNumber(W_BaseNumber):
     def ToInt32(self, ctx):
         if isnan(self.floatval) or isinf(self.floatval):
             return 0
-        return intmask(self.floatval)
+        return intmask(int(self.floatval))
 
     def ToUInt32(self, ctx):
         if isnan(self.floatval) or isinf(self.floatval):
