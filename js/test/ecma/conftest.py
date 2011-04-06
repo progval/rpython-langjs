@@ -1,18 +1,34 @@
+import pytest
+
+exclusionlist = ['shell.js', 'browser.js']
+#passing_tests = ['Number', 'Boolean', 'Array']
+
+def pytest_ignore_collect(path, config):
+    if path.basename in exclusionlist:
+        return True
+
+def pytest_collect_file(path, parent):
+    if path.ext == ".js":
+        return JSTestFile(path, parent=parent)
+
+def pytest_addoption(parser):
+    parser.addoption('--ecma',
+           action="store_true", dest="ecma", default=False,
+           help="run js interpreter ecma tests"
+    )
+
 import py
 
 from _pytest.runner import Failed
-
 from js.interpreter import *
 from js.jsobj import W_Array, W_String
 from js import interpreter
 from js.execution import JsBaseExcept
 from pypy.rlib.parsing.parsing import ParseError
-import js
 
 interpreter.TEST = True
 
-rootdir = py.path.local().dirpath()
-exclusionlist = ['shell.js', 'browser.js']
+rootdir = py.path.local(__file__).dirpath()
 
 def overriden_evaljs(ctx, args, this):
     try:
@@ -21,51 +37,16 @@ def overriden_evaljs(ctx, args, this):
     except JsBaseExcept:
         return W_String("error")
 
-passing_tests = ['Number', 'Boolean', 'Array']
 
-class EcmatestPlugin:
-    def pytest_addoption(self, parser):
-        parser.addoption('--ecma',
-               action="store_true", dest="ecma", default=False,
-               help="run js interpreter ecma tests"
-        )
+class JSTestFile(pytest.File):
+    def __init__(self, fspath, parent=None, config=None, session=None):
+        super(JSTestFile, self).__init__(fspath, parent, config, session)
+        self.name = self.fspath.purebasename
 
-    def pytest_collect_file(self, path, parent):
-        if parent.name not in passing_tests:
-            return
-        if path.ext == ".js" and path.basename not in exclusionlist:
-            if not parent.config.option.ecma:
-                py.test.skip("ECMA tests disabled, run with --ecma")
-            return JSTestFile(path, parent=parent)
-
-#ConftestPlugin = EcmatestPlugin # XXX fix me
-
-class JSTestFile(py.test.collect.File):
-    def init_interp(cls):
-        if hasattr(cls, 'interp'):
-            cls.testcases.PutValue(W_Array(), cls.interp.global_context)
-            cls.tc.PutValue(W_IntNumber(0), cls.interp.global_context)
-
-        cls.interp = Interpreter()
-        shellpath = rootdir/'shell.js'
-        if not hasattr(cls, 'shellfile'):
-            cls.shellfile = load_file(str(shellpath))
-        cls.interp.run(cls.shellfile)
-        cls.testcases = cls.interp.global_context.resolve_identifier(cls.interp.global_context, 'testcases')
-        cls.tc = cls.interp.global_context.resolve_identifier(cls.interp.global_context, 'tc')
-        # override eval
-        cls.interp.w_Global.Put(cls.interp.global_context, 'eval', W_Builtin(overriden_evaljs))
-        
-    init_interp = classmethod(init_interp)
-    
-    def __init__(self, fspath, parent=None):
-        super(JSTestFile, self).__init__(fspath, parent)
-        self.name = fspath.purebasename
-        self.fspath = fspath
-          
     def collect(self):
-        if py.test.config.option.collectonly:
-            return
+        if self.session.config.getvalue("ecma") is not True:
+            pytest.skip("ECMA tests disabled, run with --ecma")
+
         self.init_interp()
         #actually run the file :)
         t = load_file(str(self.fspath))
@@ -82,23 +63,61 @@ class JSTestFile(py.test.collect.File):
         self.tc = ctx.resolve_identifier(ctx, 'tc')
         testcount = testcases.Get(ctx, 'length').ToInt32(ctx)
         self.testcases = testcases
-        return [JSTestItem(number, parent=self) for number in range(testcount)]
 
-class JSTestItem(py.test.collect.Item):
-    def __init__(self, number, parent=None):
-        super(JSTestItem, self).__init__(str(number), parent)
-        self.number = number
-        
+        for number in xrange(testcount):
+            yield JSTestItem(str(number), parent=self)
+
+    def init_interp(cls):
+        if hasattr(cls, 'interp'):
+            cls.testcases.PutValue(W_Array(), cls.interp.global_context)
+            cls.tc.PutValue(W_IntNumber(0), cls.interp.global_context)
+
+        cls.interp = Interpreter()
+        shellpath = rootdir/'shell.js'
+        if not hasattr(cls, 'shellfile'):
+            cls.shellfile = load_file(str(shellpath))
+        cls.interp.run(cls.shellfile)
+        cls.testcases = cls.interp.global_context.resolve_identifier(cls.interp.global_context, 'testcases')
+        cls.tc = cls.interp.global_context.resolve_identifier(cls.interp.global_context, 'tc')
+        # override eval
+        cls.interp.w_Global.Put(cls.interp.global_context, 'eval', W_Builtin(overriden_evaljs))
+
+#
+#    init_interp = classmethod(init_interp)
+#
+#
+#
+
+class JSTestItem(pytest.Item):
+    def __init__(self, name, parent=None, config=None, session=None):
+        super(JSTestItem, self).__init__(name, parent, config, session)
+        self.test_number = int(name)
+        self.name = parent.name + '.' + name
+
     def runtest(self):
-        ctx = JSTestFile.interp.global_context
+        ctx = self.parent.interp.global_context
         r3 = ctx.resolve_identifier(ctx, 'run_test')
-        w_test_number = W_IntNumber(self.number)
+        w_test_number = W_IntNumber(self.test_number)
         result = r3.Call(ctx=ctx, args=[w_test_number]).ToString()
         __tracebackhide__ = True
         if result != "passed":
-            raise Failed(msg=result)
+            raise JsTestException(self, result)
+
+    def repr_failure(self, excinfo):
+        if isinstance(excinfo.value, JsTestException):
+            return "\n".join([
+                "test execution failed",
+                "   failed: %r:" % (excinfo.value.item.name),
+                "   :%r" % (excinfo.value.result)
+            ])
 
     _handling_traceback = False
-    def _getpathlineno(self):
-        return self.parent.parent.fspath, 0 
+#    def _getpathlineno(self):
+#        return self.parent.parent.fspath, 0
+#
+
+class JsTestException(Exception):
+    def __init__(self, item, result):
+        self.item = item
+        self.result = result
 
