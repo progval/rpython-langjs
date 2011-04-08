@@ -49,8 +49,9 @@ def sub(ctx, nleft, nright):
 
 def mult(ctx, nleft, nright):
     if isinstance(nleft, W_IntNumber) and isinstance(nright, W_IntNumber):
-        ileft = nleft.ToInt32(ctx)
-        iright = nright.ToInt32(ctx)
+        # XXXX test & stuff
+        ileft = nleft.ToInteger(ctx)
+        iright = nright.ToInteger(ctx)
         try:
             return W_IntNumber(ovfcheck(ileft * iright))
         except OverflowError:
