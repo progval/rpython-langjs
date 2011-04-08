@@ -55,7 +55,7 @@ def assertv(code, value):
 def asserte(code, value):
     jsint = interpreter.Interpreter()
     py.test.raises(value, 'jsint.run(interpreter.load_source(code, ""))')
-    
+
 def test_interp_parse():
     yield assertv, "1+1;", 2
     yield assertp, "print(1+2+3); print(1);", ["6", "1"]
@@ -174,7 +174,7 @@ def test_array_initializer():
 
 def test_throw():
     assertp("throw(3);", "uncaught exception: 3")
-    
+
 def test_group():
     assertv("(2+1);", 3)
 
@@ -205,7 +205,7 @@ def test_try_catch_finally():
         print(5);
     }
     """, ["3", "5"]
-    
+
 def test_if_then():
     assertp("""
     if (1) {
@@ -291,7 +291,7 @@ def test_function_name():
     }
     x();
     """, "my name is x")
-        
+
 def test_new_with_function():
     c= """
     x = function() {this.info = 'hello';};
@@ -331,7 +331,7 @@ def test_eval():
 def test_arrayobject():
     assertv("""var x = new Array();
     x.length == 0;""", 'true')
-     
+
 def test_break():
     assertp("""
     while(1){
@@ -350,7 +350,7 @@ def test_typeof():
     assertv("""
     typeof x
     """, 'undefined')
-    
+
 def test_semicolon():
     assertp(';', [])
 
@@ -366,7 +366,7 @@ def test_increment():
     x = 1;
     x++;
     x;""", 2)
-    
+
 def test_ternaryop():
     yield assertv, "( 1 == 1 ) ? true : false;", True
     yield assertv, "( 1 == 0 ) ? true : false;", False
@@ -377,7 +377,7 @@ def test_booleanliterals():
     var y = true;
     print(y);
     print(x);""", ["true", "false"])
-    
+
 def test_unarynot():
     assertp("""
     var x = false;
@@ -406,7 +406,7 @@ def test_math_stuff():
     print(-z);
     """, ['10', '2', 'false', '3', 'NaN', 'Infinity', '-Infinity',
     '3', 'null', '-2'])
-    
+
 def test_globalproperties():
     assertp( """
     print(NaN);
@@ -417,7 +417,7 @@ def test_globalproperties():
 def test_strangefunc():
     assertp("""function f1() { var z; var t;}""", [])
     assertp(""" "'t'"; """, [])
-    
+
 def test_null():
     assertv("null;", w_Null)
 
@@ -559,7 +559,7 @@ def test_function_this():
     var f = new foo();
     f.bar();
     """, 'debug')
-    
+
 def test_inplace_assign():
     yield assertv, "x=1; x+=1; x;", 2
     yield assertv, "x=1; x-=1; x;", 0
@@ -585,7 +585,7 @@ def test_twoarray():
     a2[0] = 2;
     print(a1[0]);
     """, ['1', '1'])
-    
+
 def test_semicolon():
     assertv("1", 1)
 
@@ -627,7 +627,7 @@ def test_proper_prototype_inheritance():
     function x () {};
     x.my();
     """, 1
-    
+
 def test_new_without_args_really():
     assertv("var x = new Boolean; x.toString();", 'false')
 
@@ -636,7 +636,8 @@ def test_pypy_repr():
     # See optimization on astbuilder.py for a reason to the test below
     yield assertv, "pypy_repr(3.0);", 'W_IntNumber'
     yield assertv, "pypy_repr(3.5);", 'W_FloatNumber'
-    yield assertv, "x=9999; pypy_repr(x*x*x);", 'W_FloatNumber'
+    import sys
+    yield assertv, "x="+str(sys.maxint >> 1)+"; pypy_repr(x*x);", 'W_FloatNumber'
 
 def test_number():
     assertp("print(Number(void 0))", "NaN")

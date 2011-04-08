@@ -1,4 +1,5 @@
 # encoding: utf-8
+from pypy.rpython.lltypesystem import rffi
 from pypy.rlib.rarithmetic import r_uint, intmask, ovfcheck_float_to_int
 from pypy.rlib.rfloat import isnan, isinf, NAN, formatd
 from js.execution import ThrowException, JsTypeError,\
@@ -49,10 +50,10 @@ class W_Root(object):
         return int(self.ToNumber(ctx))
 
     def ToInt32(self, ctx):
-        return int(self.ToNumber(ctx))
+        return r_int32(int(self.ToNumber(ctx)))
 
     def ToUInt32(self, ctx):
-        return r_uint(0)
+        return r_uint32(0)
 
     def Get(self, ctx, P):
         raise NotImplementedError(self.__class__)
@@ -468,16 +469,22 @@ class W_IntNumber(W_BaseNumber):
         return float(self.intval)
 
     def ToInt32(self, ctx):
-        return self.intval
+        return r_int32(self.intval)
 
     def ToUInt32(self, ctx):
-        return r_uint(self.intval)
+        return r_uint32(self.intval)
 
     def GetPropertyName(self):
         return self.ToString()
 
     def __repr__(self):
         return 'W_IntNumber(%s)' % (self.intval,)
+
+def r_int32(n):
+    return rffi.cast(rffi.INT, n)
+
+def r_uint32(n):
+    return rffi.cast(rffi.UINT, n)
 
 class W_FloatNumber(W_BaseNumber):
     """ Number known to be a float
@@ -522,17 +529,17 @@ class W_FloatNumber(W_BaseNumber):
         if self.floatval == 0 or isinf(self.floatval):
             return self.floatval
 
-        return intmask(self.floatval)
+        return intmask(int(self.floatval))
 
     def ToInt32(self, ctx):
         if isnan(self.floatval) or isinf(self.floatval):
             return 0
-        return intmask(int(self.floatval))
+        return r_int32(int(self.floatval))
 
     def ToUInt32(self, ctx):
         if isnan(self.floatval) or isinf(self.floatval):
             return r_uint(0)
-        return r_uint(self.floatval)
+        return r_uint32(int(self.floatval))
 
     def __repr__(self):
         return 'W_FloatNumber(%s)' % (self.floatval,)
