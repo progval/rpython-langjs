@@ -492,7 +492,8 @@ class URSH(BaseBinaryBitwiseOp):
     def eval(self, ctx, stack):
         op2 = stack.pop().ToUInt32(ctx)
         op1 = stack.pop().ToUInt32(ctx)
-        stack.append(W_IntNumber(op1 >> (op2 & 0x1F)))
+        # XXX check if it could fit into int
+        stack.append(W_FloatNumber(op1 >> (op2 & 0x1F)))
 
 class RSH(BaseBinaryBitwiseOp):
     def eval(self, ctx, stack):
