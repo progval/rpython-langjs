@@ -481,10 +481,10 @@ class W_IntNumber(W_BaseNumber):
         return 'W_IntNumber(%s)' % (self.intval,)
 
 def r_int32(n):
-    return rffi.cast(rffi.INT, n)
+    return intmask(rffi.cast(rffi.INT, n))
 
 def r_uint32(n):
-    return rffi.cast(rffi.UINT, n)
+    return intmask(rffi.cast(rffi.UINT, n))
 
 class W_FloatNumber(W_BaseNumber):
     """ Number known to be a float

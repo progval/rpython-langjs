@@ -630,7 +630,15 @@ class W_DateObject(W_NativeObject):
         return create_object(ctx, 'Date', Value = W_FloatNumber(0.0))
 
 def pypy_repr(ctx, args, this):
-    return W_String(str(args[0]))
+    o = args[0]
+    t = 'Unknown'
+    if isinstance(o, W_FloatNumber):
+        t = 'W_FloatNumber'
+    elif isinstance(o, W_IntNumber):
+        t = 'W_IntNumber'
+    elif isinstance(o, W_BaseNumber):
+        t = 'W_Base_Number'
+    return W_String(t)
 
 def put_values(ctx, obj, dictvalues):
     for key,value in dictvalues.iteritems():
