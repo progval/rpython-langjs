@@ -27,6 +27,9 @@ def internal_property(name, value):
     return Property(name, value, True, True, True, True)
 
 class W_Root(object):
+
+    def __init__(self):
+        pass
     #def GetValue(self):
     #    return self
 
