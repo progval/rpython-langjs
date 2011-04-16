@@ -53,9 +53,9 @@ class JSTestFile(pytest.File):
         try:
             self.interp.run(t)
         except ParseError, e:
-            raise Failed(msg=e.nice_error_message(filename=str(self.fspath)), excinfo=None)
-        except JsBaseExcept:
-            raise Failed(msg="Javascript Error", excinfo=py.code.ExceptionInfo())
+            raise Failed(msg=e.nice_error_message(filename=str(self.fspath))) #, excinfo=None)
+        except JsBaseExcept, e:
+            raise Failed(msg="Javascript Error: "+str(e)) #, excinfo=py.code.ExceptionInfo())
         except:
             raise
         ctx = self.interp.global_context
