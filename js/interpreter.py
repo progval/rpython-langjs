@@ -637,12 +637,14 @@ class W_ArraySort(W_NewBuiltin):
             newlength += 1
         return this
 
+import time
 class W_DateObject(W_NativeObject):
     def Call(self, ctx, args=[], this=None):
         return create_object(ctx, 'Object')
 
     def Construct(self, ctx, args=[]):
-        return create_object(ctx, 'Date', Value = W_FloatNumber(0.0))
+        v = int(time.time()*1000)
+        return create_object(ctx, 'Date', Value = W_IntNumber(v))
 
 def pypy_repr(ctx, args, this):
     o = args[0]
