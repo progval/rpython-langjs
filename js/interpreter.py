@@ -223,6 +223,9 @@ def powjs(ctx, args, this):
 def sqrtjs(ctx, args, this):
     return W_FloatNumber(math.sqrt(args[0].ToNumber(ctx)))
 
+def logjs(ctx, args, this):
+    return W_FloatNumber(math.log(args[0].ToNumber(ctx)))
+
 def versionjs(ctx, args, this):
     return w_Undefined
 
@@ -813,6 +816,7 @@ class Interpreter(object):
         w_math.Put(ctx, 'round', W_Builtin(roundjs, Class='function'))
         w_math.Put(ctx, 'pow', W_Builtin(powjs, Class='function'))
         w_math.Put(ctx, 'sqrt', W_Builtin(sqrtjs, Class='function'))
+        w_math.Put(ctx, 'log', W_Builtin(logjs, Class='function'))
         w_math.Put(ctx, 'E', W_FloatNumber(math.e), flags=allon)
         w_math.Put(ctx, 'LN2', W_FloatNumber(math.log(2)), flags=allon)
         w_math.Put(ctx, 'LN10', W_FloatNumber(math.log(10)), flags=allon)
