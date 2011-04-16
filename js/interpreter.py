@@ -203,7 +203,16 @@ def absjs(ctx, args, this):
     return W_FloatNumber(abs(args[0].ToNumber(ctx)))
 
 def floorjs(ctx, args, this):
-    return W_IntNumber(int(math.floor(args[0].ToNumber(ctx))))
+    if len(args) < 1:
+        return W_FloatNumber(NAN)
+
+    val = args[0].ToNumber(ctx)
+
+    pos = math.floor(val)
+    if isnan(val):
+        pos = INFINITY
+
+    return W_FloatNumber(pos)
 
 def powjs(ctx, args, this):
     return W_FloatNumber(math.pow(args[0].ToNumber(ctx), args[1].ToNumber(ctx)))
