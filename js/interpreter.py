@@ -214,6 +214,9 @@ def floorjs(ctx, args, this):
 
     return W_FloatNumber(pos)
 
+def roundjs(ctx, args, this):
+    return floorjs(ctx, args, this)
+
 def powjs(ctx, args, this):
     return W_FloatNumber(math.pow(args[0].ToNumber(ctx), args[1].ToNumber(ctx)))
 
@@ -807,6 +810,7 @@ class Interpreter(object):
         w_math.Put(ctx, 'prototype', w_ObjPrototype, flags = allon)
         w_math.Put(ctx, 'abs', W_Builtin(absjs, Class='function'))
         w_math.Put(ctx, 'floor', W_Builtin(floorjs, Class='function'))
+        w_math.Put(ctx, 'round', W_Builtin(roundjs, Class='function'))
         w_math.Put(ctx, 'pow', W_Builtin(powjs, Class='function'))
         w_math.Put(ctx, 'sqrt', W_Builtin(sqrtjs, Class='function'))
         w_math.Put(ctx, 'E', W_FloatNumber(math.e), flags=allon)
