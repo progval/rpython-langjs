@@ -648,3 +648,18 @@ def test_number():
     }
     print (Number(new MyObject(100)));
     """, "100")
+
+def test_decrement():
+    assertv("""
+    var x = 2;
+    x--;
+    x;""", 1)
+
+def test_member_increment():
+    yield assertv, "var x = {y:1}; x.y++; x.y;", 2
+    yield assertv, "var x = {y:1}; x.y++;""", 1
+
+def test_member_decrement():
+    yield assertv, " var x = {y:2}; x.y--; x.y;", 1
+    yield assertv, " var x = {y:2}; x.y--;", 2
+

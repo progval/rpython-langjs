@@ -35,8 +35,15 @@ def increment(ctx, nleft, constval=1):
     else:
         return plus(ctx, nleft, W_IntNumber(constval))
 
+def decrement(ctx, nleft, constval=1):
+    if isinstance(nleft, W_IntNumber):
+        return W_IntNumber(nleft.intval - constval)
+    else:
+        return sub(ctx, nleft, W_IntNumber(constval))
+
 def sub(ctx, nleft, nright):
     if isinstance(nleft, W_IntNumber) and isinstance(nright, W_IntNumber):
+        # XXX fff
         ileft = nleft.ToInt32(ctx)
         iright = nright.ToInt32(ctx)
         try:

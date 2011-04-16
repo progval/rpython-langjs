@@ -7,7 +7,7 @@ import js.jsobj as jsobj
 from js.execution import JsTypeError, ReturnException, ThrowException
 from pypy.rlib.unroll import unrolling_iterable
 from js.baseop import plus, sub, compare, AbstractEC, StrictEC,\
-     compare_e, increment, commonnew, mult, division, uminus, mod
+     compare_e, increment, decrement, commonnew, mult, division, uminus, mod
 from pypy.rlib.jit import hint
 from pypy.rlib.rarithmetic import intmask
 from pypy.rlib.objectmodel import we_are_translated
@@ -597,9 +597,23 @@ class STORE_MEMBER_ADD(BaseStoreMemberAssign):
     def decision(self, ctx, value, prev):
         return plus(ctx, value, prev)
 
-class STORE_MEMBER_POSTINCR(BaseStoreMember):
-    def operation(self, *args):
-        raise NotImplementedError
+class BaseStoreMemberPost(Opcode):
+    def eval(self, ctx, stack):
+        left = stack.pop()
+        elem = stack.pop()
+        name = elem.ToString(ctx)
+        prev = value = left.ToObject(ctx).Get(ctx, name)
+        value = self.operation(ctx, value)
+        left.ToObject(ctx).Put(ctx, name, value)
+        stack.append(prev)
+
+class STORE_MEMBER_POSTINCR(BaseStoreMemberPost):
+    def operation(self, ctx, value):
+        return increment(ctx, value)
+
+class STORE_MEMBER_POSTDECR(BaseStoreMemberPost):
+    def operation(self, ctx, value):
+        return decrement(ctx, value)
 
 class STORE_MEMBER_PREINCR(BaseStoreMember):
     def operation(self, *args):
