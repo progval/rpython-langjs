@@ -28,7 +28,7 @@
 
 load('base.js');
 load('richards.js');
-//load('deltablue.js');
+load('deltablue.js');
 //load('crypto.js');
 //load('raytrace.js');
 //load('earley-boyer.js');
