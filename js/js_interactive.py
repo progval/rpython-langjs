@@ -38,11 +38,6 @@ def debugjs(ctx, args, this):
     DEBUG = not DEBUG
     return W_Boolean(DEBUG)
 
-def loadjs(ctx, args, this):
-    filename = args[0].ToString()
-    t = load_file(filename)
-    return t.execute(ctx)
-
 def tracejs(ctx, args, this):
     arguments = args
     import pdb
@@ -51,14 +46,13 @@ def tracejs(ctx, args, this):
 
 def quitjs(ctx, args, this):
     sys.exit(0)
-    
+
 class JSInterpreter(code.InteractiveConsole):
     def __init__(self, locals=None, filename="<console>"):
         code.InteractiveConsole.__init__(self, locals, filename)
         self.interpreter = Interpreter()
         ctx = self.interpreter.global_context
         self.interpreter.w_Global.Put(ctx, 'quit', W_Builtin(quitjs))
-        self.interpreter.w_Global.Put(ctx, 'load', W_Builtin(loadjs))
         self.interpreter.w_Global.Put(ctx, 'trace', W_Builtin(tracejs))
         self.interpreter.w_Global.Put(ctx, 'debug', W_Builtin(debugjs))
 

@@ -22,6 +22,14 @@ ASTBUILDER = ASTBuilder()
 def writer(x):
     print x
 
+def make_loadjs(interp):
+    def f(ctx, args, this):
+        filename = str(args[0].ToString(ctx))
+        t = load_file(filename)
+        interp.run(t)
+        return w_Undefined
+    return f
+
 def load_source(script_source, sourcename):
     temp_tree = parse(script_source)
     ASTBUILDER.sourcename = sourcename
@@ -861,6 +869,8 @@ class Interpreter(object):
         # debugging
         if not we_are_translated():
             w_Global.Put(ctx, 'pypy_repr', W_Builtin(pypy_repr))
+
+        w_Global.Put(ctx, 'load', W_Builtin(make_loadjs(self)))
 
         self.global_context = ctx
         self.w_Global = w_Global
