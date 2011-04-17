@@ -16,10 +16,10 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-// This implementation of the DeltaBlue benchmark is derived 
-// from the Smalltalk implementation by John Maloney and Mario 
-// Wolczko. Some parts have been translated directly, whereas 
-// others have been modified more aggresively to make it feel 
+// This implementation of the DeltaBlue benchmark is derived
+// from the Smalltalk implementation by John Maloney and Mario
+// Wolczko. Some parts have been translated directly, whereas
+// others have been modified more aggresively to make it feel
 // more like a JavaScript program.
 
 
@@ -51,7 +51,7 @@ Object.prototype.inherits = function (shuper) {
   Inheriter.prototype = shuper.prototype;
   this.prototype = new Inheriter();
   this.superConstructor = shuper;
-}
+};
 
 function OrderedCollection() {
   this.elms = new Array();
@@ -59,19 +59,19 @@ function OrderedCollection() {
 
 OrderedCollection.prototype.add = function (elm) {
   this.elms.push(elm);
-}
+};
 
 OrderedCollection.prototype.at = function (index) {
   return this.elms[index];
-}
+};
 
 OrderedCollection.prototype.size = function () {
   return this.elms.length;
-}
+};
 
 OrderedCollection.prototype.removeFirst = function () {
   return this.elms.pop();
-}
+};
 
 OrderedCollection.prototype.remove = function (elm) {
   var index = 0, skipped = 0;
@@ -86,7 +86,7 @@ OrderedCollection.prototype.remove = function (elm) {
   }
   for (var i = 0; i < skipped; i++)
     this.elms.pop();
-}
+};
 
 /* --- *
  * S t r e n g t h
@@ -105,19 +105,19 @@ function Strength(strengthValue, name) {
 
 Strength.stronger = function (s1, s2) {
   return s1.strengthValue < s2.strengthValue;
-}
+};
 
 Strength.weaker = function (s1, s2) {
   return s1.strengthValue > s2.strengthValue;
-}
+};
 
 Strength.weakestOf = function (s1, s2) {
   return this.weaker(s1, s2) ? s1 : s2;
-}
+};
 
 Strength.strongest = function (s1, s2) {
   return this.stronger(s1, s2) ? s1 : s2;
-}
+};
 
 Strength.prototype.nextWeaker = function () {
   switch (this.strengthValue) {
@@ -128,7 +128,7 @@ Strength.prototype.nextWeaker = function () {
     case 4: return Strength.PREFERRED;
     case 5: return Strength.REQUIRED;
   }
-}
+};
 
 // Strength constants.
 Strength.REQUIRED        = new Strength(0, "required");
@@ -160,7 +160,7 @@ function Constraint(strength) {
 Constraint.prototype.addConstraint = function () {
   this.addToGraph();
   planner.incrementalAdd(this);
-}
+};
 
 /**
  * Attempt to find a way to enforce this constraint. If successful,
@@ -185,12 +185,12 @@ Constraint.prototype.satisfy = function (mark) {
     alert("Cycle encountered");
   out.mark = mark;
   return overridden;
-}
+};
 
 Constraint.prototype.destroyConstraint = function () {
   if (this.isSatisfied()) planner.incrementalRemove(this);
   else this.removeFromGraph();
-}
+};
 
 /**
  * Normal constraints are not input constraints.  An input constraint
@@ -199,7 +199,7 @@ Constraint.prototype.destroyConstraint = function () {
  */
 Constraint.prototype.isInput = function () {
   return false;
-}
+};
 
 /* --- *
  * U n a r y   C o n s t r a i n t
@@ -224,7 +224,7 @@ UnaryConstraint.inherits(Constraint);
 UnaryConstraint.prototype.addToGraph = function () {
   this.myOutput.addConstraint(this);
   this.satisfied = false;
-}
+};
 
 /**
  * Decides if this constraint can be satisfied and records that
@@ -233,25 +233,25 @@ UnaryConstraint.prototype.addToGraph = function () {
 UnaryConstraint.prototype.chooseMethod = function (mark) {
   this.satisfied = (this.myOutput.mark != mark)
     && Strength.stronger(this.strength, this.myOutput.walkStrength);
-}
+};
 
 /**
  * Returns true if this constraint is satisfied in the current solution.
  */
 UnaryConstraint.prototype.isSatisfied = function () {
   return this.satisfied;
-}
+};
 
 UnaryConstraint.prototype.markInputs = function (mark) {
   // has no inputs
-}
+};
 
 /**
  * Returns the current output variable.
  */
 UnaryConstraint.prototype.output = function () {
   return this.myOutput;
-}
+};
 
 /**
  * Calculate the walkabout strength, the stay flag, and, if it is
@@ -262,23 +262,23 @@ UnaryConstraint.prototype.recalculate = function () {
   this.myOutput.walkStrength = this.strength;
   this.myOutput.stay = !this.isInput();
   if (this.myOutput.stay) this.execute(); // Stay optimization
-}
+};
 
 /**
  * Records that this constraint is unsatisfied
  */
 UnaryConstraint.prototype.markUnsatisfied = function () {
   this.satisfied = false;
-}
+};
 
 UnaryConstraint.prototype.inputsKnown = function () {
   return true;
-}
+};
 
 UnaryConstraint.prototype.removeFromGraph = function () {
   if (this.myOutput != null) this.myOutput.removeConstraint(this);
   this.satisfied = false;
-}
+};
 
 /* --- *
  * S t a y   C o n s t r a i n t
@@ -298,7 +298,7 @@ StayConstraint.inherits(UnaryConstraint);
 
 StayConstraint.prototype.execute = function () {
   // Stay constraints do nothing
-}
+};
 
 /* --- *
  * E d i t   C o n s t r a i n t
@@ -319,11 +319,11 @@ EditConstraint.inherits(UnaryConstraint);
  */
 EditConstraint.prototype.isInput = function () {
   return true;
-}
+};
 
 EditConstraint.prototype.execute = function () {
   // Edit constraints do nothing
-}
+};
 
 /* --- *
  * B i n a r y   C o n s t r a i n t
@@ -371,9 +371,9 @@ BinaryConstraint.prototype.chooseMethod = function (mark) {
   } else {
     this.direction = Strength.stronger(this.strength, this.v2.walkStrength)
       ? Direction.FORWARD
-      : Direction.BACKWARD
+      : Direction.BACKWARD;
   }
-}
+};
 
 /**
  * Add this constraint to the constraint graph
@@ -382,35 +382,35 @@ BinaryConstraint.prototype.addToGraph = function () {
   this.v1.addConstraint(this);
   this.v2.addConstraint(this);
   this.direction = Direction.NONE;
-}
+};
 
 /**
  * Answer true if this constraint is satisfied in the current solution.
  */
 BinaryConstraint.prototype.isSatisfied = function () {
   return this.direction != Direction.NONE;
-}
+};
 
 /**
  * Mark the input variable with the given mark.
  */
 BinaryConstraint.prototype.markInputs = function (mark) {
   this.input().mark = mark;
-}
+};
 
 /**
  * Returns the current input variable
  */
 BinaryConstraint.prototype.input = function () {
   return (this.direction == Direction.FORWARD) ? this.v1 : this.v2;
-}
+};
 
 /**
  * Returns the current output variable
  */
 BinaryConstraint.prototype.output = function () {
   return (this.direction == Direction.FORWARD) ? this.v2 : this.v1;
-}
+};
 
 /**
  * Calculate the walkabout strength, the stay flag, and, if it is
@@ -422,25 +422,25 @@ BinaryConstraint.prototype.recalculate = function () {
   out.walkStrength = Strength.weakestOf(this.strength, ihn.walkStrength);
   out.stay = ihn.stay;
   if (out.stay) this.execute();
-}
+};
 
 /**
  * Record the fact that this constraint is unsatisfied.
  */
 BinaryConstraint.prototype.markUnsatisfied = function () {
   this.direction = Direction.NONE;
-}
+};
 
 BinaryConstraint.prototype.inputsKnown = function (mark) {
   var i = this.input();
   return i.mark == mark || i.stay || i.determinedBy == null;
-}
+};
 
 BinaryConstraint.prototype.removeFromGraph = function () {
   if (this.v1 != null) this.v1.removeConstraint(this);
   if (this.v2 != null) this.v2.removeConstraint(this);
   this.direction = Direction.NONE;
-}
+};
 
 /* --- *
  * S c a l e   C o n s t r a i n t
@@ -468,18 +468,18 @@ ScaleConstraint.prototype.addToGraph = function () {
   ScaleConstraint.superConstructor.prototype.addToGraph.call(this);
   this.scale.addConstraint(this);
   this.offset.addConstraint(this);
-}
+};
 
 ScaleConstraint.prototype.removeFromGraph = function () {
   ScaleConstraint.superConstructor.prototype.removeFromGraph.call(this);
   if (this.scale != null) this.scale.removeConstraint(this);
   if (this.offset != null) this.offset.removeConstraint(this);
-}
+};
 
 ScaleConstraint.prototype.markInputs = function (mark) {
   ScaleConstraint.superConstructor.prototype.markInputs.call(this, mark);
   this.scale.mark = this.offset.mark = mark;
-}
+};
 
 /**
  * Enforce this constraint. Assume that it is satisfied.
@@ -490,7 +490,7 @@ ScaleConstraint.prototype.execute = function () {
   } else {
     this.v1.value = (this.v2.value - this.offset.value) / this.scale.value;
   }
-}
+};
 
 /**
  * Calculate the walkabout strength, the stay flag, and, if it is
@@ -502,7 +502,7 @@ ScaleConstraint.prototype.recalculate = function () {
   out.walkStrength = Strength.weakestOf(this.strength, ihn.walkStrength);
   out.stay = ihn.stay && this.scale.stay && this.offset.stay;
   if (out.stay) this.execute();
-}
+};
 
 /* --- *
  * E q u a l i t  y   C o n s t r a i n t
@@ -522,7 +522,7 @@ EqualityConstraint.inherits(BinaryConstraint);
  */
 EqualityConstraint.prototype.execute = function () {
   this.output().value = this.input().value;
-}
+};
 
 /* --- *
  * V a r i a b l e
@@ -550,7 +550,7 @@ function Variable(name, initialValue) {
  */
 Variable.prototype.addConstraint = function (c) {
   this.constraints.add(c);
-}
+};
 
 /**
  * Removes all traces of c from this variable.
@@ -558,7 +558,7 @@ Variable.prototype.addConstraint = function (c) {
 Variable.prototype.removeConstraint = function (c) {
   this.constraints.remove(c);
   if (this.determinedBy == c) this.determinedBy = null;
-}
+};
 
 /* --- *
  * P l a n n e r
@@ -590,7 +590,7 @@ Planner.prototype.incrementalAdd = function (c) {
   var overridden = c.satisfy(mark);
   while (overridden != null)
     overridden = overridden.satisfy(mark);
-}
+};
 
 /**
  * Entry point for retracting a constraint. Remove the given
@@ -617,14 +617,14 @@ Planner.prototype.incrementalRemove = function (c) {
     }
     strength = strength.nextWeaker();
   } while (strength != Strength.WEAKEST);
-}
+};
 
 /**
  * Select a previously unused mark value.
  */
 Planner.prototype.newMark = function () {
   return ++this.currentMark;
-}
+};
 
 /**
  * Extract a plan for resatisfaction starting from the given source
@@ -658,7 +658,7 @@ Planner.prototype.makePlan = function (sources) {
     }
   }
   return plan;
-}
+};
 
 /**
  * Extract a plan for resatisfying starting from the output of the
@@ -673,7 +673,7 @@ Planner.prototype.extractPlanFromConstraints = function (constraints) {
       sources.add(c);
   }
   return this.makePlan(sources);
-}
+};
 
 /**
  * Recompute the walkabout strengths and stay flags of all variables
@@ -701,7 +701,7 @@ Planner.prototype.addPropagate = function (c, mark) {
     this.addConstraintsConsumingTo(d.output(), todo);
   }
   return true;
-}
+};
 
 
 /**
@@ -733,7 +733,7 @@ Planner.prototype.removePropagateFrom = function (out) {
     }
   }
   return unsatisfied;
-}
+};
 
 Planner.prototype.addConstraintsConsumingTo = function (v, coll) {
   var determining = v.determinedBy;
@@ -743,7 +743,7 @@ Planner.prototype.addConstraintsConsumingTo = function (v, coll) {
     if (c != determining && c.isSatisfied())
       coll.add(c);
   }
-}
+};
 
 /* --- *
  * P l a n
@@ -760,22 +760,22 @@ function Plan() {
 
 Plan.prototype.addConstraint = function (c) {
   this.v.add(c);
-}
+};
 
 Plan.prototype.size = function () {
   return this.v.size();
-}
+};
 
 Plan.prototype.constraintAt = function (index) {
   return this.v.at(index);
-}
+};
 
 Plan.prototype.execute = function () {
   for (var i = 0; i < this.size(); i++) {
     var c = this.constraintAt(i);
     c.execute();
   }
-}
+};
 
 /* --- *
  * M a i n
