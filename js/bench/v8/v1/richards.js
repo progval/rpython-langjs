@@ -43,7 +43,7 @@ var Richards = new BenchmarkSuite('Richards', 34886, [
 /**
  * The Richards benchmark simulates the task dispatcher of an
  * operating system.
- **/
+ */
 function runRichards() {
   var scheduler = new Scheduler();
   scheduler.addIdleTask(ID_IDLE, 0, null, COUNT);
@@ -85,7 +85,7 @@ var COUNT = 1000;
  * They don't have any meaning a such but are characteristic of a
  * correct run so if the actual queue or hold count is different from
  * the expected there must be a bug in the implementation.
- **/
+ */
 var EXPECTED_QUEUE_COUNT = 2322;
 var EXPECTED_HOLD_COUNT = 928;
 
