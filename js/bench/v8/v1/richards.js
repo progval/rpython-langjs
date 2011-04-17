@@ -378,7 +378,8 @@ IdleTask.prototype.run = function (packet) {
     this.v1 = this.v1 >> 1;
     return this.scheduler.release(ID_DEVICE_A);
   } else {
-    this.v1 = (this.v1 >> 1) ^ 0xD008;
+    // XXX this.v1 = (this.v1 >> 1) ^ 0xD008;
+    this.v1 = (this.v1 >> 1) ^ 53256;
     return this.scheduler.release(ID_DEVICE_B);
   }
 };
