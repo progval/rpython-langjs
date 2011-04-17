@@ -62,7 +62,8 @@ function BenchmarkSuite(name, reference, benchmarks) {
   this.name = name;
   this.reference = reference;
   this.benchmarks = benchmarks;
-  BenchmarkSuite.suites.push(this);
+  // XXX BenchmarkSuite.suites.push(this);
+  BenchmarkSuite.suites[BenchmarkSuite.suites.length] = this;
 }
 
 
@@ -134,7 +135,8 @@ BenchmarkSuite.GeometricMean = function(numbers) {
 // Notifies the runner that we're done running a single benchmark in
 // the benchmark suite. This can be useful to report progress.
 BenchmarkSuite.prototype.NotifyStep = function(result) {
-  this.results.push(result);
+  // XXX this.results.push(result);
+  this.results[this.results.length] = result;
   if (this.runner.NotifyStep) this.runner.NotifyStep(result.benchmark.name);
 };
 
@@ -144,7 +146,8 @@ BenchmarkSuite.prototype.NotifyStep = function(result) {
 BenchmarkSuite.prototype.NotifyResult = function() {
   var mean = BenchmarkSuite.GeometricMean(this.results);
   var score = this.reference / mean;
-  BenchmarkSuite.scores.push(score);
+  // BenchmarkSuite.scores.push(score);
+  BenchmarkSuite.scores[BenchmarkSuite.scores.length] = score;
   if (this.runner.NotifyResult) {
     this.runner.NotifyResult(this.name, Math.round(100 * score));
   }
