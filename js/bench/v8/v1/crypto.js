@@ -156,7 +156,7 @@ setupEngine = function(fn, bits) {
   BI_FV = Math.pow(2,BI_FP);
   BI_F1 = BI_FP-dbits;
   BI_F2 = 2*dbits-BI_FP;
-}
+};
 
 
 // Digit conversions
@@ -1401,7 +1401,9 @@ function rng_seed_int(x) {
   rng_pool[rng_pptr++] ^= (x >> 8) & 255;
   rng_pool[rng_pptr++] ^= (x >> 16) & 255;
   rng_pool[rng_pptr++] ^= (x >> 24) & 255;
-  if(rng_pptr >= rng_psize) rng_pptr -= rng_psize;
+  if(rng_pptr >= rng_psize) {
+    rng_pptr -= rng_psize;
+  }
 }
 
 // Mix in the current time (w/milliseconds) into the pool
