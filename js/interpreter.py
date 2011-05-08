@@ -562,6 +562,16 @@ class W_ArrayJoin(W_NewBuiltin):
 
         return W_String(common_join(ctx, this, sep))
 
+class W_ArrayPush(W_NewBuiltin):
+    def Call(self, ctx, args=[], this=None):
+        n = this.Get(ctx, 'length').ToUInt32(ctx)
+        for arg in args:
+            this.Put(ctx, str(n), arg)
+            n += 1
+        j = W_IntNumber(n)
+        this.Put(ctx, 'length', j);
+        return j
+
 class W_ArrayReverse(W_NewBuiltin):
     length = 0
     def Call(self, ctx, args=[], this=None):
@@ -808,6 +818,7 @@ class Interpreter(object):
             'join': W_ArrayJoin(ctx),
             'reverse': W_ArrayReverse(ctx),
             'sort': W_ArraySort(ctx),
+            'push': W_ArrayPush(ctx),
         })
 
         w_Array.Put(ctx, 'prototype', w_ArrPrototype, flags = allon)
