@@ -594,9 +594,18 @@ class STORE_MEMBER_POSTDECR(BaseStoreMemberPost):
     def operation(self, ctx, value):
         return decrement(ctx, value)
 
-class STORE_MEMBER_PREINCR(BaseStoreMember):
-    def operation(self, *args):
-        raise NotImplementedError
+class STORE_MEMBER_PREINCR(Opcode):
+    def eval(self, ctx, stack):
+        left = stack.pop()
+        elem = stack.pop()
+        name = elem.ToString(ctx)
+        value = left.ToObject(ctx).Get(ctx, name)
+        value = self.operation(ctx, value)
+        left.ToObject(ctx).Put(ctx, name, value)
+        stack.append(value)
+
+    def operation(self, ctx, value):
+        return increment(ctx, value)
 
 class STORE_MEMBER_SUB(BaseStoreMember):
     def operation(self, *args):
