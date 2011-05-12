@@ -457,12 +457,12 @@ class TestToAstFunction(BaseTestToAST):
 
     def test_function_decl(self):
         self.check('function f(x, y, z) {x;}',
-                   ['DECLARE_FUNCTION f [\'x\', \'y\', \'z\'] [\n  LOAD_VARIABLE "x"\n  POP\n]'])
+                   ['DECLARE_FUNCTION f [\'x\', \'y\', \'z\'] [\n  LOAD_VARIABLE "x"\n]'])
 
     def test_function_expression(self):
         self.check('var x = function() {return x}',[
             'DECLARE_VAR "x"',
-            'DECLARE_FUNCTION [] [\n  LOAD_VARIABLE "x"\n  RETURN\n]',
+            'DECLARE_FUNCTION [] [\n  LOAD_VARIABLE "x"\n  RETURN\n  LOAD_UNDEFINED\n]',
             'LOAD_FUNCTION',
             'STORE "x"',
             'POP'])
@@ -509,6 +509,31 @@ class TestToAstFunction(BaseTestToAST):
                     'LOAD_VARIABLE "x"',
                     'STORE_MEMBER_SUB',
                     'POP'])
+
+
+def test_retlast_pop_removal():
+    jscode = JsCode()
+    jscode.emit('POP')
+    jsfunc = jscode.make_js_function()
+    assert not jsfunc.opcodes
+
+    jscode = JsCode()
+    jscode.emit('POP')
+    jscode.emit('LABEL', 0)
+    jsfunc = jscode.make_js_function()
+    assert_bytecode_list_eql(jsfunc.opcodes, ['POP', 'LOAD_UNDEFINED'])
+
+
+
+def test_retlast_undefined_addition():
+    jscode = JsCode()
+    jsfunc = jscode.make_js_function()
+    assert_bytecode_list_eql(jsfunc.opcodes, ['LOAD_UNDEFINED'])
+
+    jscode = JsCode()
+    jscode.emit('LOAD_INTCONSTANT', 1)
+    jsfunc = jscode.make_js_function()
+    assert_bytecode_list_eql(jsfunc.opcodes, ['LOAD_INTCONSTANT 1', 'LOAD_UNDEFINED'])
 
 from js.jsparser import parse
 

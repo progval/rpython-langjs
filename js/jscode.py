@@ -99,8 +99,14 @@ class JsCode(object):
         return opcode
 
     def make_js_function(self, name='__dont_care__', params=None):
+        if self.opcodes and isinstance(self.opcodes[-1], POP):
+            self.opcodes.pop()
+        else:
+            self.emit('LOAD_UNDEFINED')
+
         if self.has_labels:
             self.remove_labels()
+
         return JsFunction(name, params, self.opcodes)
 
     def remove_labels(self):
@@ -143,11 +149,6 @@ class JsFunction(object):
             return e.value
 
     def run_bytecode(self, ctx, stack, check_stack=True, retlast=False):
-        popped = False
-        if retlast and self.opcodes and isinstance(self.opcodes[-1], POP):
-            self.opcodes.pop()
-            popped = True
-
         i = 0
         to_pop = 0
         try:
@@ -179,15 +180,9 @@ class JsFunction(object):
             for i in range(to_pop):
                 ctx.pop_object()
 
-        if retlast:
-            if popped:
-                assert len(stack) == 1
-                return stack[0]
-            else:
-                assert not stack
-                return w_Undefined
         if check_stack:
-            assert not stack
+            assert len(stack) == 1
+        return stack[0]
 
 class Opcode(object):
     def __init__(self):
