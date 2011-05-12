@@ -15,10 +15,29 @@ from pypy.rlib.objectmodel import we_are_translated
 class AlreadyRun(Exception):
     pass
 
-class T(list):
+class Stack(object):
+    def __init__(self):
+        self.content = []
+
+    def pop(self):
+        return self.content.pop()
+
+    def top(self):
+        return self.content[-1]
+
     def append(self, element):
         assert isinstance(element, W_Root)
-        super(T, self).append(element)
+        self.content.append(element)
+
+    def pop_n(self, n):
+        to_cut = len(self.content) - n
+        assert to_cut >= 0
+        list = self.content[to_cut:]
+        del self.content[to_cut:]
+        return list
+
+    def check(self):
+        assert len(self.content) == 1
 
 class JsCode(object):
     """ That object stands for code of a single javascript function
@@ -30,7 +49,6 @@ class JsCode(object):
         self.startlooplabel = []
         self.endlooplabel = []
         self.updatelooplabel = []
-        self.stack = []
 
     def emit_label(self, num = -1):
         if num == -1:
@@ -140,10 +158,7 @@ class JsFunction(object):
         self.opcodes = make_sure_not_resized(code)
 
     def run(self, ctx, check_stack=True):
-        if we_are_translated():
-            stack = []
-        else:
-            stack = T()
+        stack = Stack()
         try:
             return self.run_bytecode(ctx, stack, check_stack)
         except ReturnException, e:
@@ -182,8 +197,8 @@ class JsFunction(object):
                 ctx.pop_object()
 
         if check_stack:
-            assert len(stack) == 1
-        return stack[0]
+            stack.check()
+        return stack.top()
 
 class Opcode(object):
     def __init__(self):
@@ -320,10 +335,7 @@ class LOAD_LIST(Opcode):
         self.counter = counter
 
     def eval(self, ctx, stack):
-        to_cut = len(stack)-self.counter
-        assert to_cut >= 0
-        list_w = stack[to_cut:]
-        del stack[to_cut:]
+        list_w = stack.pop_n(self.counter)
         stack.append(W_List(list_w))
 
     def __repr__(self):
@@ -488,9 +500,9 @@ class MOD(BaseBinaryOperation):
 
 class UPLUS(BaseUnaryOperation):
     def eval(self, ctx, stack):
-        if isinstance(stack[-1], W_IntNumber):
+        if isinstance(stack.top(), W_IntNumber):
             return
-        if isinstance(stack[-1], W_FloatNumber):
+        if isinstance(stack.top(), W_FloatNumber):
             return
         stack.append(W_FloatNumber(stack.pop().ToNumber(ctx)))
 
@@ -603,7 +615,7 @@ class BaseStore(Opcode):
 
 class STORE(BaseStore):
     def process(self, ctx, name, stack):
-        return stack[-1]
+        return stack.top()
 
 class BaseAssignOper(BaseStore):
     def process(self, ctx, name, stack):
@@ -721,7 +733,7 @@ class BaseIfJump(BaseJump):
 
 class BaseIfNopopJump(BaseJump):
     def eval(self, ctx, stack):
-        value = stack[-1]
+        value = stack.top()
         self.decision = value.ToBoolean()
 
 class JUMP_IF_FALSE(BaseIfJump):
@@ -820,7 +832,7 @@ class CALL_METHOD(Opcode):
 
 class DUP(Opcode):
     def eval(self, ctx, stack):
-        stack.append(stack[-1])
+        stack.append(stack.top())
 
 class THROW(Opcode):
     def eval(self, ctx, stack):
@@ -887,7 +899,7 @@ class JUMP_IF_ITERATOR_EMPTY(BaseJump):
         pass
 
     def do_jump(self, stack, pos):
-        iterator = stack[-1]
+        iterator = stack.top()
         assert isinstance(iterator, W_Iterator)
         if iterator.empty():
             return self.where
@@ -898,7 +910,7 @@ class NEXT_ITERATOR(Opcode):
         self.name = name
 
     def eval(self, ctx, stack):
-        iterator = stack[-1]
+        iterator = stack.top()
         assert isinstance(iterator, W_Iterator)
         ctx.assign(self.name, iterator.next())
 
