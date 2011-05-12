@@ -189,6 +189,9 @@ def printjs(ctx, args, this):
     writer(",".join([i.ToString(ctx) for i in args]))
     return w_Undefined
 
+def noop(*args):
+    return w_Undefined
+
 def isnanjs(ctx, args, this):
     if len(args) < 1:
         return newbool(True)
@@ -889,6 +892,7 @@ class Interpreter(object):
         w_Global.Put(ctx, 'isNaN', W_Builtin(isnanjs))
         w_Global.Put(ctx, 'isFinite', W_Builtin(isfinitejs))
         w_Global.Put(ctx, 'print', W_Builtin(printjs))
+        w_Global.Put(ctx, 'alert', W_Builtin(noop))
         w_Global.Put(ctx, 'unescape', W_Builtin(unescapejs))
 
         w_Global.Put(ctx, 'this', w_Global)
