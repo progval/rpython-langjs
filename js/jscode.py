@@ -107,7 +107,7 @@ class JsCode(object):
         if self.has_labels:
             self.remove_labels()
 
-        return JsFunction(name, params, self.opcodes)
+        return JsFunction(name, params, self.opcodes[:])
 
     def remove_labels(self):
         """ Basic optimization to remove all labels and change
@@ -134,9 +134,10 @@ class JsCode(object):
 
 class JsFunction(object):
     def __init__(self, name, params, code):
+        from pypy.rlib.debug import make_sure_not_resized
         self.name = name
         self.params = params
-        self.opcodes = code
+        self.opcodes = make_sure_not_resized(code)
 
     def run(self, ctx, check_stack=True):
         if we_are_translated():

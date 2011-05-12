@@ -10,7 +10,7 @@ from js.jsobj import W_IntNumber, W_FloatNumber, W_Object,\
      w_Null, W_BaseNumber, isnull_or_undefined
 from pypy.rlib.parsing.ebnfparse import Symbol, Nonterminal
 from js.execution import JsTypeError, ThrowException
-from js.jscode import JsCode, JsFunction
+from js.jscode import JsCode
 from constants import unescapedict
 from pypy.rlib.unroll import unrolling_iterable
 
