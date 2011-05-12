@@ -149,7 +149,8 @@ class W_Eval(W_NewBuiltin):
 
         bytecode = JsCode()
         node.emit(bytecode)
-        return bytecode.run(ctx, retlast=True)
+        func = bytecode.make_js_function()
+        return func.run(ctx, retlast = True)
 
 class W_ParseInt(W_NewBuiltin):
     length = 1
@@ -317,7 +318,8 @@ class W_Function(W_NewBuiltin):
         ast = ASTBUILDER.dispatch(funcnode)
         bytecode = JsCode()
         ast.emit(bytecode)
-        return bytecode.run(ctx, retlast=True)
+        func = bytecode.make_js_function()
+        return func.run(ctx, retlast=True)
 
     def Construct(self, ctx, args=[]):
         return self.Call(ctx, args, this=None)
@@ -894,7 +896,8 @@ class Interpreter(object):
         if not we_are_translated():
             # debugging
             self._code = bytecode
+        func = bytecode.make_js_function()
         if interactive:
-            return bytecode.run(self.global_context, retlast=True)
+            return func.run(self.global_context, retlast=True)
         else:
-            bytecode.run(self.global_context)
+            func.run(self.global_context)

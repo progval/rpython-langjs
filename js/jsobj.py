@@ -147,7 +147,7 @@ class W_PrimitiveObject(W_Root):
         w_Arguments = W_Arguments(self, args)
         act.Put(ctx, 'arguments', w_Arguments)
         newctx = function_context(self.Scope, act, this)
-        val = self.callfunc.run(ctx=newctx)
+        val = self.callfunc.run(ctx=newctx, retlast=True)
         return val
 
     def Construct(self, ctx, args=[]):

@@ -313,7 +313,7 @@ class FunctionStatement(Statement):
         code = JsCode()
         if self.body is not None:
             self.body.emit(code)
-        funcobj = JsFunction(self.name, self.params, code)
+        funcobj = code.make_js_function(self.name, self.params)
         bytecode.emit('DECLARE_FUNCTION', funcobj)
         if self.name is None:
             bytecode.emit('LOAD_FUNCTION', funcobj)
@@ -648,18 +648,20 @@ class Try(Statement):
         # a bit naive operator for now
         trycode = JsCode()
         self.tryblock.emit(trycode)
+        tryfunc = trycode.make_js_function()
         if self.catchblock:
             catchcode = JsCode()
             self.catchblock.emit(catchcode)
+            catchfunc = catchcode.make_js_function()
+            finallyfunc = finallycode.make_js_function()
         else:
-            catchcode = None
+            catchfunc = None
         if self.finallyblock:
             finallycode = JsCode()
             self.finallyblock.emit(finallycode)
         else:
-            finallycode = None
-        bytecode.emit('TRYCATCHBLOCK', trycode, self.catchparam.get_literal(),
-                      catchcode, finallycode)    
+            finallyfunc = None
+        bytecode.emit('TRYCATCHBLOCK', tryfunc, self.catchparam.get_literal(), catchfunc, finallyfunc)
 
 class VariableDeclaration(Expression):
     def __init__(self, pos, identifier, expr=None):

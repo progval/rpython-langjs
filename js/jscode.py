@@ -15,61 +15,6 @@ from pypy.rlib.objectmodel import we_are_translated
 class AlreadyRun(Exception):
     pass
 
-def run_bytecode(opcodes, ctx, stack, check_stack=True, retlast=False):
-    popped = False
-    if retlast:
-        if isinstance(opcodes[-1], POP):
-            opcodes.pop()
-            popped = True
-
-    i = 0
-    to_pop = 0
-    try:
-        while i < len(opcodes):
-            opcode = opcodes[i]
-            #if we_are_translated():
-            #    #this is an optimization strategy for translated code
-            #    #on top of cpython it destroys the performance
-            #    #besides, this code might be completely wrong
-            #    for name, op in opcode_unrolling:
-            #        opcode = hint(opcode, deepfreeze=True)
-            #        if isinstance(opcode, op):
-            #            result = opcode.eval(ctx, stack)
-            #            assert result is None
-            #            break
-            #else:
-            result = opcode.eval(ctx, stack)
-            assert result is None
-
-            if isinstance(opcode, BaseJump):
-                i = opcode.do_jump(stack, i)
-            else:
-                i += 1
-            if isinstance(opcode, WITH_START):
-                to_pop += 1
-            elif isinstance(opcode, WITH_END):
-                to_pop -= 1
-    finally:
-        for i in range(to_pop):
-            ctx.pop_object()
-
-    if retlast:
-        if popped:
-            assert len(stack) == 1
-            return stack[0]
-        else:
-            assert not stack
-            return w_Undefined
-    if check_stack:
-        assert not stack
-
-#def run_bytecode_unguarded(opcodes, ctx, stack, check_stack=True, retlast=False):
-#    try:
-#        run_bytecode(opcodes, ctx, stack, check_stack, retlast)
-#    except ThrowException:
-#        print
-#        raise
-
 class T(list):
     def append(self, element):
         assert isinstance(element, W_Root)
@@ -153,19 +98,10 @@ class JsCode(object):
         self.opcodes.append(opcode)
         return opcode
 
-    def run(self, ctx, check_stack=True, retlast=False):
+    def make_js_function(self, name='__dont_care__', params=None):
         if self.has_labels:
             self.remove_labels()
-        if 1:
-            if we_are_translated():
-                stack = []
-            else:
-                stack = T()
-            return run_bytecode(self.opcodes, ctx, stack, check_stack,
-                                retlast)
-        else:
-            return run_bytecode_unguarded(self.opcodes, ctx, self,stack,
-                                          check_stack, retlast)
+        return JsFunction(name, params, self.opcodes)
 
     def _freeze_(self):
         if self.has_labels:
@@ -206,14 +142,64 @@ class JsFunction(object):
     def __init__(self, name, params, code):
         self.name = name
         self.params = params
-        self.code = code
+        self.opcodes = code
 
-    def run(self, ctx):
+    def run(self, ctx, check_stack=True, retlast=False):
+        if we_are_translated():
+            stack = []
+        else:
+            stack = T()
         try:
-            self.code.run(ctx)
+            return self.run_bytecode(ctx, stack, check_stack, retlast)
         except ReturnException, e:
             return e.value
-        return w_Undefined
+
+    def run_bytecode(self, ctx, stack, check_stack=True, retlast=False):
+        popped = False
+        if retlast and self.opcodes and isinstance(self.opcodes[-1], POP):
+            self.opcodes.pop()
+            popped = True
+
+        i = 0
+        to_pop = 0
+        try:
+            while i < len(self.opcodes):
+                opcode = self.opcodes[i]
+                #if we_are_translated():
+                #    #this is an optimization strategy for translated code
+                #    #on top of cpython it destroys the performance
+                #    #besides, this code might be completely wrong
+                #    for name, op in opcode_unrolling:
+                #        opcode = hint(opcode, deepfreeze=True)
+                #        if isinstance(opcode, op):
+                #            result = opcode.eval(ctx, stack)
+                #            assert result is None
+                #            break
+                #else:
+                result = opcode.eval(ctx, stack)
+                assert result is None
+
+                if isinstance(opcode, BaseJump):
+                    i = opcode.do_jump(stack, i)
+                else:
+                    i += 1
+                if isinstance(opcode, WITH_START):
+                    to_pop += 1
+                elif isinstance(opcode, WITH_END):
+                    to_pop -= 1
+        finally:
+            for i in range(to_pop):
+                ctx.pop_object()
+
+        if retlast:
+            if popped:
+                assert len(stack) == 1
+                return stack[0]
+            else:
+                assert not stack
+                return w_Undefined
+        if check_stack:
+            assert not stack
 
 class Opcode(object):
     def __init__(self):
@@ -804,7 +790,7 @@ class DECLARE_FUNCTION(Opcode):
             name = ""
         else:
             name = funcobj.name + " "
-        codestr = '\n'.join(['  %r' % (op,) for op in funcobj.code.opcodes])
+        codestr = '\n'.join(['  %r' % (op,) for op in funcobj.opcodes])
         return 'DECLARE_FUNCTION %s%r [\n%s\n]' % (name, funcobj.params, codestr)
 
 class DECLARE_VAR(Opcode):
@@ -861,34 +847,34 @@ class THROW(Opcode):
         raise ThrowException(val)
 
 class TRYCATCHBLOCK(Opcode):
-    def __init__(self, trycode, catchparam, catchcode, finallycode):
-        self.trycode     = trycode
-        self.catchcode   = catchcode
+    def __init__(self, tryfunc, catchparam, catchfunc, finallyfunc):
+        self.tryfunc     = tryfunc
+        self.catchfunc   = catchfunc
         self.catchparam  = catchparam
-        self.finallycode = finallycode
+        self.finallyfunc = finallyfunc
 
     def eval(self, ctx, stack):
         try:
             try:
-                self.trycode.run(ctx)
+                self.tryfunc.run(ctx)
             except ThrowException, e:
-                if self.catchcode is not None:
+                if self.catchfunc is not None:
                     # XXX just copied, I don't know if it's right
                     obj = W_Object()
                     obj.Put(ctx, self.catchparam, e.exception)
                     ctx.push_object(obj)
                     try:
-                        self.catchcode.run(ctx)
+                        self.catchfunc.run(ctx)
                     finally:
                         ctx.pop_object()
-                if self.finallycode is not None:
-                    self.finallycode.run(ctx)
-                if not self.catchcode:
+                if self.finallyfunc is not None:
+                    self.finallyfunc.run(ctx)
+                if not self.catchfunc:
                     raise
         except ReturnException:
             # we run finally block here and re-raise the exception
-            if self.finallycode is not None:
-                self.finallycode.run(ctx)
+            if self.finallyfunc is not None:
+                self.finallyfunc.run(ctx)
             raise
 
     def __repr__(self):

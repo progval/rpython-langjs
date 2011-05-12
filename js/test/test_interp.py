@@ -13,7 +13,8 @@ def test_simple():
     bytecode.emit('LOAD_FLOATCONSTANT', 4)
     bytecode.emit('ADD')
     bytecode.emit('POP')
-    res = bytecode.run(ExecutionContext([W_Object()]), check_stack=False, retlast=True)
+    func = bytecode.make_js_function()
+    res = func.run(ExecutionContext([W_Object()]), check_stack=False, retlast=True)
     assert res.ToNumber(None) == 6.0
 
 def assertp(code, prints):
@@ -37,7 +38,8 @@ def assertv(code, value):
     try:
         bytecode = JsCode()
         interpreter.load_source(code, '').emit(bytecode)
-        code_val = bytecode.run(ExecutionContext([ctx]), retlast=True)
+        func = bytecode.make_js_function()
+        code_val = func.run(ExecutionContext([ctx]), retlast=True)
     except ThrowException, excpt:
         code_val = excpt.exception
     print code_val, value
