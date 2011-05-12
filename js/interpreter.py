@@ -574,6 +574,19 @@ class W_ArrayPush(W_NewBuiltin):
         this.Put(ctx, 'length', j);
         return j
 
+class W_ArrayPop(W_NewBuiltin):
+    def Call(self, ctx, args=[], this=None):
+        len = this.Get(ctx, 'length').ToUInt32(ctx)
+        if(len == 0):
+            return w_Undefined
+        else:
+            indx = len-1
+            indxstr = str(indx)
+            element = this.Get(ctx, indxstr)
+            this.Delete(indxstr)
+            this.Put(ctx, 'length', W_IntNumber(indx))
+            return element
+
 class W_ArrayReverse(W_NewBuiltin):
     length = 0
     def Call(self, ctx, args=[], this=None):
@@ -821,6 +834,7 @@ class Interpreter(object):
             'reverse': W_ArrayReverse(ctx),
             'sort': W_ArraySort(ctx),
             'push': W_ArrayPush(ctx),
+            'pop': W_ArrayPop(ctx),
         })
 
         w_Array.Put(ctx, 'prototype', w_ArrPrototype, flags = allon)
