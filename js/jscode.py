@@ -758,7 +758,7 @@ class JUMP_IF_FALSE_NOPOP(BaseIfNopopJump):
             return pos + 1
         return self.where
 
-class JUMP_IF_TRUE(BaseIfNopopJump):
+class JUMP_IF_TRUE(BaseIfJump):
     def do_jump(self, stack, pos):
         if self.decision:
             return self.where
