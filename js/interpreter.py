@@ -150,7 +150,7 @@ class W_Eval(W_NewBuiltin):
         bytecode = JsCode()
         node.emit(bytecode)
         func = bytecode.make_js_function()
-        return func.run(ctx, retlast = True)
+        return func.run(ctx)
 
 class W_ParseInt(W_NewBuiltin):
     length = 1
@@ -319,7 +319,7 @@ class W_Function(W_NewBuiltin):
         bytecode = JsCode()
         ast.emit(bytecode)
         func = bytecode.make_js_function()
-        return func.run(ctx, retlast=True)
+        return func.run(ctx)
 
     def Construct(self, ctx, args=[]):
         return self.Call(ctx, args, this=None)
@@ -898,6 +898,6 @@ class Interpreter(object):
             self._code = bytecode
         func = bytecode.make_js_function()
         if interactive:
-            return func.run(self.global_context, retlast=True)
+            return func.run(self.global_context)
         else:
             func.run(self.global_context)

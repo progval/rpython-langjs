@@ -138,17 +138,17 @@ class JsFunction(object):
         self.params = params
         self.opcodes = code
 
-    def run(self, ctx, check_stack=True, retlast=False):
+    def run(self, ctx, check_stack=True):
         if we_are_translated():
             stack = []
         else:
             stack = T()
         try:
-            return self.run_bytecode(ctx, stack, check_stack, retlast)
+            return self.run_bytecode(ctx, stack, check_stack)
         except ReturnException, e:
             return e.value
 
-    def run_bytecode(self, ctx, stack, check_stack=True, retlast=False):
+    def run_bytecode(self, ctx, stack, check_stack=True):
         i = 0
         to_pop = 0
         try:
