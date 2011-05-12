@@ -289,8 +289,14 @@ class BaseTestToAST(BaseGrammarTest):
 
     def check(self, source, expected):
         bytecode = self.compile(source)
-        assert bytecode == expected
+        assert_bytecode_list_eql(bytecode.opcodes, expected)
         return bytecode
+
+def assert_bytecode_list_eql(opcodes, list_of_opcodes):
+    assert isinstance(list_of_opcodes, list)
+    assert len(list_of_opcodes) == len(opcodes)
+    for i, j in zip(opcodes, list_of_opcodes):
+        assert repr(i) == j
 
 class TestToASTExpr(BaseTestToAST):
     def setup_class(cls):
@@ -382,7 +388,7 @@ class TestToAstStatement(BaseTestToAST):
     def check_remove_label(self, s, expected, expected_after_rl):
         bytecode = self.check(s, expected)
         bytecode.remove_labels()
-        assert bytecode == expected_after_rl
+        assert_bytecode_list_eql(bytecode.opcodes, expected_after_rl)
 
     def test_control_flow(self):
         self.check_remove_label('while (i>1) {x}',

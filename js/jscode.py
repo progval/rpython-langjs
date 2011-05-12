@@ -103,11 +103,6 @@ class JsCode(object):
             self.remove_labels()
         return JsFunction(name, params, self.opcodes)
 
-    def _freeze_(self):
-        if self.has_labels:
-            self.remove_labels()
-        return True
-
     def remove_labels(self):
         """ Basic optimization to remove all labels and change
         jumps to addresses. Necessary to run code at all
@@ -130,13 +125,6 @@ class JsCode(object):
 
     def __repr__(self):
         return "\n".join([repr(i) for i in self.opcodes])
-
-    def __eq__(self, list_of_opcodes):
-        if not isinstance(list_of_opcodes, list):
-            return False
-        if len(list_of_opcodes) != len(self.opcodes):
-            return False
-        return all([i == j for i, j in zip(self.opcodes, list_of_opcodes)])
 
 class JsFunction(object):
     def __init__(self, name, params, code):
@@ -209,9 +197,6 @@ class Opcode(object):
         """ Execute in context ctx
         """
         raise NotImplementedError
-
-    def __eq__(self, other):
-        return repr(self) == other
 
     def __repr__(self):
         return self.__class__.__name__
