@@ -382,6 +382,41 @@ class ASTBuilder(RPythonVisitor):
     def visit_iterationstatement(self, node):
         return self.dispatch(node.children[0])
 
+    def visit_switchstatement(self, node):
+        pos = self.get_pos(node)
+        expression = self.dispatch(node.children[0])
+        caseblock = self.dispatch(node.children[1])
+        return operations.Switch(pos, expression, caseblock.clauses, caseblock.default_clause)
+
+    def visit_caseblock(self, node):
+        pos = self.get_pos(node)
+        caseclauses = self.dispatch(node.children[0])
+        defaultblock = self.dispatch(node.children[1])
+        return operations.Cases(pos, caseclauses, defaultblock)
+
+    def visit_caseclauses(self, node):
+        pos = self.get_pos(node)
+        expressions = []
+        clauses = []
+        for c in node.children:
+            if c.symbol == 'statementlist':
+                block = self.dispatch(c)
+                clauses.append(operations.CaseClause(pos, expressions, block))
+                expressions = []
+            else:
+                expressions.append(self.dispatch(c))
+        return clauses
+
+    def visit_defaultclause(self, node):
+        pos = self.get_pos(node)
+        block = self.dispatch(node.children[0])
+        return operations.DefaultClause(pos, block)
+
+    def visit_statementlist(self, node):
+        pos = self.get_pos(node)
+        block = self.dispatch(node.children[0])
+        return operations.StatementList(pos, block)
+
     def visit_whiles(self, node):
         pos = self.get_pos(node)
         itertype = node.children[0].additional_info

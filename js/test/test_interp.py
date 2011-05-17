@@ -599,7 +599,6 @@ def test_octal_and_hex():
     yield assertv, "0xF", 15
 
 def test_switch():
-    py.test.skip("not ready yet")
     yield assertv, """
     x = 1;
     switch(x){
@@ -607,11 +606,11 @@ def test_switch():
         default: 30;
     };""", 15
     yield assertv, """
-    x = 1;
+    x = 0;
     switch(x){
         case 1: 15; break;
         default: 30;
-    };""", 15
+    };""", 30
 
 def test_autoboxing():
     yield assertv, "'abc'.charAt(0)", 'a'
@@ -669,3 +668,30 @@ def test_member_preincrement():
     yield assertv, "var x = {y:1}; ++x.y; x.y;", 2
     yield assertv, "var x = {y:1}; ++x.y;", 2
 
+def switch_test_code(x):
+    return """
+    function f(x) {
+      var y;
+      switch(x) {
+        case 1:
+            y = 1;
+            break;
+        case 2:
+            y = 2;
+            break;
+        case 3:
+        default:
+            return 42;
+      }
+      return y;
+    };
+
+    f(%(x)s);
+    """ % {'x': x}
+
+
+def test_more_switch():
+    yield assertv, switch_test_code(0), 42
+    yield assertv, switch_test_code(1), 1
+    yield assertv, switch_test_code(2), 2
+    yield assertv, switch_test_code(3), 42

@@ -359,6 +359,64 @@ class If(Statement):
         else:
             bytecode.emit('LABEL', one)
 
+class Switch(Statement):
+    def __init__(self, pos, expression, clauses, default_clause = None):
+        super(Switch, self).__init__(pos)
+        self.expression = expression
+        self.clauses = clauses
+        self.default_clause = default_clause
+
+    def emit(self, bytecode):
+        end_of_switch = bytecode.prealocate_label()
+
+        for clause in self.clauses:
+            clause_code = bytecode.prealocate_label()
+            next_clause = bytecode.prealocate_label()
+            for expression in clause.expressions:
+
+                expression.emit(bytecode)
+                self.expression.emit(bytecode)
+                bytecode.emit('EQ')
+                bytecode.emit('JUMP_IF_TRUE', clause_code)
+
+            bytecode.emit('JUMP', next_clause)
+            bytecode.emit('LABEL', clause_code)
+            clause.block.emit(bytecode)
+            bytecode.emit('JUMP', end_of_switch)
+            bytecode.emit('LABEL', next_clause)
+        self.default_clause.emit(bytecode)
+        bytecode.emit('LABEL', end_of_switch)
+        bytecode.emit('POP')
+
+class Cases(Statement):
+    def __init__(self, pos, clauses, default_clause):
+        super(Cases, self).__init__(pos)
+        self.clauses = clauses
+        self.default_clause = default_clause
+
+class CaseClause(Statement):
+    def __init__(self, pos, expressions, block):
+        super(CaseClause, self).__init__(pos)
+        self.expressions = expressions
+        self.block = block
+
+class StatementList(Statement):
+    def __init__(self, pos, block):
+        super(StatementList, self).__init__(pos)
+        self.block = block
+
+    def emit(self, bytecode):
+        self.block.emit(bytecode)
+        bytecode.unpop_or_undefined()
+
+class DefaultClause(Statement):
+    def __init__(self, pos, block):
+        super(DefaultClause, self).__init__(pos)
+        self.block = block
+
+    def emit(self, bytecode):
+        self.block.emit(bytecode)
+
 #class Group(UnaryOp):
 #    def eval(self, ctx):
 #        return self.expr.eval(ctx)
