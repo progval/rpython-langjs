@@ -384,7 +384,10 @@ class Switch(Statement):
             clause.block.emit(bytecode)
             bytecode.emit('JUMP', end_of_switch)
             bytecode.emit('LABEL', next_clause)
-        self.default_clause.emit(bytecode)
+        if self.default_clause is not None:
+            self.default_clause.emit(bytecode)
+        else:
+            bytecode.unpop_or_undefined()
         bytecode.emit('LABEL', end_of_switch)
         bytecode.emit('POP')
 

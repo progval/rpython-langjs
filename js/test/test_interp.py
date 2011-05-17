@@ -695,3 +695,21 @@ def test_more_switch():
     yield assertv, switch_test_code(1), 1
     yield assertv, switch_test_code(2), 2
     yield assertv, switch_test_code(3), 42
+
+def switch_no_default_test_code(x):
+    return """
+    function f(x) {
+      switch(x) {
+        case 1:
+            return 2;
+            break;
+      }
+      return 42;
+    };
+
+    f(%(x)s);
+    """ % {'x': x}
+
+def test_switch_no_default():
+    yield assertv, switch_no_default_test_code(0), 42
+    yield assertv, switch_no_default_test_code(1), 2
