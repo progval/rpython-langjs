@@ -116,11 +116,19 @@ class JsCode(object):
         self.opcodes.append(opcode)
         return opcode
 
-    def make_js_function(self, name='__dont_care__', params=None):
+    def unpop(self):
         if self.opcodes and isinstance(self.opcodes[-1], POP):
             self.opcodes.pop()
+            return True
         else:
+            return False
+
+    def unpop_or_undefined(self):
+        if not self.unpop():
             self.emit('LOAD_UNDEFINED')
+
+    def make_js_function(self, name='__dont_care__', params=None):
+        self.unpop_or_undefined()
 
         if self.has_labels:
             self.remove_labels()
