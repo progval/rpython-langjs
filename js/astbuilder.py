@@ -50,16 +50,16 @@ class ASTBuilder(RPythonVisitor):
         '[': operations.Array,
         '{': operations.ObjectInit,
     }
-    
+
     def __init__(self):
         self.varlists = []
         self.funclists = []
         self.sourcename = ""
         RPythonVisitor.__init__(self)
-    
+
     def set_sourcename(self, sourcename):
         self.sourcename = sourcename #XXX I should call this
-    
+
     def get_pos(self, node):
         value = ''
         source_pos = None
@@ -88,7 +88,7 @@ class ASTBuilder(RPythonVisitor):
     def visit_DECIMALLITERAL(self, node):
         pos = self.get_pos(node)
         try:
-            
+
             f = float(node.additional_info)
             i = ovfcheck_float_to_int(f)
             if i != f:
@@ -97,7 +97,7 @@ class ASTBuilder(RPythonVisitor):
                 return operations.IntNumber(pos, i)
         except (ValueError, OverflowError):
             return operations.FloatNumber(pos, float(node.additional_info))
-    
+
     def visit_HEXINTEGERLITERAL(self, node):
         pos = self.get_pos(node)
         return operations.IntNumber(pos, int(node.additional_info, 16))
@@ -133,7 +133,7 @@ class ASTBuilder(RPythonVisitor):
     visit_shiftexpression = binaryop
     visit_expression = binaryop
     visit_expressionnoin = binaryop
-    
+
     def visit_memberexpression(self, node):
         if isinstance(node.children[0], Symbol) and \
            node.children[0].additional_info == 'new': # XXX could be a identifier?
@@ -191,7 +191,7 @@ class ASTBuilder(RPythonVisitor):
         child = self.dispatch(node.children[0])
         # all postfix expressions are assignments
         return self._dispatch_assignment(pos, child, op.additional_info, 'post')
-    
+
     def listop(self, node):
         op = node.children[0]
         pos = self.get_pos(op)
@@ -210,18 +210,18 @@ class ASTBuilder(RPythonVisitor):
         pos = self.get_pos(node)
         nodes = [self.dispatch(child) for child in node.children[1:]]
         return operations.ArgumentList(pos, nodes)
-    
+
     def visit_formalparameterlist(self, node):
         pos = self.get_pos(node)
         nodes = [self.dispatch(child) for child in node.children]
         return operations.ArgumentList(pos, nodes)
-    
+
     def visit_variabledeclarationlist(self, node):
         pos = self.get_pos(node)
         nodes = [self.dispatch(child) for child in node.children]
         return operations.VariableDeclList(pos, nodes)
     visit_variabledeclarationlistnoin = visit_variabledeclarationlist
-    
+
     def visit_propertynameandvalue(self, node):
         pos = self.get_pos(node)
         l = node.children[0]
@@ -241,7 +241,7 @@ class ASTBuilder(RPythonVisitor):
             if name in vardecl:
                 return i, vardecl
         raise ValueError("xxx")
-    
+
     def visit_IDENTIFIERNAME(self, node):
         pos = self.get_pos(node)
         name = node.additional_info
@@ -253,12 +253,12 @@ class ASTBuilder(RPythonVisitor):
             i, vardecl = t
             return operations.VariableIdentifier(pos, i, name)
         return operations.Identifier(pos, name)
-    
+
     def visit_program(self, node):
         pos = self.get_pos(node)
         body = self.dispatch(node.children[0])
         return operations.Program(pos, body)
-    
+
     def visit_variablestatement(self, node):
         pos = self.get_pos(node)
         body = self.dispatch(node.children[0])
@@ -268,7 +268,7 @@ class ASTBuilder(RPythonVisitor):
         pos = self.get_pos(node)
         exp = self.dispatch(node.children[0])
         return operations.Throw(pos, exp)
-        
+
     def visit_sourceelements(self, node):
         pos = self.get_pos(node)
         self.varlists.append({})
@@ -281,7 +281,7 @@ class ASTBuilder(RPythonVisitor):
         var_decl = self.varlists.pop().keys()
         func_decl = self.funclists.pop()
         return operations.SourceElements(pos, var_decl, func_decl, nodes, self.sourcename)
-    
+
     def functioncommon(self, node, declaration=True):
         pos = self.get_pos(node)
         i=0
@@ -296,14 +296,14 @@ class ASTBuilder(RPythonVisitor):
         if declaration:
             self.funclists[-1][identifier.get_literal()] = funcobj
         return funcobj
-    
+
     def visit_functiondeclaration(self, node):
         self.functioncommon(node)
         return None
-    
+
     def visit_functionexpression(self, node):
         return self.functioncommon(node, declaration=False)
-    
+
     def visit_variabledeclaration(self, node):
         pos = self.get_pos(node)
         identifier = self.dispatch(node.children[0])
@@ -314,11 +314,11 @@ class ASTBuilder(RPythonVisitor):
             expr = None
         return operations.VariableDeclaration(pos, identifier, expr)
     visit_variabledeclarationnoin = visit_variabledeclaration
-    
+
     def visit_expressionstatement(self, node):
         pos = self.get_pos(node)
         return operations.ExprStatement(pos, self.dispatch(node.children[0]))
-    
+
     def visit_callexpression(self, node):
         pos = self.get_pos(node)
         left = self.dispatch(node.children[0])
@@ -332,9 +332,9 @@ class ASTBuilder(RPythonVisitor):
             else:
                 right = self.dispatch(currnode)
                 left = operations.Call(pos, left, right)
-        
+
         return left
-        
+
     def visit_assignmentexpression(self, node):
         from js.operations import Identifier, Member, MemberDot,\
              VariableIdentifier
@@ -356,11 +356,11 @@ class ASTBuilder(RPythonVisitor):
         else:
             raise FakeParseError(pos, "invalid lefthand expression")
     visit_assignmentexpressionnoin = visit_assignmentexpression
-        
+
     def visit_emptystatement(self, node):
         pos = self.get_pos(node)
         return operations.Empty(pos)
-    
+
     def visit_newexpression(self, node):
         if len(node.children) == 1:
             return self.dispatch(node.children[0])
@@ -368,7 +368,7 @@ class ASTBuilder(RPythonVisitor):
             pos = self.get_pos(node)
             val = self.dispatch(node.children[1])
             return operations.New(pos, val)
-    
+
     def visit_ifstatement(self, node):
         pos = self.get_pos(node)
         condition = self.dispatch(node.children[0])
@@ -378,10 +378,10 @@ class ASTBuilder(RPythonVisitor):
         else:
             elseblock = None
         return operations.If(pos, condition, ifblock, elseblock)
-    
+
     def visit_iterationstatement(self, node):
         return self.dispatch(node.children[0])
-    
+
     def visit_whiles(self, node):
         pos = self.get_pos(node)
         itertype = node.children[0].additional_info
@@ -395,7 +395,7 @@ class ASTBuilder(RPythonVisitor):
             return operations.Do(pos, condition, block)
         else:
             raise NotImplementedError("Unknown while version %s" % (itertype,))
-    
+
     def visit_regularfor(self, node):
         pos = self.get_pos(node)
         i = 1
@@ -407,7 +407,7 @@ class ASTBuilder(RPythonVisitor):
         body, i = self.get_next_expr(node, i)
         return operations.For(pos, setup, condition, update, body)
     visit_regularvarfor = visit_regularfor
-    
+
     def visit_infor(self, node):
         from js.operations import Identifier
         pos = self.get_pos(node)
@@ -416,21 +416,21 @@ class ASTBuilder(RPythonVisitor):
         body= self.dispatch(node.children[3])
         assert isinstance(left, Identifier)
         return operations.ForIn(pos, left.name, right, body)
-    
+
     def visit_invarfor(self, node):
         pos = self.get_pos(node)
         left = self.dispatch(node.children[1])
         right = self.dispatch(node.children[2])
         body= self.dispatch(node.children[3])
-        return operations.ForVarIn(pos, left, right, body)    
-    
+        return operations.ForVarIn(pos, left, right, body)
+
     def get_next_expr(self, node, i):
         if isinstance(node.children[i], Symbol) and \
            node.children[i].additional_info in [';', ')', '(', '}']:
             return None, i+1
         else:
             return self.dispatch(node.children[i]), i+2
-    
+
     def visit_breakstatement(self, node):
         pos = self.get_pos(node)
         if len(node.children) > 0:
@@ -438,7 +438,7 @@ class ASTBuilder(RPythonVisitor):
         else:
             target = None
         return operations.Break(pos, target)
-    
+
     def visit_continuestatement(self, node):
         pos = self.get_pos(node)
         if len(node.children) > 0:
@@ -446,7 +446,7 @@ class ASTBuilder(RPythonVisitor):
         else:
             target = None
         return operations.Continue(pos, target)
-    
+
     def visit_returnstatement(self, node):
         pos = self.get_pos(node)
         if len(node.children) > 0:
@@ -461,7 +461,7 @@ class ASTBuilder(RPythonVisitor):
         truepart = self.dispatch(node.children[2])
         falsepart = self.dispatch(node.children[3])
         return operations.If(pos, condition, truepart, falsepart)
-    
+
     def visit_trystatement(self, node):
         pos = self.get_pos(node)
         tryblock = self.dispatch(node.children[0])
@@ -476,14 +476,14 @@ class ASTBuilder(RPythonVisitor):
         else:
             finallyblock = self.dispatch(node.children[1].children[1])
         return operations.Try(pos, tryblock, catchparam, catchblock, finallyblock)
-    
+
     def visit_primaryexpression(self, node):
         pos = self.get_pos(node)
         return operations.This(pos, 'this')
-    
+
     def visit_withstatement(self, node):
         pos = self.get_pos(node)
         identifier = self.dispatch(node.children[0])
         body = self.dispatch(node.children[1])
         return operations.With(pos, identifier, body)
-        
+
