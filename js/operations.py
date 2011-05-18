@@ -393,7 +393,7 @@ class Switch(Statement):
 
 class CaseBlock(Statement):
     def __init__(self, pos, clauses, default_clause):
-        super(Cases, self).__init__(pos)
+        self.pos = pos
         self.clauses = clauses
         self.default_clause = default_clause
 
@@ -404,13 +404,13 @@ class CaseClauses(Statement):
 
 class CaseClause(Statement):
     def __init__(self, pos, expressions, block):
-        super(CaseClause, self).__init__(pos)
+        self.pos = pos
         self.expressions = expressions
         self.block = block
 
 class StatementList(Statement):
     def __init__(self, pos, block):
-        super(StatementList, self).__init__(pos)
+        self.pos = pos
         self.block = block
 
     def emit(self, bytecode):
@@ -419,7 +419,7 @@ class StatementList(Statement):
 
 class DefaultClause(Statement):
     def __init__(self, pos, block):
-        super(DefaultClause, self).__init__(pos)
+        self.pos = pos
         self.block = block
 
     def emit(self, bytecode):
