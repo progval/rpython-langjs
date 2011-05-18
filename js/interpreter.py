@@ -888,6 +888,7 @@ class Interpreter(object):
         put_values(ctx, w_DatePrototype, {
             '__proto__': w_DatePrototype,
             'valueOf': get_value_of('Date')(ctx),
+            'getTime': get_value_of('Date')(ctx)
         })
 
         w_Date.Put(ctx, 'prototype', w_DatePrototype, flags=allon)
