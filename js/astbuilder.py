@@ -394,7 +394,7 @@ class ASTBuilder(RPythonVisitor):
         if len(node.children) > 1:
             defaultblock = self.dispatch(node.children[1])
         else:
-            defaultblock = None
+            defaultblock = operations.EmptyExpression(pos)
         return operations.CaseBlock(pos, caseclauses, defaultblock)
 
     def visit_caseclauses(self, node):

@@ -384,10 +384,7 @@ class Switch(Statement):
             clause.block.emit(bytecode)
             bytecode.emit('JUMP', end_of_switch)
             bytecode.emit('LABEL', next_clause)
-        if self.default_clause is not None:
-            self.default_clause.emit(bytecode)
-        else:
-            bytecode.unpop_or_undefined()
+        self.default_clause.emit(bytecode)
         bytecode.emit('LABEL', end_of_switch)
         bytecode.emit('POP')
 
@@ -787,6 +784,10 @@ class Void(Expression):
         self.expr.emit(bytecode)
         bytecode.emit('POP')
         bytecode.emit('LOAD_UNDEFINED')
+
+class EmptyExpression(Expression):
+    def emit(self, bytecode):
+        bytecode.unpop_or_undefined()
 
 class With(Statement):
     def __init__(self, pos, expr, body):
