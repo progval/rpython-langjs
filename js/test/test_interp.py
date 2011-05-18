@@ -845,7 +845,7 @@ def test_partial_for_loop():
     """, 2
 
 def test_compare_string_null():
-    assertv, """
+    yield assertv, """
     var x;
     if('a' == null){
         x = true;
@@ -854,3 +854,6 @@ def test_compare_string_null():
     }
     x;
     """, False
+
+def test_math_random():
+    yield assertv, "var x = Math.random(); var y = Math.random(); x == y;", False

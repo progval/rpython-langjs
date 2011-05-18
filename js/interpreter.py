@@ -1,5 +1,6 @@
 
 import math
+import random
 from js.jsparser import parse, ParseError
 from js.astbuilder import ASTBuilder
 from js.jsobj import global_context, W_Object,\
@@ -240,6 +241,9 @@ def logjs(ctx, args, this):
 
 def versionjs(ctx, args, this):
     return w_Undefined
+
+def randomjs(ctx, args, this):
+    return W_FloatNumber(random.random())
 
 def _ishex(ch):
     return ((ch >= 'a' and ch <= 'f') or (ch >= '0' and ch <= '9') or
@@ -866,6 +870,7 @@ class Interpreter(object):
         w_math.Put(ctx, 'PI', W_FloatNumber(math.pi), flags=allon)
         w_math.Put(ctx, 'SQRT1_2', W_FloatNumber(math.sqrt(0.5)), flags=allon)
         w_math.Put(ctx, 'SQRT2', W_FloatNumber(math.sqrt(2)), flags=allon)
+        w_math.Put(ctx, 'random', W_Builtin(randomjs, Class='function'))
         w_Global.Put(ctx, 'version', W_Builtin(versionjs), flags=allon)
 
         #Date
