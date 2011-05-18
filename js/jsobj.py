@@ -109,7 +109,7 @@ class W_Null(W_Root):
         return "null"
 
     def type(self):
-        return 'object'
+        return 'null'
 
 w_Undefined = W_Undefined()
 w_Null = W_Null()

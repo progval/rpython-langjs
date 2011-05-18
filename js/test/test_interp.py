@@ -843,3 +843,14 @@ def test_partial_for_loop():
     }
     i;
     """, 2
+
+def test_compare_string_null():
+    assertv, """
+    var x;
+    if('a' == null){
+        x = true;
+    } else {
+        x = false;
+    }
+    x;
+    """, False
