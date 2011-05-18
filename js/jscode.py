@@ -585,17 +585,23 @@ class STORE_MEMBER_ADD(BaseStoreMemberAssign):
     def decision(self, ctx, value, prev):
         return plus(ctx, value, prev)
 
-class STORE_MEMBER_BITXOR(BaseStoreMemberAssign):
+class BaseStoreMemberBitOp(BaseStoreMemberAssign):
     def decision(self, ctx, value, prev):
         op0 = value.ToInt32(ctx)
         op1 = prev.ToInt32(ctx)
-        return W_IntNumber(op0 ^ op1)
+        return W_IntNumber(self.bitop(op0, op1))
 
-class STORE_MEMBER_BITAND(BaseStoreMemberAssign):
-    def decision(self, ctx, value, prev):
-        op0 = value.ToInt32(ctx)
-        op1 = prev.ToInt32(ctx)
-        return W_IntNumber(op0 & op1)
+class STORE_MEMBER_BITXOR(BaseStoreMemberBitOp):
+    def bitop(self, op0, op1):
+        return op0 ^ op1
+
+class STORE_MEMBER_BITAND(BaseStoreMemberBitOp):
+    def bitop(self, op0, op1):
+        return op0 & op1
+
+class STORE_MEMBER_BITOR(BaseStoreMemberBitOp):
+    def bitop(self, op0, op1):
+        return op0 | op1
 
 class BaseStoreMemberPost(Opcode):
     def eval(self, ctx, stack):
