@@ -390,12 +390,12 @@ class ASTBuilder(RPythonVisitor):
 
     def visit_caseblock(self, node):
         pos = self.get_pos(node)
-        caseclauses = self.dispatch(node.children[0])
+        caseclauses = self.dispatch(node.children[0]).clauses
         if len(node.children) > 1:
             defaultblock = self.dispatch(node.children[1])
         else:
             defaultblock = None
-        return operations.Cases(pos, caseclauses, defaultblock)
+        return operations.CaseBlock(pos, caseclauses, defaultblock)
 
     def visit_caseclauses(self, node):
         pos = self.get_pos(node)
@@ -408,7 +408,7 @@ class ASTBuilder(RPythonVisitor):
                 expressions = []
             else:
                 expressions.append(self.dispatch(c))
-        return clauses
+        return operations.CaseClauses(pos, clauses)
 
     def visit_defaultclause(self, node):
         pos = self.get_pos(node)

@@ -360,8 +360,8 @@ class If(Statement):
             bytecode.emit('LABEL', one)
 
 class Switch(Statement):
-    def __init__(self, pos, expression, clauses, default_clause = None):
-        super(Switch, self).__init__(pos)
+    def __init__(self, pos, expression, clauses, default_clause):
+        self.pos = pos
         self.expression = expression
         self.clauses = clauses
         self.default_clause = default_clause
@@ -391,11 +391,16 @@ class Switch(Statement):
         bytecode.emit('LABEL', end_of_switch)
         bytecode.emit('POP')
 
-class Cases(Statement):
+class CaseBlock(Statement):
     def __init__(self, pos, clauses, default_clause):
         super(Cases, self).__init__(pos)
         self.clauses = clauses
         self.default_clause = default_clause
+
+class CaseClauses(Statement):
+    def __init__(self, pos, clauses):
+        self.pos = pos
+        self.clauses = clauses
 
 class CaseClause(Statement):
     def __init__(self, pos, expressions, block):
