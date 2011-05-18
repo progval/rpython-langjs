@@ -621,7 +621,7 @@ class STORE_MEMBER_POSTDECR(BaseStoreMemberPost):
     def operation(self, ctx, value):
         return decrement(ctx, value)
 
-class STORE_MEMBER_PREINCR(Opcode):
+class BaseStoreMemberPre(Opcode):
     def eval(self, ctx, stack):
         left = stack.pop()
         elem = stack.pop()
@@ -631,8 +631,13 @@ class STORE_MEMBER_PREINCR(Opcode):
         left.ToObject(ctx).Put(ctx, name, value)
         stack.append(value)
 
+class STORE_MEMBER_PREINCR(BaseStoreMemberPre):
     def operation(self, ctx, value):
         return increment(ctx, value)
+
+class STORE_MEMBER_PREDECR(BaseStoreMemberPre):
+    def operation(self, ctx, value):
+        return decrement(ctx, value)
 
 class STORE_MEMBER_SUB(BaseStoreMember):
     def operation(self, *args):
