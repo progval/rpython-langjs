@@ -590,6 +590,12 @@ class STORE_MEMBER_BITXOR(BaseStoreMemberAssign):
         op1 = prev.ToInt32(ctx)
         return W_IntNumber(op0 ^ op1)
 
+class STORE_MEMBER_BITAND(BaseStoreMemberAssign):
+    def decision(self, ctx, value, prev):
+        op0 = value.ToInt32(ctx)
+        op1 = prev.ToInt32(ctx)
+        return W_IntNumber(op0 & op1)
+
 class BaseStoreMemberPost(Opcode):
     def eval(self, ctx, stack):
         left = stack.pop()

@@ -719,3 +719,9 @@ def test_member_bitxor():
     yield assertv, 'var i = {x:0}; i.x^=1;', 1
     yield assertv, 'var i = {x:1}; i.x^=0;', 1
     yield assertv, 'var i = {x:1}; i.x^=1;', 0
+
+def test_member_bitand():
+    yield assertv, 'var i = {x:0}; i.x&=0;', 0
+    yield assertv, 'var i = {x:0}; i.x&=1;', 0
+    yield assertv, 'var i = {x:1}; i.x&=0;', 0
+    yield assertv, 'var i = {x:1}; i.x&=1;', 1
