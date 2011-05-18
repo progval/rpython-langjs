@@ -1408,7 +1408,8 @@ function rng_seed_int(x) {
 
 // Mix in the current time (w/milliseconds) into the pool
 function rng_seed_time() {
-  rng_seed_int(new Date().getTime());
+  var now = new Date();
+  rng_seed_int(now.getTime());
 }
 
 // Initialize the pool with junk if needed.
