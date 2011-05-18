@@ -92,18 +92,13 @@ Strength.strongest = function (s1, s2) {
 };
 
 Strength.prototype.nextWeaker = function () {
-  if (this.strengthValue == 0) {
-    return Strength.WEAKEST;
-  } else if (this.strengthValue == 1) {
-    return Strength.WEAK_DEFAULT;
-  } else if (this.strengthValue == 2) {
-    return Strength.NORMAL;
-  } else if (this.strengthValue == 3) {
-    return Strength.STRONG_DEFAULT;
-  } else if (this.strengthValue == 4) {
-    return Strength.PREFERRED;
-  } else if (this.strengthValue == 5) {
-    return Strength.REQUIRED;
+  switch (this.strengthValue) {
+    case 0: return Strength.WEAKEST;
+    case 1: return Strength.WEAK_DEFAULT;
+    case 2: return Strength.NORMAL;
+    case 3: return Strength.STRONG_DEFAULT;
+    case 4: return Strength.PREFERRED;
+    case 5: return Strength.REQUIRED;
   }
 };
 
