@@ -857,3 +857,8 @@ def test_compare_string_null():
 
 def test_math_random():
     yield assertv, "var x = Math.random(); var y = Math.random(); x == y;", False
+
+def test_math_min():
+    yield assertv, "Math.min(1, 2);", 1
+    yield assertv, "Math.min(0, 2);", 0
+    yield assertv, "Math.min(-1, 1);", -1
