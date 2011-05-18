@@ -1,6 +1,7 @@
-
 import math
-import random
+import time
+from pypy.rlib import rrandom
+random = rrandom.Random(int(time.time()))
 from js.jsparser import parse, ParseError
 from js.astbuilder import ASTBuilder
 from js.jsobj import global_context, W_Object,\
@@ -687,7 +688,6 @@ class W_ArraySort(W_NewBuiltin):
             newlength += 1
         return this
 
-import time
 class W_DateObject(W_NativeObject):
     def Call(self, ctx, args=[], this=None):
         return create_object(ctx, 'Object')
