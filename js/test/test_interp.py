@@ -715,28 +715,45 @@ def test_switch_no_default():
     yield assertv, switch_no_default_test_code(1), 2
 
 def test_member_bitxor():
+    yield assertv, 'var i = {x:0}; i.x^=0; i.x;', 0
     yield assertv, 'var i = {x:0}; i.x^=0;', 0
+    yield assertv, 'var i = {x:0}; i.x^=1; i.x;', 1
     yield assertv, 'var i = {x:0}; i.x^=1;', 1
+    yield assertv, 'var i = {x:1}; i.x^=0; i.x;', 1
     yield assertv, 'var i = {x:1}; i.x^=0;', 1
+    yield assertv, 'var i = {x:1}; i.x^=1; i.x;', 0
     yield assertv, 'var i = {x:1}; i.x^=1;', 0
 
 def test_member_bitand():
+    yield assertv, 'var i = {x:0}; i.x&=0; i.x;', 0
     yield assertv, 'var i = {x:0}; i.x&=0;', 0
+    yield assertv, 'var i = {x:0}; i.x&=1; i.x;', 0
     yield assertv, 'var i = {x:0}; i.x&=1;', 0
+    yield assertv, 'var i = {x:1}; i.x&=0; i.x;', 0
     yield assertv, 'var i = {x:1}; i.x&=0;', 0
+    yield assertv, 'var i = {x:1}; i.x&=1; i.x;', 1
     yield assertv, 'var i = {x:1}; i.x&=1;', 1
 
 def test_member_bitor():
+    yield assertv, 'var i = {x:0}; i.x|=0; i.x;', 0
     yield assertv, 'var i = {x:0}; i.x|=0;', 0
+    yield assertv, 'var i = {x:0}; i.x|=1; i.x;', 1
     yield assertv, 'var i = {x:0}; i.x|=1;', 1
+    yield assertv, 'var i = {x:1}; i.x|=0; i.x;', 1
     yield assertv, 'var i = {x:1}; i.x|=0;', 1
+    yield assertv, 'var i = {x:1}; i.x|=1; i.x;', 1
     yield assertv, 'var i = {x:1}; i.x|=1;', 1
 
 def test_store_bitrsh():
+    yield assertv, 'var i = 1; i>>=0; i;', 1
     yield assertv, 'var i = 1; i>>=0;', 1
+    yield assertv, 'var i = 2; i>>=1; i;', 1
     yield assertv, 'var i = 2; i>>=1;', 1
+    yield assertv, 'var i = 4; i>>=1; i;', 2
     yield assertv, 'var i = 4; i>>=1;', 2
+    yield assertv, 'var i = 4; i>>=2; i;', 1
     yield assertv, 'var i = 4; i>>=2;', 1
+    yield assertv, 'var i = 4; i>>=3; i;', 0
     yield assertv, 'var i = 4; i>>=3;', 0
 
 def test_loop_continue():
