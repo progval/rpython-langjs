@@ -863,5 +863,10 @@ def test_math_min():
     yield assertv, "Math.min(0, 2);", 0
     yield assertv, "Math.min(-1, 1);", -1
 
+def test_math_max():
+    yield assertv, "Math.max(1, 2);", 2
+    yield assertv, "Math.max(0, 2);", 2
+    yield assertv, "Math.max(-1, 1);", 1
+
 def test_date_get_time():
     yield assertv, "var i = new Date(); i.valueOf() == i.getTime()", True

@@ -250,6 +250,11 @@ def minjs(ctx, args, this):
     b = args[1].ToNumber(ctx)
     return W_FloatNumber(min(a, b))
 
+def maxjs(ctx, args, this):
+    a = args[0].ToNumber(ctx)
+    b = args[1].ToNumber(ctx)
+    return W_FloatNumber(max(a, b))
+
 def _ishex(ch):
     return ((ch >= 'a' and ch <= 'f') or (ch >= '0' and ch <= '9') or
             (ch >= 'A' and ch <= 'F'))
@@ -877,6 +882,7 @@ class Interpreter(object):
         w_math.Put(ctx, 'SQRT2', W_FloatNumber(math.sqrt(2)), flags=allon)
         w_math.Put(ctx, 'random', W_Builtin(randomjs, Class='function'))
         w_math.Put(ctx, 'min', W_Builtin(minjs, Class='function'))
+        w_math.Put(ctx, 'max', W_Builtin(maxjs, Class='function'))
         w_Global.Put(ctx, 'version', W_Builtin(versionjs), flags=allon)
 
         #Date
