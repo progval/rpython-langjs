@@ -713,3 +713,9 @@ def switch_no_default_test_code(x):
 def test_switch_no_default():
     yield assertv, switch_no_default_test_code(0), 42
     yield assertv, switch_no_default_test_code(1), 2
+
+def test_member_bitxor():
+    yield assertv, 'var i = {x:0}; i.x^=0;', 0
+    yield assertv, 'var i = {x:0}; i.x^=1;', 1
+    yield assertv, 'var i = {x:1}; i.x^=0;', 1
+    yield assertv, 'var i = {x:1}; i.x^=1;', 0

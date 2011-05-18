@@ -584,6 +584,12 @@ class STORE_MEMBER_ADD(BaseStoreMemberAssign):
     def decision(self, ctx, value, prev):
         return plus(ctx, value, prev)
 
+class STORE_MEMBER_BITXOR(BaseStoreMemberAssign):
+    def decision(self, ctx, value, prev):
+        op0 = value.ToInt32(ctx)
+        op1 = prev.ToInt32(ctx)
+        return W_IntNumber(op0 ^ op1)
+
 class BaseStoreMemberPost(Opcode):
     def eval(self, ctx, stack):
         left = stack.pop()
