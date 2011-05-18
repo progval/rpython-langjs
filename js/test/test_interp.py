@@ -672,6 +672,10 @@ def test_member_predecrement():
     yield assertv, "var x = {y:2}; --x.y; x.y;", 1
     yield assertv, "var x = {y:2}; --x.y;", 1
 
+def test_member_sub():
+    yield assertv, "var x = {y:10}; x.y-=5; x.y", 5
+    yield assertv, "var x = {y:10}; x.y-=5;", 5
+
 def switch_test_code(x):
     return """
     function f(x) {

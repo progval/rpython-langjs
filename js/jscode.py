@@ -639,9 +639,9 @@ class STORE_MEMBER_PREDECR(BaseStoreMemberPre):
     def operation(self, ctx, value):
         return decrement(ctx, value)
 
-class STORE_MEMBER_SUB(BaseStoreMember):
-    def operation(self, *args):
-        raise NotImplementedError
+class STORE_MEMBER_SUB(BaseStoreMemberAssign):
+    def decision(self, ctx, value, prev):
+        return sub(ctx, prev, value)
 
 class BaseStore(Opcode):
     def __init__(self, name):
