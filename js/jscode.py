@@ -61,11 +61,6 @@ class JsCode(object):
         self.startlooplabel.append(num)
         return num
 
-    def emit_startloop_label(self):
-        num = self.emit_label()
-        self.startlooplabel.append(num)
-        return num
-
     def prealocate_label(self):
         num = self.label_count
         self.label_count += 1
@@ -99,6 +94,12 @@ class JsCode(object):
         if not self.startlooplabel:
             raise ThrowException(W_String("Continue outside loop"))
         self.emit('JUMP', self.updatelooplabel[-1])
+
+    def continue_at_label(self, label):
+        self.updatelooplabel.append(label)
+
+    def done_continue(self):
+        self.updatelooplabel.pop()
 
     def emit(self, operation, *args):
         opcode = getattr(opcodes, operation)(*args)

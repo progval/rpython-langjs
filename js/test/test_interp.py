@@ -725,3 +725,52 @@ def test_member_bitand():
     yield assertv, 'var i = {x:0}; i.x&=1;', 0
     yield assertv, 'var i = {x:1}; i.x&=0;', 0
     yield assertv, 'var i = {x:1}; i.x&=1;', 1
+
+def test_loop_continue():
+    yield assertv, """
+      i = 0;
+      n = 0;
+      while (i < 3) {
+         i++;
+         if (i == 1)
+            continue;
+         n += i;
+      }
+      n;
+    """, 5
+    yield assertv, """
+      i = 0;
+      n = 0;
+      while (i < 3) {
+         i++;
+         if (i == 1)
+            continue;
+         for(j = 0; j < 10; j++) {
+           if (j == 5)
+               continue;
+           n += j;
+         }
+      }
+      n;
+    """, 80
+    yield assertv, """
+      i = 0;
+      n = 0;
+      while (i < 3) {
+         i++;
+         if (i == 1)
+            continue;
+         for(j = 0; j < 10; j++) {
+           if (j == 5)
+               continue;
+           k = 0;
+           while(k < 10) {
+             k++;
+             if (k % 2 == 0)
+                continue;
+             n += j;
+           }
+         }
+      }
+      n;
+    """, 400

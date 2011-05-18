@@ -821,12 +821,14 @@ class Do(WhileBase):
 class While(WhileBase):
     def emit(self, bytecode):
         startlabel = bytecode.emit_startloop_label()
+        bytecode.continue_at_label(startlabel)
         self.condition.emit(bytecode)
         endlabel = bytecode.prealocate_endloop_label()
         bytecode.emit('JUMP_IF_FALSE', endlabel)
         self.body.emit(bytecode)
         bytecode.emit('JUMP', startlabel)
         bytecode.emit_endloop_label(endlabel)
+        bytecode.done_continue()
 
 class ForVarIn(Statement):
     def __init__(self, pos, vardecl, lobject, body):
