@@ -51,8 +51,8 @@ var BI_F1;
 var BI_F2;
 
 // JavaScript engine analysis
-var canary = 0xdeadbeefcafe;
-var j_lm = ((canary&0xffffff)==0xefcafe);
+var canary = 244837814094590;
+var j_lm = ((canary&16777215)==15715070);
 
 // (public) Constructor
 function BigInteger(a,b,c) {
@@ -79,8 +79,8 @@ function am1(i,x,w,j,c,n) {
   var w_array    = w.array;
   while(--n >= 0) {
     var v = x*this_array[i++]+w_array[j]+c;
-    c = Math.floor(v/0x4000000);
-    w_array[j++] = v&0x3ffffff;
+    c = Math.floor(v/67108864);
+    w_array[j++] = v&67108863;
   }
   return c;
 }
@@ -91,14 +91,14 @@ function am1(i,x,w,j,c,n) {
 function am2(i,x,w,j,c,n) {
   var this_array = this.array;
   var w_array    = w.array;
-  var xl = x&0x7fff, xh = x>>15;
+  var xl = x&32767, xh = x>>15;
   while(--n >= 0) {
-    var l = this_array[i]&0x7fff;
+    var l = this_array[i]&32767;
     var h = this_array[i++]>>15;
     var m = xh*l+h*xl;
-    l = xl*l+((m&0x7fff)<<15)+w_array[j]+(c&0x3fffffff);
+    l = xl*l+((m&32767)<<15)+w_array[j]+(c&1073741823);
     c = (l>>>30)+(m>>>15)+xh*h+(c>>>30);
-    w_array[j++] = l&0x3fffffff;
+    w_array[j++] = l&1073741823;
   }
   return c;
 }
@@ -109,14 +109,14 @@ function am3(i,x,w,j,c,n) {
   var this_array = this.array;
   var w_array    = w.array;
 
-  var xl = x&0x3fff, xh = x>>14;
+  var xl = x&16383, xh = x>>14;
   while(--n >= 0) {
-    var l = this_array[i]&0x3fff;
+    var l = this_array[i]&16383;
     var h = this_array[i++]>>14;
     var m = xh*l+h*xl;
-    l = xl*l+((m&0x3fff)<<14)+w_array[j]+c;
+    l = xl*l+((m&16383)<<14)+w_array[j]+c;
     c = (l>>28)+(m>>14)+xh*h;
-    w_array[j++] = l&0xfffffff;
+    w_array[j++] = l&268435455;
   }
   return c;
 }
@@ -127,14 +127,14 @@ function am4(i,x,w,j,c,n) {
   var this_array = this.array;
   var w_array    = w.array;
 
-  var xl = x&0x1fff, xh = x>>13;
+  var xl = x&8191, xh = x>>13;
   while(--n >= 0) {
-    var l = this_array[i]&0x1fff;
+    var l = this_array[i]&8191;
     var h = this_array[i++]>>13;
     var m = xh*l+h*xl;
-    l = xl*l+((m&0x1fff)<<13)+w_array[j]+c;
+    l = xl*l+((m&8191)<<13)+w_array[j]+c;
     c = (l>>26)+(m>>13)+xh*h;
-    w_array[j++] = l&0x3ffffff;
+    w_array[j++] = l&67108863;
   }
   return c;
 }
@@ -214,7 +214,7 @@ function bnpFromString(s,b) {
   this.s = 0;
   var i = s.length, mi = false, sh = 0;
   while(--i >= 0) {
-    var x = (k==8)?s[i]&0xff:intAt(s,i);
+    var x = (k==8)?s[i]&255:intAt(s,i);
     if(x < 0) {
       if(s.charAt(i) == "-") mi = true;
       continue;
@@ -231,7 +231,7 @@ function bnpFromString(s,b) {
     sh += k;
     if(sh >= BI_DB) sh -= BI_DB;
   }
-  if(k == 8 && (s[0]&0x80) != 0) {
+  if(k == 8 && (s[0]&128) != 0) {
     this.s = -1;
     if(sh > 0) this_array[this.t-1] |= ((1<<(BI_DB-sh))-1)<<sh;
   }
@@ -542,9 +542,9 @@ function bnpInvDigit() {
   var x = this_array[0];
   if((x&1) == 0) return 0;
   var y = x&3;		// y == 1/x mod 2^2
-  y = (y*(2-(x&0xf)*y))&0xf;	// y == 1/x mod 2^4
-  y = (y*(2-(x&0xff)*y))&0xff;	// y == 1/x mod 2^8
-  y = (y*(2-(((x&0xffff)*y)&0xffff)))&0xffff;	// y == 1/x mod 2^16
+  y = (y*(2-(x&15)*y))&15;	// y == 1/x mod 2^4
+  y = (y*(2-(x&255)*y))&255;	// y == 1/x mod 2^8
+  y = (y*(2-(((x&65535)*y)&65535)))&65535;	// y == 1/x mod 2^16
   // last step - calculate inverse mod DV directly;
   // assumes 16 < DB <= 32 and assumes ability to handle 48-bit ints
   y = (y*(2-x*y%BI_DV))%BI_DV;		// y == 1/x mod 2^dbits
@@ -556,7 +556,7 @@ function bnpInvDigit() {
 function Montgomery(m) {
   this.m = m;
   this.mp = m.invDigit();
-  this.mpl = this.mp&0x7fff;
+  this.mpl = this.mp&32767;
   this.mph = this.mp>>15;
   this.um = (1<<(BI_DB-15))-1;
   this.mt2 = 2*m.t;
@@ -586,7 +586,7 @@ function montReduce(x) {
     x_array[x.t++] = 0;
   for(var i = 0; i < this.m.t; ++i) {
     // faster way of calculating u0 = x[i]*mp mod DV
-    var j = x_array[i]&0x7fff;
+    var j = x_array[i]&32767;
     var u0 = (j*this.mpl+(((j*this.mph+(x_array[i]>>15)*this.mpl)&this.um)<<15))&BI_DM;
     // use am to combine the multiply-shift-add into one call
     j = i+this.m.t;
@@ -619,7 +619,7 @@ function bnpIsEven() {
 
 // (protected) this^e, e < 2^32, doing sqr and mul with "r" (HAC 14.79)
 function bnpExp(e,z) {
-  if(e > 0xffffffff || e < 1) return BigInteger.ONE;
+  if(e > 4294967295 || e < 1) return BigInteger.ONE;
   var r = nbi(), r2 = nbi(), g = z.convert(this), i = nbits(e)-1;
   g.copyTo(r);
   while(--i >= 0) {
@@ -794,11 +794,11 @@ function bnToByteArray() {
         d |= this_array[--i]>>(p+=BI_DB-8);
       }
       else {
-        d = (this_array[i]>>(p-=8))&0xff;
+        d = (this_array[i]>>(p-=8))&255;
         if(p <= 0) { p += BI_DB; --i; }
       }
-      if((d&0x80) != 0) d |= -256;
-      if(k == 0 && (this.s&0x80) != (d&0x80)) ++k;
+      if((d&128) != 0) d |= -256;
+      if(k == 0 && (this.s&128) != (d&128)) ++k;
       if(k > 0 || d != this.s) r[k++] = d;
     }
   }
@@ -876,9 +876,9 @@ function bnShiftRight(n) {
 function lbit(x) {
   if(x == 0) return -1;
   var r = 0;
-  if((x&0xffff) == 0) { x >>= 16; r += 16; }
-  if((x&0xff) == 0) { x >>= 8; r += 8; }
-  if((x&0xf) == 0) { x >>= 4; r += 4; }
+  if((x&65535) == 0) { x >>= 16; r += 16; }
+  if((x&255) == 0) { x >>= 8; r += 8; }
+  if((x&15) == 0) { x >>= 4; r += 4; }
   if((x&3) == 0) { x >>= 2; r += 2; }
   if((x&1) == 0) ++r;
   return r;
@@ -1468,7 +1468,7 @@ function linebrk(s,n) {
 }
 
 function byte2Hex(b) {
-  if(b < 0x10)
+  if(b < 16)
     return "0" + b.toString(16);
   else
     return b.toString(16);
