@@ -732,6 +732,13 @@ def test_member_bitor():
     yield assertv, 'var i = {x:1}; i.x|=0;', 1
     yield assertv, 'var i = {x:1}; i.x|=1;', 1
 
+def test_store_bitrsh():
+    yield assertv, 'var i = 1; i>>=0;', 1
+    yield assertv, 'var i = 2; i>>=1;', 1
+    yield assertv, 'var i = 4; i>>=1;', 2
+    yield assertv, 'var i = 4; i>>=2;', 1
+    yield assertv, 'var i = 4; i>>=3;', 0
+
 def test_loop_continue():
     yield assertv, """
       i = 0;

@@ -129,17 +129,18 @@ class Assignment(Expression):
         return addoper
 
 OPERANDS = {
-    '='  : '',
-    '+=' : 'ADD',
-    '-=' : 'SUB',
-    '*=' : 'MUL',
-    '/=' : 'DIV',
-    '++' : 'INCR',
-    '--' : 'DECR',
-    '%=' : 'MOD',
-    '&=' : 'BITAND',
-    '|=' : 'BITOR',
-    '^=' : 'BITXOR',
+    '='   : '',
+    '+='  : 'ADD',
+    '-='  : 'SUB',
+    '*='  : 'MUL',
+    '/='  : 'DIV',
+    '++'  : 'INCR',
+    '--'  : 'DECR',
+    '%='  : 'MOD',
+    '&='  : 'BITAND',
+    '|='  : 'BITOR',
+    '^='  : 'BITXOR',
+    '>>=' : 'BITRSH'
     }
 
 class SimpleIncrement(Expression):

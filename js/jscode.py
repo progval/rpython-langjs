@@ -701,6 +701,10 @@ class STORE_BITXOR(BaseAssignBitOper):
     def operation(self, ctx, op1, op2):
         return W_IntNumber(op1^op2)
 
+class STORE_BITRSH(BaseAssignBitOper):
+    def operation(self, ctx, op1, op2):
+        return W_IntNumber(op1 >> op2)
+
 class STORE_POSTINCR(BaseStore):
     def process(self, ctx, name, stack):
         value = ctx.resolve_identifier(ctx, name)
