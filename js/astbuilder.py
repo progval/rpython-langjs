@@ -443,6 +443,16 @@ class ASTBuilder(RPythonVisitor):
             condition = operations.Boolean(pos, True)
         update, i = self.get_next_expr(node, i)
         body, i = self.get_next_expr(node, i)
+
+        if setup is None:
+            setup = operations.EmptyExpression(pos)
+        if condition is None:
+            condition = operations.Boolean(pos, True)
+        if update is None:
+            update = operations.EmptyExpression(pos)
+        if body is None:
+            body = operations.EmptyExpression(pos)
+
         return operations.For(pos, setup, condition, update, body)
     visit_regularvarfor = visit_regularfor
 

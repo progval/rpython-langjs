@@ -808,3 +808,38 @@ def test_loop_continue():
       }
       n;
     """, 400
+
+def test_partial_for_loop():
+    yield assertv, """
+    var i = 0;
+    for(;;){
+      i++;
+      if(i == 2)
+          break;
+    }
+    i;
+    """, 2
+    yield assertv, """
+    var i = 0;
+    for(;;i++){
+      if(i == 2)
+          break;
+    }
+    i;
+    """, 2
+    yield assertv, """
+    var i = 0;
+    for(i = 2;;){
+      if(i == 2)
+          break;
+      i = 99;
+    }
+    i;
+    """, 2
+    yield assertv, """
+    var i = 0;
+    for(;i <= 1;){
+        i++;
+    }
+    i;
+    """, 2
