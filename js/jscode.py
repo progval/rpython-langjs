@@ -16,28 +16,40 @@ class AlreadyRun(Exception):
     pass
 
 class Stack(object):
-    def __init__(self):
-        self.content = []
+    def __init__(self, size):
+        self.content = [None] * size
+        self.pointer = 0
 
     def pop(self):
-        return self.content.pop()
+        e = self.top()
+        i = self.pointer - 1
+        assert i >= 0
+        self.content[i] = None
+        self.pointer = i
+        return e
 
     def top(self):
-        return self.content[-1]
+        i = self.pointer - 1
+        if i < 0:
+            raise IndexError
+        return self.content[i]
 
     def append(self, element):
         assert isinstance(element, W_Root)
-        self.content.append(element)
+        i = self.pointer
+        assert i >= 0
+        self.content[i] = element
+        self.pointer = i + 1
 
     def pop_n(self, n):
-        to_cut = len(self.content) - n
-        assert to_cut >= 0
-        list = self.content[to_cut:]
-        del self.content[to_cut:]
+        list = []
+        for i in xrange(0, n):
+            list.append(self.pop())
+        list.reverse()
         return list
 
     def check(self):
-        assert len(self.content) == 1
+        assert self.pointer == 1
 
 class JsCode(object):
     """ That object stands for code of a single javascript function
@@ -167,7 +179,7 @@ class JsFunction(object):
         self.opcodes = make_sure_not_resized(code)
 
     def run(self, ctx, check_stack=True):
-        stack = Stack()
+        stack = Stack(len(self.opcodes) * 2)
         try:
             return self.run_bytecode(ctx, stack, check_stack)
         except ReturnException, e:
