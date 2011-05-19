@@ -27,5 +27,9 @@ def target(driver, args):
     driver.exe_name = 'js-%(backend)s'
     return entry_point, None
 
+def jitpolicy(driver):
+    from pypy.jit.codewriter.policy import JitPolicy
+    return JitPolicy()
+
 if __name__ == '__main__':
     entry_point(sys.argv)

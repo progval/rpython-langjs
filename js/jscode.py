@@ -12,11 +12,20 @@ from pypy.rlib.jit import hint
 from pypy.rlib.rarithmetic import intmask
 from pypy.rlib.objectmodel import we_are_translated
 
+from pypy.rlib.jit import JitDriver, purefunction
+
+def get_printable_location(pc, jsfunction):
+    return str(jsfunction.opcodes[pc])
+
+jitdriver = JitDriver(greens=['pc', 'self'], reds=['to_pop', 'stack', 'ctx'], get_printable_location = get_printable_location, virtualizables=['stack'])
+
 class AlreadyRun(Exception):
     pass
 
 class Stack(object):
+    _virtualizable2_ = ['content[*]', 'pointer']
     def __init__(self, size):
+        self = hint(self, access_directly = True, fresh_virtualizable = True)
         self.content = [None] * size
         self.pointer = 0
 
@@ -172,6 +181,8 @@ class JsCode(object):
         return "\n".join([repr(i) for i in self.opcodes])
 
 class JsFunction(object):
+    _immutable_fields_ = ["opcodes[*]"]
+
     def __init__(self, name, params, code):
         from pypy.rlib.debug import make_sure_not_resized
         self.name = name
@@ -185,12 +196,20 @@ class JsFunction(object):
         except ReturnException, e:
             return e.value
 
+    def _get_opcode(self, pc):
+        assert pc >= 0
+        return self.opcodes[pc]
+
     def run_bytecode(self, ctx, stack, check_stack=True):
-        i = 0
+        pc = 0
         to_pop = 0
         try:
-            while i < len(self.opcodes):
-                opcode = self.opcodes[i]
+            while True:
+                jitdriver.jit_merge_point(pc=pc, stack=stack, self=self, ctx=ctx, to_pop=to_pop)
+                if pc >= len(self.opcodes):
+                    break
+
+                opcode = self._get_opcode(pc)
                 #if we_are_translated():
                 #    #this is an optimization strategy for translated code
                 #    #on top of cpython it destroys the performance
@@ -206,9 +225,14 @@ class JsFunction(object):
                 assert result is None
 
                 if isinstance(opcode, BaseJump):
-                    i = opcode.do_jump(stack, i)
+                    new_pc = opcode.do_jump(stack, pc)
+                    condition = new_pc < pc
+                    pc = new_pc
+                    if condition:
+                        jitdriver.can_enter_jit(pc=pc, stack=stack, self=self, ctx=ctx, to_pop=to_pop)
+                    continue
                 else:
-                    i += 1
+                    pc += 1
                 if isinstance(opcode, WITH_START):
                     to_pop += 1
                 elif isinstance(opcode, WITH_END):
@@ -265,6 +289,7 @@ class Undefined(Opcode):
         stack.append(w_Undefined)
 
 class LOAD_INTCONSTANT(Opcode):
+    _immutable_fields_ = ['w_intvalue']
     def __init__(self, value):
         self.w_intvalue = W_IntNumber(int(value))
 
@@ -313,6 +338,7 @@ class LOAD_NULL(Opcode):
         stack.append(w_Null)
 
 class LOAD_VARIABLE(Opcode):
+    _immutable_fields_ = ['identifier']
     def __init__(self, identifier):
         self.identifier = identifier
 
@@ -656,6 +682,7 @@ class STORE_MEMBER_SUB(BaseStoreMemberAssign):
         return sub(ctx, prev, value)
 
 class BaseStore(Opcode):
+    _immutable_fields_ = ['name']
     def __init__(self, name):
         self.name = name
 
@@ -766,6 +793,7 @@ class LABEL(Opcode):
         return 'LABEL %d' % (self.num,)
 
 class BaseJump(Opcode):
+    _immutable_fields_ = ['where']
     def __init__(self, where):
         self.where = where
         self.decision = False

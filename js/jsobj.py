@@ -10,6 +10,8 @@ DD = 2
 RO = 4
 IT = 8
 
+from pypy.rlib import jit
+
 class SeePage(NotImplementedError):
     pass
 
@@ -372,6 +374,7 @@ class W_Array(W_ListObject):
             self.set_length(arrayindex+1)
 
 class W_Boolean(W_Primitive):
+    _immutable_fields_ = ['boolval']
     def __init__(self, boolval):
         self.boolval = bool(boolval)
 
@@ -454,6 +457,7 @@ class W_BaseNumber(W_Primitive):
         return 'number'
 
 class W_IntNumber(W_BaseNumber):
+    _immutable_fields_ = ['intval']
     """ Number known to be an integer
     """
     def __init__(self, intval):
@@ -490,6 +494,7 @@ def r_uint32(n):
     return intmask(rffi.cast(rffi.UINT, n))
 
 class W_FloatNumber(W_BaseNumber):
+    _immutable_fields_ = ['floatval']
     """ Number known to be a float
     """
     def __init__(self, floatval):
@@ -631,6 +636,7 @@ class ExecutionContext(object):
         """remove the last pushed object"""
         return self.scope.pop()
 
+    @jit.unroll_safe
     def resolve_identifier(self, ctx, identifier):
         for i in range(len(self.scope)-1, -1, -1):
             obj = self.scope[i]

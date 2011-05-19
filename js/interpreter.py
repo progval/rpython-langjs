@@ -18,6 +18,7 @@ from pypy.rlib.rarithmetic import r_uint
 from pypy.rlib.rfloat import NAN, INFINITY, isnan, isinf
 from pypy.rlib.objectmodel import specialize
 from pypy.rlib.listsort import TimSort
+from pypy.rlib import jit
 
 ASTBUILDER = ASTBuilder()
 
@@ -32,6 +33,7 @@ def make_loadjs(interp):
         return w_Undefined
     return f
 
+@jit.dont_look_inside
 def load_source(script_source, sourcename):
     temp_tree = parse(script_source)
     ASTBUILDER.sourcename = sourcename
