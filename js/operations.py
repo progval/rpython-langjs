@@ -23,6 +23,8 @@ class Position(object):
         self.start = start
         self.end = end
 
+    def __repr__(self):
+        return "l:%d %d,%d" %(self.lineno, self.start, self.end)
 
 class Node(object):
     """
@@ -284,6 +286,9 @@ class Member(Expression):
         self.left = left
         self.expr = expr
 
+    def __repr__(self):
+        return "Member %s[%s]" % (repr(self.left), repr(self.expr))
+
     def emit(self, bytecode):
         self.left.emit(bytecode)
         self.expr.emit(bytecode)
@@ -295,6 +300,9 @@ class MemberDot(Expression):
         self.name = name.get_literal()
         self.left = left
         self.pos = pos
+
+    def __repr__(self):
+        return "MemberDot %s.%s" % (repr(self.left), self.name)
 
     def emit(self, bytecode):
         self.left.emit(bytecode)
@@ -327,6 +335,9 @@ class Identifier(Expression):
     def __init__(self, pos, name):
         self.pos = pos
         self.name = name
+
+    def __repr__(self):
+        return "Identifier '%s'" % (self.name )
 
     def emit(self, bytecode):
         bytecode.emit('LOAD_VARIABLE', self.name)
@@ -597,6 +608,9 @@ class IntNumber(BaseNumber):
         self.pos = pos
         self.num = num
 
+    def __repr__(self):
+        return "IntNumber %d" % (self.num)
+
     def emit(self, bytecode):
         bytecode.emit('LOAD_INTCONSTANT', self.num)
 
@@ -612,6 +626,9 @@ class String(Expression):
     def __init__(self, pos, strval):
         self.pos = pos
         self.strval = self.string_unquote(strval)
+
+    def __repr__(self):
+        return "String %s" % (self.strval)
 
     def emit(self, bytecode):
         bytecode.emit('LOAD_STRINGCONSTANT', self.strval)
@@ -738,11 +755,17 @@ class VariableDeclaration(Expression):
             self.expr.emit(bytecode)
             bytecode.emit('STORE', self.identifier)
 
+    def __repr__(self):
+        return "VariableDeclaration %s:%s" % (self.identifier, self.expr)
+
 class VariableIdentifier(Expression):
     def __init__(self, pos, depth, identifier):
         self.pos = pos
         self.depth = depth
         self.identifier = identifier
+
+    def __repr__(self):
+        return "VariableIdentifier %s" % (self.identifier)
 
     def emit(self, bytecode):
         bytecode.emit('LOAD_VARIABLE', self.identifier)
