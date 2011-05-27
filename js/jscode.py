@@ -29,6 +29,9 @@ class Stack(object):
         self.content = [None] * size
         self.pointer = 0
 
+    def __repr__(self):
+        return "Stack %(content)s@%(pointer)d" % {'pointer': self.pointer, 'content': self.content}
+
     def pop(self):
         e = self.top()
         i = self.pointer - 1
