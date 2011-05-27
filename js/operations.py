@@ -121,14 +121,6 @@ class Array(ListOp):
             element.emit(bytecode)
         bytecode.emit('LOAD_ARRAY', len(self.nodes))
 
-class Assignment(Expression):
-    def _get_name(self):
-        addoper = OPERANDS[self.operand]
-        if addoper:
-            addoper = '_' + self.prefix.upper() + addoper
-        else:
-            addoper = ''
-        return addoper
 
 OPERANDS = {
     '='   : '',
@@ -142,83 +134,82 @@ OPERANDS = {
     '&='  : 'BITAND',
     '|='  : 'BITOR',
     '^='  : 'BITXOR',
-    '>>=' : 'BITRSH'
+    '>>=' : 'RSH'
     }
 
-class SimpleIncrement(Expression):
-    def __init__(self, pos, left, atype):
-        self.pos   = pos
-        self.left  = left
-        self.atype = atype
+# OPERANDS.values() is not staic enough
+OPERATIONS = unrolling_iterable(['ADD', 'SUB', 'MUL', 'DIV', 'MOD', 'BITAND', 'BITOR', 'BITXOR', 'BITNOT', 'URSH', 'RSH', 'LSH', 'INCR', 'DECR'])
+
+class BaseAssignment(Expression):
+    noops = ['=']
+
+    def has_operation(self):
+        return self.operand not in self.noops
+
+    def post_operation(self):
+        return self.post
 
     def emit(self, bytecode):
-        self.left.emit(bytecode)
-        if self.atype == '++':
-            bytecode.emit('INCR')
-        elif self.atype == '--':
-            bytecode.emit('DECR')
+        if self.has_operation():
+            self.left.emit(bytecode)
+            if self.post_operation():
+                bytecode.emit('DUP')
+            self.right.emit(bytecode)
+            self.emit_operation(bytecode)
+        else:
+            self.right.emit(bytecode)
 
-class SimpleAssignment(Assignment):
-    def __init__(self, pos, left, right, operand, prefix=''):
+        self.emit_store(bytecode)
+
+        if self.post_operation():
+            bytecode.emit('POP')
+
+    def emit_operation(self, bytecode):
+        # calls to bytecode.emit have to be very very very static
+        operation = self.get_operation()
+        for op in OPERATIONS:
+            if op == operation:
+                bytecode.emit(op)
+
+    def emit_store(self, bytecode):
+        raise NotImplementedError
+
+    def get_operation(self):
+        operation = OPERANDS[self.operand]
+        return operation
+
+class AssignmentOperation(BaseAssignment):
+    def __init__(self, pos, left, right, operand, post = False):
+        self.left = left
         self.identifier = left.get_literal()
         self.right = right
+        if self.right is None:
+            self.right = Empty(pos)
         self.pos = pos
         self.operand = operand
-        self.prefix = prefix
+        self.post = post
 
-    def emit(self, bytecode):
-        if self.right is not None:
-            self.right.emit(bytecode)
-        bytecode_name = 'STORE' + self._get_name()
-        bytecode.emit_store(bytecode_name, self.identifier)
+    def emit_store(self, bytecode):
+        bytecode.emit('STORE', self.identifier)
 
-class VariableAssignment(Assignment):
-    def __init__(self, pos, left, right, operand):
-        xxx # shall never land here for now
-        self.identifier = left.identifier
+class MemberAssignmentOperation(BaseAssignment):
+    def __init__(self, pos, left, right, operand, post = False):
+        self.pos = pos
+        self.left = left
         self.right = right
-        self.pos = pos
+        if right is None:
+            self.right = Empty(pos)
+
         self.operand = operand
-        self.depth = left.depth
 
-    def emit(self, bytecode):
-        self.right.emit(bytecode)
-        bytecode.emit('STORE_VAR', self.depth, self.identifier)
+        self.w_object = self.left.left
+        self.expr = self.left.expr
+        self.post = post
 
-class MemberAssignment(Assignment):
-    def __init__(self, pos, what, item, right, operand, prefix=''):
-        # XXX we can optimise here what happens if what is identifier,
-        #     but let's leave it alone for now
-        self.pos = pos
-        self.what = what
-        self.item = item
-        self.right = right
-        self.operand = operand
-        self.prefix = prefix
-
-    def emit(self, bytecode):
-        if self.right is not None:
-            self.right.emit(bytecode)
-        self.item.emit(bytecode)
-        self.what.emit(bytecode)
-        bytecode.emit_store_member('STORE_MEMBER' + self._get_name())
-
-class MemberDotAssignment(Assignment):
-    def __init__(self, pos, what, name, right, operand, prefix=''):
-        self.pos = pos
-        self.what = what
-        self.itemname = name
-        self.right = right
-        self.operand = operand
-        self.prefix = prefix
-
-    def emit(self, bytecode):
-        # XXX optimize this a bit
-        if self.right is not None:
-            self.right.emit(bytecode)
-        bytecode.emit('LOAD_STRINGCONSTANT', self.itemname)
-        self.what.emit(bytecode)
-        bytecode.emit_store_member('STORE_MEMBER' + self._get_name())
+    def emit_store(self, bytecode):
+        self.expr.emit(bytecode)
+        self.w_object.emit(bytecode)
+        bytecode.emit('STORE_MEMBER')
 
 class Block(Statement):
     def __init__(self, pos, nodes):
@@ -290,9 +281,9 @@ class Member(Expression):
         return "Member %s[%s]" % (repr(self.left), repr(self.expr))
 
     def emit(self, bytecode):
-        self.left.emit(bytecode)
         self.expr.emit(bytecode)
-        bytecode.emit('LOAD_ELEMENT')
+        self.left.emit(bytecode)
+        bytecode.emit('LOAD_MEMBER')
 
 class MemberDot(Expression):
     "this is for object.name"
@@ -300,13 +291,15 @@ class MemberDot(Expression):
         self.name = name.get_literal()
         self.left = left
         self.pos = pos
+        self.expr = String(pos, "'%s'" % (self.name))
 
     def __repr__(self):
         return "MemberDot %s.%s" % (repr(self.left), self.name)
 
     def emit(self, bytecode):
+        bytecode.emit_str(self.name)
         self.left.emit(bytecode)
-        bytecode.emit('LOAD_MEMBER', self.name)
+        bytecode.emit('LOAD_MEMBER')
 
 class FunctionStatement(Statement):
     def __init__(self, pos, name, params, body):

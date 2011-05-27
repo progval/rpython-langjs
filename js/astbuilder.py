@@ -144,7 +144,6 @@ class ASTBuilder(RPythonVisitor):
         else:
             return self.binaryop(node)
 
-
     def literalop(self, node):
         pos = self.get_pos(node);
         value = node.children[0].additional_info
@@ -167,23 +166,15 @@ class ASTBuilder(RPythonVisitor):
         return self.UNOP_TO_CLS[op.additional_info](pos, child)
 
     def _dispatch_assignment(self, pos, left, atype, prepost):
-        from js.operations import Identifier, Member, MemberDot,\
-             VariableIdentifier
+        from js.operations import Identifier, Member, MemberDot, VariableIdentifier
 
-        if isinstance(left, Identifier):
-            return operations.SimpleAssignment(pos, left, None, atype, prepost)
-        elif isinstance(left, VariableIdentifier):
-            # XXX exchange to VariableAssignment
-            return operations.SimpleAssignment(pos, left, None, atype,
-                                                 prepost)
-        elif isinstance(left, Member):
-            return operations.MemberAssignment(pos, left.left, left.expr,
-                                               None, atype, prepost)
-        elif isinstance(left, MemberDot):
-            return operations.MemberDotAssignment(pos, left.left, left.name,
-                                                  None, atype, prepost)
+        is_post = prepost == 'post'
+        if isinstance(left, Identifier) or isinstance(left, VariableIdentifier):
+            return operations.AssignmentOperation(pos, left, None, atype, is_post)
+        elif isinstance(left, Member) or isinstance(left, MemberDot):
+            return operations.MemberAssignmentOperation(pos, left, None, atype, is_post)
         else:
-            return operations.SimpleIncrement(pos, left, atype)
+            raise FakeParseError(pos, "invalid lefthand expression")
 
     def visit_postfixexpression(self, node):
         op = node.children[1]
@@ -336,23 +327,17 @@ class ASTBuilder(RPythonVisitor):
         return left
 
     def visit_assignmentexpression(self, node):
-        from js.operations import Identifier, Member, MemberDot,\
-             VariableIdentifier
+        from js.operations import Identifier, VariableIdentifier, Member, MemberDot
+
         pos = self.get_pos(node)
         left = self.dispatch(node.children[0])
-        atype = node.children[1].additional_info
+        operation = node.children[1].additional_info
         right = self.dispatch(node.children[2])
-        if isinstance(left, Identifier):
-            return operations.SimpleAssignment(pos, left, right, atype)
-        elif isinstance(left, VariableIdentifier):
-            # XXX exchange to VariableAssignment
-            return operations.SimpleAssignment(pos, left, right, atype)
-        elif isinstance(left, Member):
-            return operations.MemberAssignment(pos, left.left, left.expr,
-                                               right, atype)
-        elif isinstance(left, MemberDot):
-            return operations.MemberDotAssignment(pos, left.left, left.name,
-                                                  right, atype)
+
+        if isinstance(left, Identifier) or isinstance(left, VariableIdentifier):
+            return operations.AssignmentOperation(pos, left, right, operation)
+        elif isinstance(left, Member) or isinstance(left, MemberDot):
+            return operations.MemberAssignmentOperation(pos, left, right, operation)
         else:
             raise FakeParseError(pos, "invalid lefthand expression")
     visit_assignmentexpressionnoin = visit_assignmentexpression

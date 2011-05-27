@@ -131,15 +131,7 @@ class JsCode(object):
         return opcode
     emit._annspecialcase_ = 'specialize:arg(1)'
 
-    def emit_store(self, operation, identifier):
-        opcode = store_opcodes[operation](identifier)
-        self.opcodes.append(opcode)
-        return opcode
 
-    def emit_store_member(self, operation):
-        opcode = store_member_opcodes[operation]()
-        self.opcodes.append(opcode)
-        return opcode
 
     def unpop(self):
         if self.opcodes and isinstance(self.opcodes[-1], POP):
@@ -436,23 +428,10 @@ class LOAD_OBJECT(Opcode):
         return 'LOAD_OBJECT %d' % (self.counter,)
 
 class LOAD_MEMBER(Opcode):
-    def __init__(self, name):
-        self.name = name
-
     def eval(self, ctx, stack):
         w_obj = stack.pop().ToObject(ctx)
-        stack.append(w_obj.Get(ctx, self.name))
-        #stack.append(W_Reference(self.name, w_obj))
-
-    def __repr__(self):
-        return 'LOAD_MEMBER "%s"' % (self.name,)
-
-class LOAD_ELEMENT(Opcode):
-    def eval(self, ctx, stack):
         name = stack.pop().ToString(ctx)
-        w_obj = stack.pop().ToObject(ctx)
         stack.append(w_obj.Get(ctx, name))
-        #stack.append(W_Reference(name, w_obj))
 
 class COMMA(BaseUnaryOperation):
     def eval(self, ctx, stack):
@@ -565,10 +544,16 @@ class NOT(BaseUnaryOperation):
         stack.append(newbool(not stack.pop().ToBoolean()))
 
 class INCR(BaseUnaryOperation):
-    pass
+    def eval(self, ctx, stack):
+        value = stack.pop()
+        newvalue = increment(ctx, value)
+        stack.append(newvalue)
 
 class DECR(BaseUnaryOperation):
-    pass
+    def eval(self, ctx, stack):
+        value = stack.pop()
+        newvalue = decrement(ctx, value)
+        stack.append(newvalue)
 
 class GT(BaseBinaryComparison):
     def decision(self, ctx, op1, op2):
@@ -602,191 +587,26 @@ class ISNOT(BaseBinaryComparison):
     def decision(self, ctx, op1, op2):
         return newbool(not StrictEC(ctx, op1, op2))
 
-
-class BaseStoreMember(Opcode):
+class STORE_MEMBER(Opcode):
     def eval(self, ctx, stack):
         left = stack.pop()
-        elem = stack.pop()
+        member = stack.pop()
         value = stack.pop()
-        name = elem.ToString(ctx)
-        value = self.operation(ctx, left, name, value)
+        name = member.ToString(ctx)
         left.ToObject(ctx).Put(ctx, name, value)
         stack.append(value)
 
-class STORE_MEMBER(BaseStoreMember):
-    def operation(self, ctx, left, elem, value):
-        return value
-
-class BaseStoreMemberAssign(BaseStoreMember):
-    def operation(self, ctx, left, name, value):
-        prev = left.Get(ctx, name)
-        return self.decision(ctx, value, prev)
-
-class STORE_MEMBER_ADD(BaseStoreMemberAssign):
-    def decision(self, ctx, value, prev):
-        return plus(ctx, value, prev)
-
-class BaseStoreMemberBitOp(BaseStoreMemberAssign):
-    def decision(self, ctx, value, prev):
-        op0 = value.ToInt32(ctx)
-        op1 = prev.ToInt32(ctx)
-        return W_IntNumber(self.bitop(op0, op1))
-
-class STORE_MEMBER_BITXOR(BaseStoreMemberBitOp):
-    def bitop(self, op0, op1):
-        return op0 ^ op1
-
-class STORE_MEMBER_BITAND(BaseStoreMemberBitOp):
-    def bitop(self, op0, op1):
-        return op0 & op1
-
-class STORE_MEMBER_BITOR(BaseStoreMemberBitOp):
-    def bitop(self, op0, op1):
-        return op0 | op1
-
-class BaseStoreMemberPost(Opcode):
-    def eval(self, ctx, stack):
-        left = stack.pop()
-        elem = stack.pop()
-        name = elem.ToString(ctx)
-        prev = value = left.ToObject(ctx).Get(ctx, name)
-        value = self.operation(ctx, value)
-        left.ToObject(ctx).Put(ctx, name, value)
-        stack.append(prev)
-
-class STORE_MEMBER_POSTINCR(BaseStoreMemberPost):
-    def operation(self, ctx, value):
-        return increment(ctx, value)
-
-class STORE_MEMBER_POSTDECR(BaseStoreMemberPost):
-    def operation(self, ctx, value):
-        return decrement(ctx, value)
-
-class BaseStoreMemberPre(Opcode):
-    def eval(self, ctx, stack):
-        left = stack.pop()
-        elem = stack.pop()
-        name = elem.ToString(ctx)
-        value = left.ToObject(ctx).Get(ctx, name)
-        value = self.operation(ctx, value)
-        left.ToObject(ctx).Put(ctx, name, value)
-        stack.append(value)
-
-class STORE_MEMBER_PREINCR(BaseStoreMemberPre):
-    def operation(self, ctx, value):
-        return increment(ctx, value)
-
-class STORE_MEMBER_PREDECR(BaseStoreMemberPre):
-    def operation(self, ctx, value):
-        return decrement(ctx, value)
-
-class STORE_MEMBER_SUB(BaseStoreMemberAssign):
-    def decision(self, ctx, value, prev):
-        return sub(ctx, prev, value)
-
-class BaseStore(Opcode):
+class STORE(Opcode):
     _immutable_fields_ = ['name']
     def __init__(self, name):
         self.name = name
 
     def eval(self, ctx, stack):
-        value = self.process(ctx, self.name, stack)
+        value = stack.top()
         ctx.assign(self.name, value)
 
     def __repr__(self):
         return '%s "%s"' % (self.__class__.__name__, self.name)
-
-class STORE(BaseStore):
-    def process(self, ctx, name, stack):
-        return stack.top()
-
-class BaseAssignOper(BaseStore):
-    def process(self, ctx, name, stack):
-        right = stack.pop()
-        left = ctx.resolve_identifier(ctx, name)
-        result = self.operation(ctx, left, right)
-        stack.append(result)
-        return result
-
-class BaseAssignBitOper(BaseStore):
-    def process(self, ctx, name, stack):
-        right = stack.pop().ToInt32(ctx)
-        left = ctx.resolve_identifier(ctx, name).ToInt32(ctx)
-        result = self.operation(ctx, left, right)
-        stack.append(result)
-        return result
-
-class STORE_ADD(BaseAssignOper):
-    def operation(self, ctx, left, right):
-        return plus(ctx, left, right)
-
-class STORE_SUB(BaseAssignOper):
-    def operation(self, ctx, left, right):
-        return sub(ctx, left, right)
-
-class STORE_MUL(BaseAssignOper):
-    def operation(self, ctx, left, right):
-        return mult(ctx, left, right)
-
-class STORE_DIV(BaseAssignOper):
-    def operation(self, ctx, left, right):
-        return division(ctx, left, right)
-
-class STORE_MOD(BaseAssignOper):
-    def operation(self, ctx, left, right):
-        return mod(ctx, left, right)
-
-class STORE_BITAND(BaseAssignBitOper):
-    def operation(self, ctx, op1, op2):
-        return W_IntNumber(op1&op2)
-
-class STORE_BITOR(BaseAssignBitOper):
-    def operation(self, ctx, op1, op2):
-        return W_IntNumber(op1|op2)
-
-class STORE_BITXOR(BaseAssignBitOper):
-    def operation(self, ctx, op1, op2):
-        return W_IntNumber(op1^op2)
-
-class STORE_BITRSH(BaseAssignBitOper):
-    def operation(self, ctx, op1, op2):
-        return W_IntNumber(op1 >> op2)
-
-class STORE_POSTINCR(BaseStore):
-    def process(self, ctx, name, stack):
-        value = ctx.resolve_identifier(ctx, name)
-        num = value.ToNumber(ctx)
-        newval = W_FloatNumber(num + 1)
-
-        stack.append(W_FloatNumber(num))
-        return newval
-
-class STORE_POSTDECR(BaseStore):
-    def process(self, ctx, name, stack):
-        value = ctx.resolve_identifier(ctx, name)
-        num = value.ToNumber(ctx)
-        newval = W_FloatNumber(num - 1)
-
-        stack.append(W_FloatNumber(num))
-        return newval
-
-class STORE_PREINCR(BaseStore):
-    def process(self, ctx, name, stack):
-        value = ctx.resolve_identifier(ctx, name)
-        num = value.ToNumber(ctx)
-        newval = W_FloatNumber(num + 1)
-
-        stack.append(newval)
-        return newval
-
-class STORE_PREDECR(BaseStore):
-    def process(self, ctx, name, stack):
-        value = ctx.resolve_identifier(ctx, name)
-        num = value.ToNumber(ctx)
-        newval = W_FloatNumber(num - 1)
-
-        stack.append(newval)
-        return newval
 
 class LABEL(Opcode):
     def __init__(self, num):
@@ -1045,8 +865,4 @@ opcodes = Opcodes()
 store_opcodes = {}
 store_member_opcodes = {}
 for name, value in OpcodeMap.items():
-    if name.startswith('STORE_MEMBER'):
-        store_member_opcodes[name] = value
-    elif name.startswith('STORE'):
-        store_opcodes[name] = value
     setattr(opcodes, name, value)

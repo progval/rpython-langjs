@@ -364,12 +364,8 @@ class TestToASTExpr(BaseTestToAST):
             'ADD',
             'LOAD_INTCONSTANT 6',
             'SUB'])
-        self.check('++5', [
-            'LOAD_INTCONSTANT 5',
-            'INCR'])
-        self.check('5--', [
-            'LOAD_INTCONSTANT 5',
-            'DECR'])
+        py.test.raises(FakeParseError, self.check, '++5', [])
+        py.test.raises(FakeParseError, self.check, '--5', [])
         self.check('"hello " + \'world\'',
                    ['LOAD_STRINGCONSTANT "hello "',
                     'LOAD_STRINGCONSTANT "world"',
@@ -377,9 +373,9 @@ class TestToASTExpr(BaseTestToAST):
 
     def test_member(self):
         self.check('a["b"]',
-                   ['LOAD_VARIABLE "a"',
-                    'LOAD_STRINGCONSTANT "b"',
-                    'LOAD_ELEMENT'])
+                   ['LOAD_STRINGCONSTANT "b"',
+                    'LOAD_VARIABLE "a"',
+                    'LOAD_MEMBER'])
 
 class TestToAstStatement(BaseTestToAST):
     def setup_class(cls):
@@ -482,8 +478,9 @@ class TestToAstFunction(BaseTestToAST):
             'POP'])
 
     def test_member(self):
-        self.check('a.b', ['LOAD_VARIABLE "a"',
-                           'LOAD_MEMBER "b"',
+        self.check('a.b', ['LOAD_STRINGCONSTANT "b"',
+                           'LOAD_VARIABLE "a"',
+                           'LOAD_MEMBER',
                            'POP'])
         self.check('a.b = 3', ['LOAD_INTCONSTANT 3',
                                'LOAD_STRINGCONSTANT "b"',
@@ -493,23 +490,54 @@ class TestToAstFunction(BaseTestToAST):
 
     def test_different_assignments(self):
         self.check('x += y', [
+            'LOAD_VARIABLE "x"',
             'LOAD_VARIABLE "y"',
-            'STORE_ADD "x"',
+            'ADD',
+            'STORE "x"',
             'POP'])
-        self.check('x++', ['STORE_POSTINCR "x"',
-                           'POP'])
+        self.check('x++', [
+            'LOAD_VARIABLE "x"',
+            'DUP',
+            'INCR',
+            'STORE "x"',
+            'POP',
+            'POP'])
+        self.check('x.y++', [
+            'LOAD_STRINGCONSTANT "y"',
+            'LOAD_VARIABLE "x"',
+            'LOAD_MEMBER',
+            'DUP',
+            'INCR',
+            'LOAD_STRINGCONSTANT "y"',
+            'LOAD_VARIABLE "x"',
+            'STORE_MEMBER',
+            'POP',
+            'POP'])
         self.check('++x[2]', [
             'LOAD_INTCONSTANT 2',
             'LOAD_VARIABLE "x"',
-            'STORE_MEMBER_PREINCR',
+            'LOAD_MEMBER',
+            'INCR',
+            'LOAD_INTCONSTANT 2',
+            'LOAD_VARIABLE "x"',
+            'STORE_MEMBER',
             'POP'])
         self.check('x.y -= 2',
-                   ['LOAD_INTCONSTANT 2',
+                   ['LOAD_STRINGCONSTANT "y"',
+                    'LOAD_VARIABLE "x"',
+                    'LOAD_MEMBER',
+                    'LOAD_INTCONSTANT 2',
+                    'SUB',
                     'LOAD_STRINGCONSTANT "y"',
                     'LOAD_VARIABLE "x"',
-                    'STORE_MEMBER_SUB',
+                    'STORE_MEMBER',
                     'POP'])
 
+    def test_variable_assign(self):
+        self.check('x=1;', ['LOAD_INTCONSTANT 1', 'STORE "x"', 'POP'])
+        self.check('var x; x = 1;', ['DECLARE_VAR "x"', 'LOAD_INTCONSTANT 1', 'STORE "x"', 'POP'])
+        self.check('var x=1;', ['DECLARE_VAR "x"', 'LOAD_INTCONSTANT 1', 'STORE "x"', 'POP'])
+        self.check('x+=1;', ['LOAD_VARIABLE "x"','LOAD_INTCONSTANT 1', 'ADD', 'STORE "x"', 'POP'])
 
 def test_retlast_pop_removal():
     jscode = JsCode()
