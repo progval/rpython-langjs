@@ -640,13 +640,9 @@ for name, value in locals().items():
     if name.upper() == name and type(value) == type(Opcode) and issubclass(value, Opcode):
         OpcodeMap[name] = value
 
-opcode_unrolling = unrolling_iterable(OpcodeMap.items())
-
 class Opcodes:
     pass
 
 opcodes = Opcodes()
-store_opcodes = {}
-store_member_opcodes = {}
 for name, value in OpcodeMap.items():
     setattr(opcodes, name, value)
