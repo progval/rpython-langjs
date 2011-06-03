@@ -888,7 +888,6 @@ def test_declare_local_var():
     }
     f();
     """, 12
-    py.test.skip("does not work yet")
     yield assertv, """
     function f() {
         var i;

@@ -466,7 +466,7 @@ class DECLARE_VAR(Opcode):
         self.name = name
 
     def eval(self, ctx, stack):
-        ctx.declare_local(self.name)
+        ctx.declare_variable(self.name)
 
     def __repr__(self):
         return 'DECLARE_VAR "%s"' % (self.name,)

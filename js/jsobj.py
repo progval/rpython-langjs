@@ -596,16 +596,13 @@ class ExecutionContext(object):
     def __str__(self):
         return "<ExCtx %s, var: %s>"%(self.scope, self.variable)
 
-    def declare_local(self, name):
+    def declare_variable(self, name):
         self.scope[-1].Put(self, name, w_Undefined, flags = DD)
-        self.local_identifiers.append(name)
-        self.local_values.append(w_Undefined)
+        prop = self.scope[-1].propdict[name]
+        self.local_values.append(prop)
 
     def get_local_value(self, idx):
-        return self.local_values[idx]
-
-    def get_local_identifier(self, idx):
-        return self.local_identifiers[idx]
+        return self.local_values[idx].value
 
     def get_local_index(self, name):
         if name in self.local_identifiers:
@@ -614,20 +611,15 @@ class ExecutionContext(object):
             return None
 
     def assign_local(self, idx, value):
-        name = self.get_local_identifier(idx)
-        self.store(name, value)
-        self.store_local(idx, value)
+        self.local_values[idx].value = value
+
+    def delete_local(self, identifier):
+        idx = self.get_local_index(identifier)
+        if idx is not None:
+            self.local_variables[idx] = None
+            self.local_identifiers[idx] = None
 
     def assign(self, name, value):
-        idx = self.get_local_index(name)
-        if idx is not None:
-            self.store_local(idx, value)
-        self.store(name, value)
-
-    def store_local(self, idx, value):
-        self.local_values[idx]=value
-
-    def store(self, name, value):
         assert name is not None
         for i in range(len(self.scope)-1, -1, -1):
             obj = self.scope[i]
@@ -643,6 +635,7 @@ class ExecutionContext(object):
         self.variable.Put(self, name, value)
 
     def delete_identifier(self, name):
+        self.delete_local(name)
         for i in range(len(self.scope)-1, -1, -1):
             obj = self.scope[i]
             assert isinstance(obj, W_PrimitiveObject)
