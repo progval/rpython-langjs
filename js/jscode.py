@@ -123,7 +123,11 @@ class JsCode(object):
         return opcode
     emit._annspecialcase_ = 'specialize:arg(1)'
 
+    def emit_str(self, s):
+        return self.emit('LOAD_STRINGCONSTANT', s)
 
+    def emit_int(self, i):
+        return self.emit('LOAD_INTCONSTANT', i)
 
     def unpop(self):
         if self.opcodes and isinstance(self.opcodes[-1], POP):
