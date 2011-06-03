@@ -378,10 +378,12 @@ class TestToASTExpr(BaseTestToAST):
                     'LOAD_MEMBER'])
 
     def test_store_local(self):
-        self.check("function f() {var x; x = 1}",
+        self.check("function f() {var x; x = 1;}",
+            ['DECLARE_FUNCTION f [] [\n  DECLARE_VAR "x"\n  LOAD_INTCONSTANT 1\n  STORE_LOCAL 0\n]'])
+        self.check("function f() {var x = 1;}",
             ['DECLARE_FUNCTION f [] [\n  DECLARE_VAR "x"\n  LOAD_INTCONSTANT 1\n  STORE_LOCAL 0\n]'])
         self.check('function f() {var x = 1; y = 2;}',
-            ['DECLARE_FUNCTION f [] [\n  DECLARE_VAR "x"\n  LOAD_INTCONSTANT 1\n  STORE_LOCAL 0\n  LOAD_INTCONSTANT 2\n  STORE "y"\n]'])
+            ['DECLARE_FUNCTION f [] [\n  DECLARE_VAR "x"\n  LOAD_INTCONSTANT 1\n  STORE_LOCAL 0\n  POP\n  LOAD_INTCONSTANT 2\n  STORE "y"\n]'])
 
 class TestToAstStatement(BaseTestToAST):
     def setup_class(cls):

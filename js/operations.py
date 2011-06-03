@@ -794,9 +794,8 @@ class LocalIdentifier(Expression):
         return self.identifier
 
 class VariableIdentifier(Expression):
-    def __init__(self, pos, depth, identifier):
+    def __init__(self, identifier):
         self.pos = pos
-        self.depth = depth
         self.identifier = identifier
 
     def __repr__(self):
@@ -816,7 +815,7 @@ class VariableDeclList(Statement):
     def emit(self, bytecode):
         for node in self.nodes:
             node.emit(bytecode)
-            if isinstance(node, VariableDeclaration) and node.expr is not None:
+            if (isinstance(node, VariableDeclaration) or isinstance(node, LocalVariableDeclaration)) and node.expr is not None:
                 bytecode.emit('POP')
 
 class Variable(Statement):
@@ -892,7 +891,7 @@ class While(WhileBase):
 class ForVarIn(Statement):
     def __init__(self, pos, vardecl, lobject, body):
         self.pos = pos
-        assert isinstance(vardecl, VariableDeclaration)
+        assert isinstance(vardecl, VariableDeclaration) or isinstance(vardecl, LocalVariableDeclaration)
         self.iteratorname = vardecl.identifier
         self.object = lobject
         self.body = body

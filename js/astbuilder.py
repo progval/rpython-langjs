@@ -41,6 +41,11 @@ class Scopes(object):
     def end_scope(self):
         self.scopes.pop()
 
+    def identifiers(self):
+        if self.current_scope() is not None:
+            return self.current_scope().local_variables
+        return []
+
     def add_local(self, identifier):
         if self.current_scope() is not None:
             return self.current_scope().add_local(identifier)
@@ -270,29 +275,12 @@ class ASTBuilder(RPythonVisitor):
         right = self.dispatch(node.children[1])
         return operations.PropertyInit(pos,left,right)
 
-    def _search_identifier(self, name):
-        lenall = len(self.varlists)
-        for i in range(lenall):
-            num = lenall - i - 1
-            vardecl = self.varlists[num]
-            if name in vardecl:
-                return i, vardecl
-        raise ValueError("xxx")
-
     def visit_IDENTIFIERNAME(self, node):
         pos = self.get_pos(node)
         name = node.additional_info
-        try:
-            t = self._search_identifier(name)
-        except ValueError:
-            pass
-        else:
-            i, vardecl = t
-            local = self.scopes.get_local(name)
-            if local is not None:
-                return operations.LocalIdentifier(pos, name, local)
-            else:
-                return operations.VariableIdentifier(pos, i, name)
+        local = self.scopes.get_local(name)
+        if local is not None:
+            return operations.LocalIdentifier(pos, name, local)
         return operations.Identifier(pos, name)
 
     def visit_program(self, node):
@@ -319,7 +307,11 @@ class ASTBuilder(RPythonVisitor):
             node = self.dispatch(child)
             if node is not None:
                 nodes.append(node)
-        var_decl = self.varlists.pop().keys()
+        var_decl = self.scopes.identifiers()
+        if not var_decl:
+            var_decl = self.varlists.pop().keys()
+        else:
+            self.varlists.pop()
         func_decl = self.funclists.pop()
         return operations.SourceElements(pos, var_decl, func_decl, nodes, self.sourcename)
 
