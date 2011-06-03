@@ -4,7 +4,6 @@ from js.jsobj import W_IntNumber, W_FloatNumber, W_String,\
      w_True, w_False, W_List, w_Null, W_Iterator, W_Root
 import js.jsobj as jsobj
 from js.execution import JsTypeError, ReturnException, ThrowException
-from pypy.rlib.unroll import unrolling_iterable
 from js.baseop import plus, sub, compare, AbstractEC, StrictEC,\
      compare_e, increment, decrement, commonnew, mult, division, uminus, mod
 from pypy.rlib.rarithmetic import intmask
@@ -467,7 +466,7 @@ class DECLARE_VAR(Opcode):
         self.name = name
 
     def eval(self, ctx, stack):
-        ctx.scope[-1].Put(ctx, self.name, w_Undefined, flags = jsobj.DD)
+        ctx.declare_local(self.name)
 
     def __repr__(self):
         return 'DECLARE_VAR "%s"' % (self.name,)
@@ -631,6 +630,27 @@ class DELETE_MEMBER(Opcode):
         what = stack.pop().ToString(ctx)
         obj = stack.pop().ToObject(ctx)
         stack.append(newbool(obj.Delete(what)))
+
+class LOAD_LOCAL(Opcode):
+    def __init__(self, local):
+        self.local = local
+
+    def eval(self, ctx, stack):
+        stack.append(ctx.get_local_value(self.local))
+
+    def __repr__(self):
+        return 'LOAD_LOCAL %d' % (self.local,)
+
+class STORE_LOCAL(Opcode):
+    def __init__(self, local):
+        self.local = local
+
+    def eval(self, ctx, stack):
+        value = stack.top()
+        ctx.assign_local(self.local, value)
+
+    def __repr__(self):
+        return 'STORE_LOCAL %d' % (self.local,)
 
 # different opcode mappings, to make annotator happy
 

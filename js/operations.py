@@ -192,6 +192,21 @@ class AssignmentOperation(BaseAssignment):
     def emit_store(self, bytecode):
         bytecode.emit('STORE', self.identifier)
 
+class LocalAssignmentOperation(AssignmentOperation):
+    def __init__(self, pos, left, right, operand, post = False):
+        self.left = left
+        self.local = left.local
+        self.identifier = left.get_literal()
+        self.right = right
+        if self.right is None:
+            self.right = Empty(pos)
+        self.pos = pos
+        self.operand = operand
+        self.post = post
+
+    def emit_store(self, bytecode):
+        bytecode.emit('STORE_LOCAL', self.local)
+
 class MemberAssignmentOperation(BaseAssignment):
     def __init__(self, pos, left, right, operand, post = False):
         self.pos = pos
@@ -750,6 +765,33 @@ class VariableDeclaration(Expression):
 
     def __repr__(self):
         return "VariableDeclaration %s:%s" % (self.identifier, self.expr)
+
+class LocalVariableDeclaration(Expression):
+    def __init__(self, pos, identifier, local, expr=None):
+        self.pos = pos
+        self.identifier = identifier.get_literal()
+        self.local = local
+        self.expr = expr
+
+    def emit(self, bytecode):
+        if self.expr is not None:
+            self.expr.emit(bytecode)
+            bytecode.emit('STORE_LOCAL', self.local)
+
+    def __repr__(self):
+        return "LocalVariableDeclaration %d(%s):%s" % (self.local, self.identifier, self.expr)
+
+class LocalIdentifier(Expression):
+    def __init__(self, pos, identifier, local):
+        self.pos = pos
+        self.identifier = identifier
+        self.local = local
+
+    def emit(self, bytecode):
+        bytecode.emit('LOAD_LOCAL', self.local)
+
+    def get_literal(self):
+        return self.identifier
 
 class VariableIdentifier(Expression):
     def __init__(self, pos, depth, identifier):

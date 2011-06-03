@@ -4,6 +4,51 @@ from pypy.rlib.parsing.parsing import ParseError
 
 from js import operations
 
+class Scope(object):
+    def __init__(self):
+        self.local_variables = []
+
+    def __repr__(self):
+        return 'Scope ' + repr(self.local_variables)
+
+    def add_local(self, identifier):
+        if not self.is_local(identifier):
+            self.local_variables.append(identifier)
+        return self.get_local(identifier)
+
+    def is_local(self, identifier):
+        return identifier in self.local_variables
+
+    def get_local(self, identifier):
+        if self.is_local(identifier):
+            return self.local_variables.index(identifier)
+        else:
+            return None
+
+class Scopes(object):
+    def __init__(self):
+        self.scopes = []
+
+    def current_scope(self):
+        if not self.scopes:
+            return None
+        else:
+            return self.scopes[-1]
+
+    def new_scope(self):
+        self.scopes.append(Scope())
+
+    def end_scope(self):
+        self.scopes.pop()
+
+    def add_local(self, identifier):
+        if self.current_scope() is not None:
+            return self.current_scope().add_local(identifier)
+
+    def get_local(self, identifier):
+        if self.current_scope() is not None:
+            return self.current_scope().get_local(identifier)
+
 class FakeParseError(Exception):
     def __init__(self, pos, msg):
         self.pos = pos
@@ -54,6 +99,7 @@ class ASTBuilder(RPythonVisitor):
     def __init__(self):
         self.varlists = []
         self.funclists = []
+        self.scopes = Scopes()
         self.sourcename = ""
         RPythonVisitor.__init__(self)
 
@@ -166,12 +212,12 @@ class ASTBuilder(RPythonVisitor):
         return self.UNOP_TO_CLS[op.additional_info](pos, child)
 
     def _dispatch_assignment(self, pos, left, atype, prepost):
-        from js.operations import Identifier, Member, MemberDot, VariableIdentifier
-
         is_post = prepost == 'post'
-        if isinstance(left, Identifier) or isinstance(left, VariableIdentifier):
+        if self.is_local_identifier(left):
+            return operations.LocalAssignmentOperation(pos, left, None, atype, is_post)
+        elif self.is_identifier(left):
             return operations.AssignmentOperation(pos, left, None, atype, is_post)
-        elif isinstance(left, Member) or isinstance(left, MemberDot):
+        elif self.is_member(left):
             return operations.MemberAssignmentOperation(pos, left, None, atype, is_post)
         else:
             raise FakeParseError(pos, "invalid lefthand expression")
@@ -242,7 +288,11 @@ class ASTBuilder(RPythonVisitor):
             pass
         else:
             i, vardecl = t
-            return operations.VariableIdentifier(pos, i, name)
+            local = self.scopes.get_local(name)
+            if local is not None:
+                return operations.LocalIdentifier(pos, name, local)
+            else:
+                return operations.VariableIdentifier(pos, i, name)
         return operations.Identifier(pos, name)
 
     def visit_program(self, node):
@@ -274,6 +324,7 @@ class ASTBuilder(RPythonVisitor):
         return operations.SourceElements(pos, var_decl, func_decl, nodes, self.sourcename)
 
     def functioncommon(self, node, declaration=True):
+        self.scopes.new_scope()
         pos = self.get_pos(node)
         i=0
         identifier, i = self.get_next_expr(node, i)
@@ -286,6 +337,7 @@ class ASTBuilder(RPythonVisitor):
         funcobj = operations.FunctionStatement(pos, identifier, p, functionbody)
         if declaration:
             self.funclists[-1][identifier.get_literal()] = funcobj
+        self.scopes.end_scope()
         return funcobj
 
     def visit_functiondeclaration(self, node):
@@ -298,12 +350,16 @@ class ASTBuilder(RPythonVisitor):
     def visit_variabledeclaration(self, node):
         pos = self.get_pos(node)
         identifier = self.dispatch(node.children[0])
+        local = self.scopes.add_local(identifier.get_literal())
         self.varlists[-1][identifier.get_literal()] = None
         if len(node.children) > 1:
             expr = self.dispatch(node.children[1])
         else:
             expr = None
-        return operations.VariableDeclaration(pos, identifier, expr)
+        if local is not None:
+            return operations.LocalVariableDeclaration(pos, identifier, local, expr)
+        else:
+            return operations.VariableDeclaration(pos, identifier, expr)
     visit_variabledeclarationnoin = visit_variabledeclaration
 
     def visit_expressionstatement(self, node):
@@ -326,17 +382,30 @@ class ASTBuilder(RPythonVisitor):
 
         return left
 
+    def is_identifier(self, obj):
+        from js.operations import Identifier, VariableIdentifier
+        return isinstance(obj, Identifier) or isinstance(obj, VariableIdentifier)
+
+    def is_member(self, obj):
+        from js.operations import  Member, MemberDot
+        return isinstance(obj, Member) or isinstance(obj, MemberDot)
+
+    def is_local_identifier(self, obj):
+        from js.operations import LocalIdentifier
+        return isinstance(obj, LocalIdentifier)
+
     def visit_assignmentexpression(self, node):
-        from js.operations import Identifier, VariableIdentifier, Member, MemberDot
 
         pos = self.get_pos(node)
         left = self.dispatch(node.children[0])
         operation = node.children[1].additional_info
         right = self.dispatch(node.children[2])
 
-        if isinstance(left, Identifier) or isinstance(left, VariableIdentifier):
+        if self.is_local_identifier(left):
+            return operations.LocalAssignmentOperation(pos, left, right, operation)
+        elif self.is_identifier(left):
             return operations.AssignmentOperation(pos, left, right, operation)
-        elif isinstance(left, Member) or isinstance(left, MemberDot):
+        elif self.is_member(left):
             return operations.MemberAssignmentOperation(pos, left, right, operation)
         else:
             raise FakeParseError(pos, "invalid lefthand expression")

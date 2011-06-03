@@ -876,3 +876,27 @@ def test_math_max():
 
 def test_date_get_time():
     yield assertv, "var i = new Date(); i.valueOf() == i.getTime()", True
+
+def test_declare_local_var():
+    yield assertv, """
+    function f() {
+        var i = 4;
+        function g() {
+            return i + 8;
+        }
+        return g();
+    }
+    f();
+    """, 12
+    py.test.skip("does not work yet")
+    yield assertv, """
+    function f() {
+        var i;
+        function g() {
+            i = 4;
+            return 8;
+        }
+        return g() + i;
+    }
+    f();
+    """, 12

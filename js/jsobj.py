@@ -590,11 +590,44 @@ class ExecutionContext(object):
             self.property = Property('',w_Undefined)
         else:
             self.property = jsproperty
+        self.local_identifiers = []
+        self.local_values = []
 
     def __str__(self):
         return "<ExCtx %s, var: %s>"%(self.scope, self.variable)
 
+    def declare_local(self, name):
+        self.scope[-1].Put(self, name, w_Undefined, flags = DD)
+        self.local_identifiers.append(name)
+        self.local_values.append(w_Undefined)
+
+    def get_local_value(self, idx):
+        return self.local_values[idx]
+
+    def get_local_identifier(self, idx):
+        return self.local_identifiers[idx]
+
+    def get_local_index(self, name):
+        if name in self.local_identifiers:
+            return self.local_identifiers.index(name)
+        else:
+            return None
+
+    def assign_local(self, idx, value):
+        name = self.get_local_identifier(idx)
+        self.store(name, value)
+        self.store_local(idx, value)
+
     def assign(self, name, value):
+        idx = self.get_local_index(name)
+        if idx is not None:
+            self.store_local(idx, value)
+        self.store(name, value)
+
+    def store_local(self, idx, value):
+        self.local_values[idx]=value
+
+    def store(self, name, value):
         assert name is not None
         for i in range(len(self.scope)-1, -1, -1):
             obj = self.scope[i]
