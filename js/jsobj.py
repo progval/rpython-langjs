@@ -613,8 +613,9 @@ class ExecutionContext(object):
     def delete_local(self, identifier):
         if identifier in self.local_identifiers:
             idx = self.get_local_index(identifier)
-            self.local_variables[idx] = None
-            self.local_identifiers[idx] = None
+            self.local_identifiers[idx] = ''
+            # TODO translator does not like this
+            #self.local_variables[idx] = None
 
     def assign(self, name, value):
         assert name is not None
