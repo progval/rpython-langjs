@@ -605,17 +605,14 @@ class ExecutionContext(object):
         return self.local_values[idx].value
 
     def get_local_index(self, name):
-        if name in self.local_identifiers:
-            return self.local_identifiers.index(name)
-        else:
-            return None
+        return self.local_identifiers.index(name)
 
     def assign_local(self, idx, value):
         self.local_values[idx].value = value
 
     def delete_local(self, identifier):
-        idx = self.get_local_index(identifier)
-        if idx is not None:
+        if identifier in self.local_identifiers:
+            idx = self.get_local_index(identifier)
             self.local_variables[idx] = None
             self.local_identifiers[idx] = None
 

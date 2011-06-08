@@ -12,18 +12,14 @@ class Scope(object):
         return 'Scope ' + repr(self.local_variables)
 
     def add_local(self, identifier):
-        if not self.is_local(identifier):
+        if not self.is_local(identifier) == True:
             self.local_variables.append(identifier)
-        return self.get_local(identifier)
 
     def is_local(self, identifier):
         return identifier in self.local_variables
 
     def get_local(self, identifier):
-        if self.is_local(identifier):
-            return self.local_variables.index(identifier)
-        else:
-            return None
+        return self.local_variables.index(identifier)
 
 class Scopes(object):
     def __init__(self):
@@ -42,17 +38,22 @@ class Scopes(object):
         self.scopes.pop()
 
     def identifiers(self):
-        if self.current_scope() is not None:
+        if self.scope_present():
             return self.current_scope().local_variables
         return []
 
+    def is_local(self, identifier):
+        return self.scope_present() == True and self.current_scope().is_local(identifier) == True
+
+    def scope_present(self):
+        return self.current_scope() is not None
+
     def add_local(self, identifier):
-        if self.current_scope() is not None:
-            return self.current_scope().add_local(identifier)
+        if self.scope_present():
+            self.current_scope().add_local(identifier)
 
     def get_local(self, identifier):
-        if self.current_scope() is not None:
-            return self.current_scope().get_local(identifier)
+        return self.current_scope().get_local(identifier)
 
 class FakeParseError(Exception):
     def __init__(self, pos, msg):
@@ -278,8 +279,8 @@ class ASTBuilder(RPythonVisitor):
     def visit_IDENTIFIERNAME(self, node):
         pos = self.get_pos(node)
         name = node.additional_info
-        local = self.scopes.get_local(name)
-        if local is not None:
+        if self.scopes.is_local(name):
+            local = self.scopes.get_local(name)
             return operations.LocalIdentifier(pos, name, local)
         return operations.Identifier(pos, name)
 
@@ -342,13 +343,16 @@ class ASTBuilder(RPythonVisitor):
     def visit_variabledeclaration(self, node):
         pos = self.get_pos(node)
         identifier = self.dispatch(node.children[0])
-        local = self.scopes.add_local(identifier.get_literal())
-        self.varlists[-1][identifier.get_literal()] = None
+        identifier_name = identifier.get_literal()
+        self.scopes.add_local(identifier_name)
+        self.varlists[-1][identifier_name] = None
         if len(node.children) > 1:
             expr = self.dispatch(node.children[1])
         else:
             expr = None
-        if local is not None:
+
+        if self.scopes.is_local(identifier_name):
+            local = self.scopes.get_local(identifier_name)
             return operations.LocalVariableDeclaration(pos, identifier, local, expr)
         else:
             return operations.VariableDeclaration(pos, identifier, expr)

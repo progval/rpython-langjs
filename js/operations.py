@@ -195,7 +195,7 @@ class AssignmentOperation(BaseAssignment):
 class LocalAssignmentOperation(AssignmentOperation):
     def __init__(self, pos, left, right, operand, post = False):
         self.left = left
-        self.local = left.local
+        self.local = left.get_local()
         self.identifier = left.get_literal()
         self.right = right
         if self.right is None:
@@ -792,6 +792,9 @@ class LocalIdentifier(Expression):
 
     def get_literal(self):
         return self.identifier
+
+    def get_local(self):
+        return self.local
 
 class VariableIdentifier(Expression):
     def __init__(self, identifier):
