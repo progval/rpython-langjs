@@ -7,7 +7,10 @@ from js.opcodes import opcodes, POP, LABEL, BaseJump, WITH_START, WITH_END
 from js.jsobj import W_Root, W_String
 
 def get_printable_location(pc, jsfunction):
-    return str(jsfunction.opcodes[pc])
+    try:
+        return str(jsfunction.opcodes[pc])
+    except IndexError:
+        return "???"
 
 jitdriver = JitDriver(greens=['pc', 'self'], reds=['to_pop', 'stack', 'ctx'], get_printable_location = get_printable_location, virtualizables=['stack'])
 
