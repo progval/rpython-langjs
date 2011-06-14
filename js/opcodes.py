@@ -80,6 +80,7 @@ class LOAD_FLOATCONSTANT(Opcode):
         return 'LOAD_FLOATCONSTANT %s' % (self.w_floatvalue.floatval,)
 
 class LOAD_STRINGCONSTANT(Opcode):
+    _immutable_fields_ = ['w_stringvalue']
     def __init__(self, value):
         self.w_stringvalue = W_String(value)
 
@@ -141,6 +142,7 @@ class LOAD_ARRAY(Opcode):
         return 'LOAD_ARRAY %d' % (self.counter,)
 
 class LOAD_LIST(Opcode):
+    _immutable_fields_ = ['counter']
     def __init__(self, counter):
         self.counter = counter
 
@@ -632,6 +634,7 @@ class DELETE_MEMBER(Opcode):
         stack.append(newbool(obj.Delete(what)))
 
 class LOAD_LOCAL(Opcode):
+    _immutable_fields_ = ['local']
     def __init__(self, local):
         self.local = local
 
@@ -642,6 +645,7 @@ class LOAD_LOCAL(Opcode):
         return 'LOAD_LOCAL %d' % (self.local,)
 
 class STORE_LOCAL(Opcode):
+    _immutable_fields_ = ['local']
     def __init__(self, local):
         self.local = local
 
