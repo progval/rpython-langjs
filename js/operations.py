@@ -123,7 +123,6 @@ class Array(ListOp):
 
 
 OPERANDS = {
-    '='   : '',
     '+='  : 'ADD',
     '-='  : 'SUB',
     '*='  : 'MUL',
@@ -137,8 +136,7 @@ OPERANDS = {
     '>>=' : 'RSH'
     }
 
-# OPERANDS.values() is not staic enough
-OPERATIONS = unrolling_iterable(['ADD', 'SUB', 'MUL', 'DIV', 'MOD', 'BITAND', 'BITOR', 'BITXOR', 'BITNOT', 'URSH', 'RSH', 'LSH', 'INCR', 'DECR'])
+OPERATIONS = unrolling_iterable(OPERANDS.items())
 
 class BaseAssignment(Expression):
     noops = ['=']
@@ -166,17 +164,15 @@ class BaseAssignment(Expression):
 
     def emit_operation(self, bytecode):
         # calls to bytecode.emit have to be very very very static
-        operation = self.get_operation()
-        for op in OPERATIONS:
-            if op == operation:
-                bytecode.emit(op)
+        op = self.operand
+        for key, value in OPERATIONS:
+            if op == key:
+                bytecode.emit(value)
+                return
+        assert 0
 
     def emit_store(self, bytecode):
         raise NotImplementedError
-
-    def get_operation(self):
-        operation = OPERANDS[self.operand]
-        return operation
 
 class AssignmentOperation(BaseAssignment):
     def __init__(self, pos, left, right, operand, post = False):
