@@ -147,7 +147,7 @@ class LOAD_LIST(Opcode):
         self.counter = counter
 
     def eval(self, ctx, stack):
-        list_w = stack.pop_n(self.counter)
+        list_w = stack.pop_n(self.counter)[:] # pop_n returns a non-resizable list
         stack.append(W_List(list_w))
 
     def __repr__(self):

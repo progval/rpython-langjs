@@ -6,6 +6,8 @@ from js.execution import JsTypeError, ReturnException, ThrowException
 from js.opcodes import opcodes, POP, LABEL, BaseJump, WITH_START, WITH_END
 from js.jsobj import W_Root, W_String
 
+from pypy.rlib import jit, debug
+
 def get_printable_location(pc, jsfunction):
     try:
         return str(jsfunction.opcodes[pc])
@@ -48,12 +50,13 @@ class Stack(object):
         self.content[i] = element
         self.pointer = i + 1
 
+    @jit.unroll_safe
     def pop_n(self, n):
-        list = []
-        for i in xrange(0, n):
-            list.append(self.pop())
-        list.reverse()
-        return list
+        l = [None] * n
+        for i in range(n-1, -1, -1):
+            l[i] = self.pop()
+        debug.make_sure_not_resized(l)
+        return l
 
     def check(self):
         assert self.pointer == 1
