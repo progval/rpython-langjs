@@ -1,11 +1,8 @@
 import py
 
-from js import interpreter
-from js.jscode import Stack
+from js.utils import Stack
 from js.jsobj import W_IntNumber
 
-jsint = interpreter.Interpreter()
-ctx   = jsint.w_Global
 one   = W_IntNumber(1)
 two   = W_IntNumber(2)
 three = W_IntNumber(3)

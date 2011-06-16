@@ -19,48 +19,6 @@ jitdriver = JitDriver(greens=['pc', 'self'], reds=['to_pop', 'stack', 'ctx'], ge
 class AlreadyRun(Exception):
     pass
 
-class Stack(object):
-    _virtualizable2_ = ['content[*]', 'pointer']
-    def __init__(self, size):
-        self = hint(self, access_directly = True, fresh_virtualizable = True)
-        self.content = [None] * size
-        self.pointer = 0
-
-    def __repr__(self):
-        return "Stack %(content)s@%(pointer)d" % {'pointer': self.pointer, 'content': self.content}
-
-    def pop(self):
-        e = self.top()
-        i = self.pointer - 1
-        assert i >= 0
-        self.content[i] = None
-        self.pointer = i
-        return e
-
-    def top(self):
-        i = self.pointer - 1
-        if i < 0:
-            raise IndexError
-        return self.content[i]
-
-    def append(self, element):
-        assert isinstance(element, W_Root)
-        i = self.pointer
-        assert i >= 0
-        self.content[i] = element
-        self.pointer = i + 1
-
-    @jit.unroll_safe
-    def pop_n(self, n):
-        l = [None] * n
-        for i in range(n-1, -1, -1):
-            l[i] = self.pop()
-        debug.make_sure_not_resized(l)
-        return l
-
-    def check(self):
-        assert self.pointer == 1
-
 class JsCode(object):
     """ That object stands for code of a single javascript function
     """
@@ -187,6 +145,7 @@ class JsFunction(object):
         self.opcodes = make_sure_not_resized(code)
 
     def run(self, ctx, check_stack=True):
+        from js.utils import Stack
         stack = Stack(len(self.opcodes) * 2)
         try:
             return self.run_bytecode(ctx, stack, check_stack)
