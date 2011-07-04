@@ -574,6 +574,7 @@ class W_List(W_Root):
         return 'W_List(%s)' % (self.list_w,)
 
 class ExecutionContext(StackMixin):
+    _virtualizable2_ = ['stack[*]', 'stack_pointer']
     def __init__(self, scope, this=None, variable=None,
                     debug=False, jsproperty=None):
         assert scope is not None
