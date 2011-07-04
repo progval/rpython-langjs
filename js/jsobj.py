@@ -2,15 +2,17 @@
 from pypy.rpython.lltypesystem import rffi
 from pypy.rlib.rarithmetic import r_uint, intmask, ovfcheck_float_to_int
 from pypy.rlib.rfloat import isnan, isinf, NAN, formatd
-from js.execution import ThrowException, JsTypeError,\
-     RangeError, ReturnException
+from js.execution import ThrowException, JsTypeError, RangeError, ReturnException
+
+from pypy.rlib.jit import hint
+from pypy.rlib import jit, debug
+from js.utils import StackMixin
+
 import string
 DE = 1
 DD = 2
 RO = 4
 IT = 8
-
-from pypy.rlib import jit
 
 class SeePage(NotImplementedError):
     pass
@@ -571,7 +573,7 @@ class W_List(W_Root):
     def __repr__(self):
         return 'W_List(%s)' % (self.list_w,)
 
-class ExecutionContext(object):
+class ExecutionContext(StackMixin):
     def __init__(self, scope, this=None, variable=None,
                     debug=False, jsproperty=None):
         assert scope is not None
@@ -592,6 +594,7 @@ class ExecutionContext(object):
             self.property = jsproperty
         self.local_identifiers = []
         self.local_values = []
+        StackMixin.__init__(self)
 
     def __str__(self):
         return "<ExCtx %s, var: %s>"%(self.scope, self.variable)

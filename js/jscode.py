@@ -14,7 +14,7 @@ def get_printable_location(pc, jsfunction):
     except IndexError:
         return "???"
 
-jitdriver = JitDriver(greens=['pc', 'self'], reds=['to_pop', 'stack', 'ctx'], get_printable_location = get_printable_location, virtualizables=['stack'])
+jitdriver = JitDriver(greens=['pc', 'self'], reds=['to_pop', 'ctx'], get_printable_location = get_printable_location, virtualizables=['ctx'])
 
 class AlreadyRun(Exception):
     pass
@@ -135,6 +135,21 @@ class JsCode(object):
     def __repr__(self):
         return "\n".join([repr(i) for i in self.opcodes])
 
+@jit.dont_look_inside
+def _save_stack(ctx, size):
+    old_stack = ctx.stack
+    old_stack_pointer = ctx.stack_pointer
+
+    ctx.stack_pointer = 0
+    ctx.stack = [None] * size
+    return old_stack, old_stack_pointer
+
+@jit.dont_look_inside
+def _restore_stack(ctx, state):
+    old_stack, old_stack_pointer = state
+    ctx.stack_pointer = old_stack_pointer
+    ctx.stack = old_stack
+
 class JsFunction(object):
     _immutable_fields_ = ["opcodes[*]"]
 
@@ -145,10 +160,12 @@ class JsFunction(object):
         self.opcodes = make_sure_not_resized(code)
 
     def run(self, ctx, check_stack=True):
-        from js.utils import Stack
-        stack = Stack(len(self.opcodes) * 2)
+        state = _save_stack(ctx, len(self.opcodes) * 2)
+
         try:
-            return self.run_bytecode(ctx, stack, check_stack)
+            r = self.run_bytecode(ctx, check_stack)
+            _restore_stack(ctx, state)
+            return r
         except ReturnException, e:
             return e.value
 
@@ -156,12 +173,12 @@ class JsFunction(object):
         assert pc >= 0
         return self.opcodes[pc]
 
-    def run_bytecode(self, ctx, stack, check_stack=True):
+    def run_bytecode(self, ctx, check_stack=True):
         pc = 0
         to_pop = 0
         try:
             while True:
-                jitdriver.jit_merge_point(pc=pc, stack=stack, self=self, ctx=ctx, to_pop=to_pop)
+                jitdriver.jit_merge_point(pc=pc, self=self, ctx=ctx, to_pop=to_pop)
                 if pc >= len(self.opcodes):
                     break
 
@@ -177,15 +194,15 @@ class JsFunction(object):
                 #            assert result is None
                 #            break
                 #else:
-                result = opcode.eval(ctx, stack)
+                result = opcode.eval(ctx)
                 assert result is None
 
                 if isinstance(opcode, BaseJump):
-                    new_pc = opcode.do_jump(stack, pc)
+                    new_pc = opcode.do_jump(ctx, pc)
                     condition = new_pc < pc
                     pc = new_pc
                     if condition:
-                        jitdriver.can_enter_jit(pc=pc, stack=stack, self=self, ctx=ctx, to_pop=to_pop)
+                        jitdriver.can_enter_jit(pc=pc, self=self, ctx=ctx, to_pop=to_pop)
                     continue
                 else:
                     pc += 1
@@ -198,5 +215,5 @@ class JsFunction(object):
                 ctx.pop_object()
 
         if check_stack:
-            stack.check()
-        return stack.top()
+            ctx.check_stack()
+        return ctx.top()

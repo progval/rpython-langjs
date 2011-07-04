@@ -1,38 +1,34 @@
 # encoding: utf-8
-from js.jsobj import W_Root
 from pypy.rlib.jit import hint
 from pypy.rlib import jit, debug
 
-class Stack(object):
-    _virtualizable2_ = ['content[*]', 'pointer']
-    def __init__(self, size):
-        self = hint(self, access_directly = True, fresh_virtualizable = True)
-        self.content = [None] * size
-        self.pointer = 0
-
-    def __repr__(self):
-        return "<Stack %(content)s@%(pointer)d>" % {'pointer': self.pointer, 'content': self.content}
+class StackMixin(object):
+    _mixin_ = True
+    def __init__(self):
+        self.stack = [None]
+        self.stack_pointer = 0
 
     def pop(self):
         e = self.top()
-        i = self.pointer - 1
+        i = self.stack_pointer - 1
         assert i >= 0
-        self.content[i] = None
-        self.pointer = i
+        self.stack[i] = None
+        self.stack_pointer = i
         return e
 
     def top(self):
-        i = self.pointer - 1
+        i = self.stack_pointer - 1
         if i < 0:
             raise IndexError
-        return self.content[i]
+        return self.stack[i]
 
     def append(self, element):
+        from js.jsobj import W_Root
         assert isinstance(element, W_Root)
-        i = self.pointer
+        i = self.stack_pointer
         assert i >= 0
-        self.content[i] = element
-        self.pointer = i + 1
+        self.stack[i] = element
+        self.stack_pointer = i + 1
 
     @jit.unroll_safe
     def pop_n(self, n):
@@ -42,5 +38,5 @@ class Stack(object):
         debug.make_sure_not_resized(l)
         return l
 
-    def check(self):
-        assert self.pointer == 1
+    def check_stack(self):
+        assert self.stack_pointer == 1
