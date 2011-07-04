@@ -15,7 +15,9 @@ class TestLLtype(LLJitMixin):
     def test_append(self):
         code = """
         function f() {
-            for(i = 0; i < 100; i++){
+            var i = 0;
+            while(i < 100) {
+                i++;
             }
         }
         f();
