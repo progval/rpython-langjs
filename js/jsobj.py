@@ -139,6 +139,8 @@ class W_PrimitiveObject(W_Root):
         if self.callfunc is None: # XXX Not sure if I should raise it here
             raise JsTypeError('not a function')
         act = ActivationObject()
+        newctx = function_context(self.Scope, act, this)
+
         paramn = len(self.callfunc.params)
         for i in range(paramn):
             paramname = self.callfunc.params[i]
@@ -146,11 +148,13 @@ class W_PrimitiveObject(W_Root):
                 value = args[i]
             except IndexError:
                 value = w_Undefined
-            act.Put(ctx, paramname, value)
+            newctx.declare_variable(paramname)
+            newctx.assign(paramname, value)
+
         act.Put(ctx, 'this', this)
         w_Arguments = W_Arguments(self, args)
         act.Put(ctx, 'arguments', w_Arguments)
-        newctx = function_context(self.Scope, act, this)
+
         val = self.callfunc.run(ctx=newctx)
         return val
 

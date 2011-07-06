@@ -461,7 +461,7 @@ class TestToAstFunction(BaseTestToAST):
 
     def test_function_decl(self):
         self.check('function f(x, y, z) {x;}',
-                   ['DECLARE_FUNCTION f [\'x\', \'y\', \'z\'] [\n  LOAD_VARIABLE "x"\n]'])
+                   ['DECLARE_FUNCTION f [\'x\', \'y\', \'z\'] [\n  LOAD_LOCAL 0\n]'])
 
     def test_function_expression(self):
         self.check('var x = function() {return x}',[
@@ -546,6 +546,11 @@ class TestToAstFunction(BaseTestToAST):
         self.check('var x; x = 1;', ['DECLARE_VAR "x"', 'LOAD_INTCONSTANT 1', 'STORE "x"', 'POP'])
         self.check('var x=1;', ['DECLARE_VAR "x"', 'LOAD_INTCONSTANT 1', 'STORE "x"', 'POP'])
         self.check('x+=1;', ['LOAD_VARIABLE "x"','LOAD_INTCONSTANT 1', 'ADD', 'STORE "x"', 'POP'])
+
+    def test_local_function_param(self):
+        self.check('function f(x) { return x; };', ['DECLARE_FUNCTION f [\'x\'] [\n  LOAD_LOCAL 0\n  RETURN\n  LOAD_UNDEFINED\n]'])
+        self.check('function f(x) { var y; return y; };', ['DECLARE_FUNCTION f [\'x\'] [\n  DECLARE_VAR "y"\n  LOAD_LOCAL 1\n  RETURN\n  LOAD_UNDEFINED\n]'])
+        self.check('function f(x) { return y; };', ['DECLARE_FUNCTION f [\'x\'] [\n  LOAD_VARIABLE "y"\n  RETURN\n  LOAD_UNDEFINED\n]'])
 
 def test_retlast_pop_removal():
     jscode = JsCode()

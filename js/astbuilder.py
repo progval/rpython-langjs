@@ -268,6 +268,8 @@ class ASTBuilder(RPythonVisitor):
     def visit_formalparameterlist(self, node):
         pos = self.get_pos(node)
         nodes = [self.dispatch(child) for child in node.children]
+        for node in nodes:
+            self.scopes.add_local(node.name)
         return operations.ArgumentList(pos, nodes)
 
     def visit_variabledeclarationlist(self, node):
