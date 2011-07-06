@@ -7,6 +7,7 @@ from js import operations
 class Scope(object):
     def __init__(self):
         self.local_variables = []
+        self.declared_variables = []
 
     def __repr__(self):
         return 'Scope ' + repr(self.local_variables)
@@ -14,6 +15,12 @@ class Scope(object):
     def add_local(self, identifier):
         if not self.is_local(identifier) == True:
             self.local_variables.append(identifier)
+
+    def declare_local(self, identifier):
+        if not self.is_local(identifier) == True:
+            self.add_local(identifier)
+            if not identifier in self.declared_variables:
+                self.declared_variables.append(identifier)
 
     def is_local(self, identifier):
         return identifier in self.local_variables
@@ -37,9 +44,9 @@ class Scopes(object):
     def end_scope(self):
         self.scopes.pop()
 
-    def identifiers(self):
+    def declarations(self):
         if self.scope_present():
-            return self.current_scope().local_variables
+            return self.current_scope().declared_variables
         return []
 
     def is_local(self, identifier):
@@ -51,6 +58,10 @@ class Scopes(object):
     def add_local(self, identifier):
         if self.scope_present():
             self.current_scope().add_local(identifier)
+
+    def declare_local(self, identifier):
+        if self.scope_present():
+            self.current_scope().declare_local(identifier)
 
     def get_local(self, identifier):
         return self.current_scope().get_local(identifier)
@@ -308,7 +319,7 @@ class ASTBuilder(RPythonVisitor):
             node = self.dispatch(child)
             if node is not None:
                 nodes.append(node)
-        var_decl = self.scopes.identifiers()
+        var_decl = self.scopes.declarations()
         if not var_decl:
             var_decl = self.varlists.pop().keys()
         else:
@@ -344,7 +355,7 @@ class ASTBuilder(RPythonVisitor):
         pos = self.get_pos(node)
         identifier = self.dispatch(node.children[0])
         identifier_name = identifier.get_literal()
-        self.scopes.add_local(identifier_name)
+        self.scopes.declare_local(identifier_name)
         self.varlists[-1][identifier_name] = None
         if len(node.children) > 1:
             expr = self.dispatch(node.children[1])
