@@ -1,4 +1,3 @@
-
 import py
 from js import interpreter
 from js.operations import IntNumber, FloatNumber, Position, Plus
