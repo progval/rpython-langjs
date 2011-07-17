@@ -40,3 +40,37 @@ class StackMixin(object):
 
     def check_stack(self):
         assert self.stack_pointer == 1
+
+class Map(object):
+    NOT_FOUND = -1
+    def __init__(self):
+        self.indexes = {}
+
+    def indexof(self, name):
+        return self.indexes.get(name, self.NOT_FOUND)
+
+    def addname(self, name):
+        if name not in self.indexes:
+            self.indexes[name] = len(self.indexes)
+        return self.indexof(name)
+
+class MapDict(Map):
+    def __init__(self, size = 99):
+        Map.__init__(self)
+        self.values = [None] * size
+
+    def get(self, name):
+        idx = self.indexof(name)
+        return self.getindex(idx)
+
+    def getindex(self, idx):
+        if idx < 0:
+            raise KeyError
+        return self.values[idx]
+
+    def set(self, name, value):
+        idx = self.addname(name)
+        self.setindex(idx, value)
+
+    def setindex(self, idx, value):
+        self.values[idx] = value
