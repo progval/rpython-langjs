@@ -1,8 +1,9 @@
 from js.jsobj import RO, Property
+from js.utils import MapDict
 
 class ExecutionContext(object):
     def __init__(self, parent=None):
-        self.values = {}
+        self.values = MapDict()
         self.parent = parent
 
     def resolve_identifier(self, ctx, identifier):
@@ -28,13 +29,13 @@ class ExecutionContext(object):
             self._identifier_set(identifier, p)
 
     def _identifier_set_local(self, identifier, value):
-        self.values[identifier] = value
+        self.values.set(identifier, value)
 
     def _identifier_get_local(self, identifier):
-        return self.values[identifier]
+        return self.values.get(identifier)
 
     def _identifier_is_local(self, identifier):
-        return identifier in self.values
+        return self.values.indexof(identifier) != self.values.NOT_FOUND
 
     def _identifier_set(self, identifier, value):
         try:

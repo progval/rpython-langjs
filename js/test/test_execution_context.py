@@ -8,16 +8,16 @@ class TestExecutionContext(object):
     def test_identifier_set_local(self):
         context = ExecutionContext()
         context._identifier_set_local('foo', 1)
-        assert context.values['foo'] == 1
+        assert context.values.get('foo') == 1
 
     def test_identifier_get_local(self):
         context = ExecutionContext()
-        context.values['foo'] = 1
+        context.values.set('foo', 1)
         assert context._identifier_get_local('foo') == 1
 
     def test_identifier_is_local(sefl):
         context = ExecutionContext()
-        context.values['foo'] = 1
+        context.values.set('foo', 1)
         assert context._identifier_is_local('foo') is True
         assert context._identifier_is_local('bar') is False
 
