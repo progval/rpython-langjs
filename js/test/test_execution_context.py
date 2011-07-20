@@ -2,7 +2,7 @@ import py
 
 from js.jsexecution_context import ExecutionContext
 from js.execution import ThrowException
-from js.jsobj import Property
+from js.jsobj import Property, w_Undefined
 
 class TestExecutionContext(object):
     def test_identifier_set_local(self):
@@ -140,3 +140,22 @@ class TestExecutionContext(object):
 
         assert p_foo_0.value == 0
         assert p_foo_1.value == 42
+
+    def test_declare_variable(self):
+        ctx = None
+        parent = ExecutionContext()
+        context = ExecutionContext(parent)
+
+        p_foo = Property('foo', 0)
+        parent._identifier_set_local('foo', p_foo)
+
+        assert context.resolve_identifier(ctx, 'foo') == 0
+
+        context.declare_variable('foo')
+        assert context.resolve_identifier(ctx, 'foo') == w_Undefined
+
+        context.assign('foo', 42)
+
+        assert p_foo.value == 0
+        assert context._identifier_get_local('foo').value == 42
+        assert context.resolve_identifier(ctx, 'foo') == 42

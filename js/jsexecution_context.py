@@ -28,6 +28,12 @@ class ExecutionContext(object):
             p = Property(identifier, value)
             self._identifier_set(identifier, p)
 
+    def declare_variable(self, identifier):
+        from js.jsobj import w_Undefined, DD
+        self.values.addname(identifier)
+        p = Property(identifier, w_Undefined, flags = DD)
+        self._identifier_set_local(identifier, p)
+
     def _identifier_set_local(self, identifier, value):
         self.values.set(identifier, value)
 
