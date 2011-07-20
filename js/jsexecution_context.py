@@ -19,7 +19,7 @@ class ExecutionContext(object):
     def assign(self, name, value):
         assert name is not None
         try:
-            p = self._identifier_get(identifier)
+            p = self._identifier_get(name)
             assert isinstance(p, Property)
             if p.flags & RO:
                 return

@@ -122,3 +122,21 @@ class TestExecutionContext(object):
         parent._identifier_set_local('foo', p_foo)
         context._identifier_set_local('bar', p_bar)
 
+        context.assign('foo', 4)
+        context.assign('bar', 8)
+
+        assert p_foo.value == 4
+        assert p_bar.value == 8
+
+    def test_assign_local_precedence(self):
+        parent = ExecutionContext()
+        context = ExecutionContext(parent)
+        p_foo_0 = Property('foo', 0)
+        p_foo_1 = Property('foo', 1)
+        parent._identifier_set_local('foo', p_foo_0)
+        context._identifier_set_local('foo', p_foo_1)
+
+        context.assign('foo', 42)
+
+        assert p_foo_0.value == 0
+        assert p_foo_1.value == 42
