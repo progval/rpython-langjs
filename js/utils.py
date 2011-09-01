@@ -46,6 +46,9 @@ class Map(object):
     def __init__(self):
         self.indexes = {}
 
+    def __repr__(self):
+        return "%s:\n  %s" %(object.__repr__(self), repr(self.indexes))
+
     def indexof(self, name):
         return self.indexes.get(name, self.NOT_FOUND)
 
@@ -59,6 +62,9 @@ class MapDict(Map):
         Map.__init__(self)
         self.values = [None] * size
 
+    def __repr__(self):
+        return "%s;\n  %s" %(Map.__repr__(self), repr(self.values))
+
     def get(self, name):
         idx = self.indexof(name)
         return self.getindex(idx)
@@ -71,6 +77,10 @@ class MapDict(Map):
     def set(self, name, value):
         idx = self.addname(name)
         self.setindex(idx, value)
+
+    def delete(self, name):
+        self.set(name, None)
+        self.delname(name)
 
     def setindex(self, idx, value):
         self.values[idx] = value
