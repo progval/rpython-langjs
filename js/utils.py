@@ -45,6 +45,12 @@ class Map(object):
     NOT_FOUND = -1
     def __init__(self):
         self.indexes = {}
+        self.next_index = 0
+
+    def _get_next_index(self):
+        index = self.next_index
+        self.next_index += 1
+        return index
 
     def __repr__(self):
         return "%s:\n  %s" %(object.__repr__(self), repr(self.indexes))
@@ -53,9 +59,12 @@ class Map(object):
         return self.indexes.get(name, self.NOT_FOUND)
 
     def addname(self, name):
-        if name not in self.indexes:
-            self.indexes[name] = len(self.indexes)
+        if self.indexof(name) == self.NOT_FOUND:
+            self.indexes[name] = self._get_next_index()
         return self.indexof(name)
+
+    def delname(self, name):
+        self.indexes[name] = self.NOT_FOUND
 
 class MapDict(Map):
     def __init__(self, size = 99):

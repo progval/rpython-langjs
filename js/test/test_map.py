@@ -15,14 +15,42 @@ class TestMap(object):
         assert m.addname('foo') == 0
         assert m.addname('bar') == 1
 
-
     def test_indexof(self):
         m = Map()
-        m.indexes['foo'] = 0
-        m.indexes['bar'] = 1
+        m.addname('foo')
+        m.addname('bar')
         assert m.indexof('foo') == 0
         assert m.indexof('bar') == 1
         assert m.indexof('baz') == Map.NOT_FOUND
+
+    def test_delname(self):
+        m = Map()
+        m.addname('foo')
+        assert m.indexof('foo') is not None
+        m.delname('foo')
+        assert m.indexof('foo') == Map.NOT_FOUND
+
+    def test_delname_monotone(self):
+        m = Map()
+        m.addname('foo')
+        index_of_foo = m.indexof('foo')
+        assert index_of_foo is not None
+        m.delname('foo')
+        assert m.indexof('foo') == Map.NOT_FOUND
+        m.addname('foo')
+        assert index_of_foo != m.indexof('foo')
+
+    def test_delname_monotone2(self):
+        m = Map()
+        m.addname('foo')
+        m.addname('bar')
+        index_of_foo = m.indexof('foo')
+        assert index_of_foo is not None
+        m.delname('foo')
+        assert m.indexof('foo') == Map.NOT_FOUND
+        m.addname('foo')
+        assert index_of_foo != m.indexof('foo')
+        assert m.indexof('bar') != m.indexof('foo')
 
 class TestMapDict(object):
     def test_set(self):
