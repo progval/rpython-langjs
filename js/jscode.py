@@ -174,8 +174,7 @@ class JsFunction(object):
         assert pc >= 0
         return self.opcodes[pc]
 
-    def run_bytecode(self, ctx, check_stack=True):
-        pc = 0
+    def run_block(self, ctx, pc=0):
         while True:
             jitdriver.jit_merge_point(pc=pc, self=self, ctx=ctx)
             if pc >= len(self.opcodes):
@@ -207,10 +206,15 @@ class JsFunction(object):
                 pc += 1
 
             if isinstance(opcode, WITH_START):
-                ctx = opcode.newctx
+                pc = self.run_block(opcode.newctx, pc)
             elif isinstance(opcode, WITH_END):
-                ctx = ctx.parent
+                break
 
+        return pc
+
+    def run_bytecode(self, ctx, check_stack=True):
+        self.run_block(ctx)
         if check_stack:
             ctx.check_stack()
+
         return ctx.top()
