@@ -1,10 +1,11 @@
 import py
 from js import interpreter
 from js.operations import IntNumber, FloatNumber, Position, Plus
-from js.jsobj import W_Object, ExecutionContext, W_Root, w_Null
+from js.jsobj import W_Object, W_Root, w_Null
 from js.execution import ThrowException
 from js.jscode import JsCode, POP
 from js.baseop import AbstractEC
+from js.jsexecution_context import ExecutionContext
 
 def test_simple():
     bytecode = JsCode()
@@ -13,7 +14,7 @@ def test_simple():
     bytecode.emit('ADD')
     bytecode.emit('POP')
     func = bytecode.make_js_function()
-    res = func.run(ExecutionContext([W_Object()]), check_stack=False)
+    res = func.run(ExecutionContext(), check_stack=False)
     assert res.ToNumber(None) == 6.0
 
 def assertp(code, prints):
@@ -33,12 +34,12 @@ def assertp(code, prints):
 
 def assertv(code, value):
     jsint = interpreter.Interpreter()
-    ctx = jsint.w_Global
+    ctx = jsint.global_context
     try:
         bytecode = JsCode()
         interpreter.load_source(code, '').emit(bytecode)
         func = bytecode.make_js_function()
-        code_val = func.run(ExecutionContext([ctx]))
+        code_val = func.run(ctx)
     except ThrowException, excpt:
         code_val = excpt.exception
     print code_val, value

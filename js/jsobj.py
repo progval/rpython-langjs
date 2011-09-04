@@ -118,6 +118,32 @@ class W_Null(W_Root):
 w_Undefined = W_Undefined()
 w_Null = W_Null()
 
+class W_ContextObject(W_Root):
+    def __init__(self, ctx):
+        self.context = ctx
+
+    def __repr__(self):
+        return '<W_ContextObject (%s)>' % (repr(self.context),)
+
+    def Get(self, ctx, name):
+        try:
+            return self.context.get_property_value(name)
+        except KeyError:
+            from js.jsobj import w_Undefined
+            return w_Undefined
+
+    def Put(self, ctx, P, V, flags = 0):
+        self.context.put(P, V)
+
+    def Delete(self, name):
+        try:
+            from jsobj import DD
+            if self.context.get_property_flags(name) & DD:
+                return False
+            self.context.delete_identifier(name)
+        except KeyError:
+            pass
+        return True
 
 class W_PrimitiveObject(W_Root):
     def __init__(self, ctx=None, Prototype=None, Class='Object',
@@ -130,16 +156,23 @@ class W_PrimitiveObject(W_Root):
         self.Class = Class
         self.callfunc = callfunc
         if callfunc is not None:
-            self.Scope = ctx.scope[:]
+            self.ctx = ctx
         else:
             self.Scope = None
         self.Value = Value
 
+    #@jit.unroll_safe
     def Call(self, ctx, args=[], this=None):
         if self.callfunc is None: # XXX Not sure if I should raise it here
             raise JsTypeError('not a function')
-        act = ActivationObject()
-        newctx = function_context(self.Scope, act, this)
+        from js.jsobj import W_Root
+        assert isinstance(this, W_Root)
+
+        from js.jsexecution_context import ActivationContext, ExecutionContext
+
+        w_Arguments = W_Arguments(self, args)
+        act = ActivationContext(self.ctx, this, w_Arguments)
+        newctx = ExecutionContext(act)
 
         paramn = len(self.callfunc.params)
         for i in range(paramn):
@@ -150,10 +183,6 @@ class W_PrimitiveObject(W_Root):
                 value = w_Undefined
             newctx.declare_variable(paramname)
             newctx.assign(paramname, value)
-
-        act.Put(ctx, 'this', this)
-        w_Arguments = W_Arguments(self, args)
-        act.Put(ctx, 'arguments', w_Arguments)
 
         val = self.callfunc.run(ctx=newctx)
         return val
@@ -576,137 +605,6 @@ class W_List(W_Root):
 
     def __repr__(self):
         return 'W_List(%s)' % (self.list_w,)
-
-class ExecutionContext(StackMixin):
-    _virtualizable2_ = ['stack[*]', 'stack_pointer']
-    def __init__(self, scope, this=None, variable=None,
-                    debug=False, jsproperty=None):
-        assert scope is not None
-        self.scope = scope
-        if this is None:
-            self.this = scope[0]
-        else:
-            self.this = this
-        if variable is None:
-            self.variable = self.scope[-1]
-        else:
-            self.variable = variable
-        self.debug = debug
-        if jsproperty is None:
-            #Attribute flags for new vars
-            self.property = Property('',w_Undefined)
-        else:
-            self.property = jsproperty
-        self.local_identifiers = []
-        self.local_values = []
-        StackMixin.__init__(self)
-
-    def __str__(self):
-        return "<ExCtx %s, var: %s>"%(self.scope, self.variable)
-
-    def declare_variable(self, name):
-        self.scope[-1].Put(self, name, w_Undefined, flags = DD)
-        prop = self.scope[-1].propdict[name]
-        self.local_values.append(prop)
-
-    def get_local_value(self, idx):
-        return self.local_values[idx].value
-
-    def get_local_index(self, name):
-        return self.local_identifiers.index(name)
-
-    def assign_local(self, idx, value):
-        self.local_values[idx].value = value
-
-    def delete_local(self, identifier):
-        if identifier in self.local_identifiers:
-            idx = self.get_local_index(identifier)
-            self.local_identifiers[idx] = ''
-            # TODO translator does not like this
-            #self.local_variables[idx] = None
-
-    def assign(self, name, value):
-        assert name is not None
-        for i in range(len(self.scope)-1, -1, -1):
-            obj = self.scope[i]
-            assert isinstance(obj, W_PrimitiveObject)
-            try:
-                P = obj.propdict[name]
-                if P.flags & RO:
-                    return
-                P.value = value
-                return
-            except KeyError:
-                pass
-        self.variable.Put(self, name, value)
-
-    def delete_identifier(self, name):
-        self.delete_local(name)
-        for i in range(len(self.scope)-1, -1, -1):
-            obj = self.scope[i]
-            assert isinstance(obj, W_PrimitiveObject)
-            try:
-                P = obj.propdict[name]
-                if P.flags & DD:
-                    return False
-                del obj.propdict[name]
-                return True
-            except KeyError:
-                pass
-        return False
-
-    def get_global(self):
-        return self.scope[0]
-
-    def push_object(self, obj):
-        """push object into scope stack"""
-        assert isinstance(obj, W_PrimitiveObject)
-        self.scope.append(obj)
-        self.variable = obj
-
-    def pop_object(self):
-        """remove the last pushed object"""
-        return self.scope.pop()
-
-    @jit.unroll_safe
-    def resolve_identifier(self, ctx, identifier):
-        for i in range(len(self.scope)-1, -1, -1):
-            obj = self.scope[i]
-            assert isinstance(obj, W_PrimitiveObject)
-            if obj.HasProperty(identifier):
-                return obj.Get(ctx, identifier)
-        raise ThrowException(W_String("ReferenceError: %s is not defined" % identifier))
-
-def global_context(w_global):
-    assert isinstance(w_global, W_PrimitiveObject)
-    ctx = ExecutionContext([w_global],
-                            this = w_global,
-                            variable = w_global,
-                            jsproperty = Property('', w_Undefined, flags = DD))
-    return ctx
-
-def function_context(scope, activation, this=None):
-    newscope = scope[:]
-    ctx = ExecutionContext(newscope,
-                            this = this,
-                            jsproperty = Property('', w_Undefined, flags = DD))
-    ctx.push_object(activation)
-    return ctx
-
-def eval_context(calling_context):
-    ctx = ExecutionContext(calling_context.scope[:],
-                            this = calling_context.this,
-                            variable = calling_context.variable,
-                            jsproperty = Property('', w_Undefined))
-    return ctx
-
-def empty_context():
-    obj = W_Object()
-    ctx = ExecutionContext([obj],
-                            this = obj,
-                            variable = obj,
-                            jsproperty = Property('', w_Undefined))
-    return ctx
 
 class W_Iterator(W_Root):
     def __init__(self, elements_w):

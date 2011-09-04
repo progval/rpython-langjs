@@ -4,7 +4,7 @@ from pypy.rlib import rrandom
 random = rrandom.Random(int(time.time()))
 from js.jsparser import parse, ParseError
 from js.astbuilder import ASTBuilder
-from js.jsobj import global_context, W_Object,\
+from js.jsobj import W_Object,\
      w_Undefined, W_NewBuiltin, W_IntNumber, w_Null, create_object, W_Boolean,\
      W_FloatNumber, W_String, W_Builtin, W_Array, w_Null, newbool,\
      isnull_or_undefined, W_PrimitiveObject, W_ListObject, W_BaseNumber,\
@@ -717,9 +717,9 @@ class Interpreter(object):
     """Creates a js interpreter"""
     def __init__(self):
         allon = DE | DD | RO
-        w_Global = W_Object(Class="global")
-
-        ctx = global_context(w_Global)
+        from js.jsexecution_context import GlobalContext
+        ctx = GlobalContext()
+        w_Global = ctx.to_context_object()
 
         w_ObjPrototype = W_Object(Prototype=None, Class='Object')
 

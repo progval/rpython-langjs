@@ -452,7 +452,7 @@ class DECLARE_FUNCTION(Opcode):
         w_obj.Put(ctx, 'constructor', w_func, flags = jsobj.DE)
         w_func.Put(ctx, 'prototype', w_obj)
         if self.funcobj.name is not None:
-            ctx.scope[-1].Put(ctx, self.funcobj.name, w_func)
+            ctx.put(self.funcobj.name, w_func)
 
     def __repr__(self):
         funcobj = self.funcobj
@@ -495,8 +495,9 @@ class CALL(Opcode):
         r1 = ctx.pop()
         args = ctx.pop()
         name = r1.ToString(ctx)
+        this = ctx.to_context_object()
         #XXX hack, this should be comming from context
-        ctx.append(common_call(ctx, r1, args, ctx.scope[-1], name))
+        ctx.append(common_call(ctx, r1, args, this, name))
 
 class CALL_METHOD(Opcode):
     def eval(self, ctx):
@@ -530,13 +531,10 @@ class TRYCATCHBLOCK(Opcode):
             except ThrowException, e:
                 if self.catchfunc is not None:
                     # XXX just copied, I don't know if it's right
-                    obj = W_Object()
-                    obj.Put(ctx, self.catchparam, e.exception)
-                    ctx.push_object(obj)
-                    try:
-                        self.catchfunc.run(ctx)
-                    finally:
-                        ctx.pop_object()
+                    from js.jsexecution_context import ExecutionContext
+                    newctx = ExecutionContext(ctx)
+                    newctx.put(self.catchparam, e.exception)
+                    self.catchfunc.run(newctx)
                 if self.finallyfunc is not None:
                     self.finallyfunc.run(ctx)
                 if not self.catchfunc:
@@ -594,13 +592,17 @@ class NEXT_ITERATOR(Opcode):
 # ---------------- with support ---------------------
 
 class WITH_START(Opcode):
+    def __init__(self):
+        self.newctx = None
+
     def eval(self, ctx):
         obj = ctx.pop().ToObject(ctx)
-        ctx.push_object(obj)
+        from js.jsexecution_context import WithExecutionContext
+        self.newctx = WithExecutionContext(ctx, obj)
 
 class WITH_END(Opcode):
     def eval(self, ctx):
-        ctx.pop_object()
+        ctx = ctx.parent
 
 # ------------------ delete -------------------------
 

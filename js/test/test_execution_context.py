@@ -159,3 +159,25 @@ class TestExecutionContext(object):
         assert p_foo.value == 0
         assert context._identifier_get_local('foo').value == 42
         assert context.resolve_identifier(ctx, 'foo') == 42
+
+    def test_get_local_value(self):
+        context = ExecutionContext()
+        context.declare_variable('foo')
+        context.declare_variable('bar')
+
+        context.assign('foo', 0)
+        assert context.get_local_value(0) == 0
+
+        context.assign('foo', 42)
+        assert context.get_local_value(0) == 42
+
+        context.assign('bar', 1)
+        assert context.get_local_value(1) == 1
+
+    def test_get_local_value_is_local(self):
+        parent = ExecutionContext()
+        context = ExecutionContext(parent)
+
+        p_foo = Property('foo', 0)
+        parent._identifier_set_local('foo', p_foo)
+        py.test.raises(KeyError, context.get_local_value, 0)

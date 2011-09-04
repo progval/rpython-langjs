@@ -14,7 +14,7 @@ def get_printable_location(pc, jsfunction):
     except IndexError:
         return "???"
 
-jitdriver = JitDriver(greens=['pc', 'self'], reds=['to_pop', 'ctx'], get_printable_location = get_printable_location, virtualizables=['ctx'])
+jitdriver = JitDriver(greens=['pc', 'self'], reds=['ctx'], get_printable_location = get_printable_location, virtualizables=['ctx'])
 
 class AlreadyRun(Exception):
     pass
@@ -164,10 +164,11 @@ class JsFunction(object):
 
         try:
             r = self.run_bytecode(ctx, check_stack)
-            _restore_stack(ctx, state)
             return r
         except ReturnException, e:
             return e.value
+        finally:
+            _restore_stack(ctx, state)
 
     def _get_opcode(self, pc):
         assert pc >= 0
@@ -175,44 +176,40 @@ class JsFunction(object):
 
     def run_bytecode(self, ctx, check_stack=True):
         pc = 0
-        to_pop = 0
-        try:
-            while True:
-                jitdriver.jit_merge_point(pc=pc, self=self, ctx=ctx, to_pop=to_pop)
-                if pc >= len(self.opcodes):
-                    break
+        while True:
+            jitdriver.jit_merge_point(pc=pc, self=self, ctx=ctx)
+            if pc >= len(self.opcodes):
+                break
 
-                opcode = self._get_opcode(pc)
-                #if we_are_translated():
-                #    #this is an optimization strategy for translated code
-                #    #on top of cpython it destroys the performance
-                #    #besides, this code might be completely wrong
-                #    for name, op in opcode_unrolling:
-                #        opcode = hint(opcode, deepfreeze=True)
-                #        if isinstance(opcode, op):
-                #            result = opcode.eval(ctx, stack)
-                #            assert result is None
-                #            break
-                #else:
-                result = opcode.eval(ctx)
-                assert result is None
+            opcode = self._get_opcode(pc)
+            #if we_are_translated():
+            #    #this is an optimization strategy for translated code
+            #    #on top of cpython it destroys the performance
+            #    #besides, this code might be completely wrong
+            #    for name, op in opcode_unrolling:
+            #        opcode = hint(opcode, deepfreeze=True)
+            #        if isinstance(opcode, op):
+            #            result = opcode.eval(ctx, stack)
+            #            assert result is None
+            #            break
+            #else:
+            result = opcode.eval(ctx)
+            assert result is None
 
-                if isinstance(opcode, BaseJump):
-                    new_pc = opcode.do_jump(ctx, pc)
-                    condition = new_pc < pc
-                    pc = new_pc
-                    if condition:
-                        jitdriver.can_enter_jit(pc=pc, self=self, ctx=ctx, to_pop=to_pop)
-                    continue
-                else:
-                    pc += 1
-                if isinstance(opcode, WITH_START):
-                    to_pop += 1
-                elif isinstance(opcode, WITH_END):
-                    to_pop -= 1
-        finally:
-            for i in range(to_pop):
-                ctx.pop_object()
+            if isinstance(opcode, BaseJump):
+                new_pc = opcode.do_jump(ctx, pc)
+                condition = new_pc < pc
+                pc = new_pc
+                if condition:
+                    jitdriver.can_enter_jit(pc=pc, self=self, ctx=ctx)
+                continue
+            else:
+                pc += 1
+
+            if isinstance(opcode, WITH_START):
+                ctx = opcode.newctx
+            elif isinstance(opcode, WITH_END):
+                ctx = ctx.parent
 
         if check_stack:
             ctx.check_stack()

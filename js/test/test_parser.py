@@ -7,7 +7,7 @@ from pypy.rlib.parsing.tree import RPythonVisitor
 from pypy import conftest
 
 from js.astbuilder import FakeParseError
-from js.jsobj import W_Object, global_context, ThrowException, empty_context
+from js.jsobj import W_Object, ThrowException
 from js.astbuilder import ASTBuilder
 from js.jscode import JsCode
 import sys

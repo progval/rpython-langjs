@@ -5,7 +5,9 @@ class o:
     viewloops = True
 conftest.option = o
 
-from pypy.jit.metainterp.test.test_basic import LLJitMixin
+#from pypy.jit.metainterp.test.test_basic import LLJitMixin
+from pypy.jit.metainterp.test.support import LLJitMixin
+
 
 from js import interpreter
 from js.jscode import JsCode, jitdriver
@@ -30,7 +32,7 @@ class TestLLtype(LLJitMixin):
 
         def interp_w(c):
             jitdriver.set_param("inlining", True)
-            code_val = func.run(ExecutionContext([ctx]))
+            code_val = func.run(jsint.global_context)
         interp_w(1)
         self.meta_interp(interp_w, [6], listcomp=True, backendopt=True, listops=True)
 
