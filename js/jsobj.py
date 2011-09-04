@@ -9,10 +9,11 @@ from pypy.rlib import jit, debug
 from js.utils import StackMixin
 
 import string
-DE = 1
-DD = 2
-RO = 4
-IT = 8
+# see ECMA 8.6.1 Property attributes
+DE = 1 # DontEnum
+DD = 2 # DontDelete
+RO = 4 # ReadOnly
+IT = 8 # Internal
 
 class SeePage(NotImplementedError):
     pass

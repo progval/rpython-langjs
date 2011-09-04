@@ -1,4 +1,5 @@
 from js.utils import MapDict, StackMixin
+from js.jsobj import DD
 
 class JSContext(object):
     def __init__(self, parent=None):
@@ -35,13 +36,12 @@ class JSContext(object):
                 return
             p.value = value
         except KeyError:
-            p = Property(name, value)
-            self._identifier_set(name, p)
+            self.get_global_context().put(name, value, flags=0)
 
-    def declare_variable(self, identifier):
-        from js.jsobj import w_Undefined, DD, Property
+    def declare_variable(self, identifier, flags=DD):
+        from js.jsobj import w_Undefined, Property
         self.values.addname(identifier)
-        p = Property(identifier, w_Undefined, flags = DD)
+        p = Property(identifier, w_Undefined, flags)
         self._identifier_set_local(identifier, p)
 
     def get_local_value(self, idx):
@@ -87,17 +87,20 @@ class JSContext(object):
         prop.value = value
 
     def get_global(self):
+        return self.get_global_context().to_context_object()
+
+    def get_global_context(self):
         if self.parent:
-            return self.parent.get_global()
+            return self.parent.get_global_context()
         else:
-            return self.to_context_object()
+            return self
 
     def to_context_object(self):
         from jsobj import W_ContextObject
         return W_ContextObject(self)
 
-    def put(self, name, value):
-        self.declare_variable(name)
+    def put(self, name, value, flags=DD):
+        self.declare_variable(name, flags)
         self.assign(name, value)
 
     def delete_identifier(self, name):

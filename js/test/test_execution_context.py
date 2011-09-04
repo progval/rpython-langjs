@@ -181,3 +181,17 @@ class TestExecutionContext(object):
         p_foo = Property('foo', 0)
         parent._identifier_set_local('foo', p_foo)
         py.test.raises(KeyError, context.get_local_value, 0)
+
+    def test_assign_global_default(self):
+        global_ctx = ExecutionContext()
+        parent = ExecutionContext(global_ctx)
+        context = ExecutionContext(parent)
+
+        context.assign('foo', 0)
+        py.test.raises(KeyError, context._identifier_get_local, 'foo')
+        py.test.raises(KeyError, parent._identifier_get_local, 'foo')
+        assert global_ctx._identifier_get_local('foo')
+        parent.assign('bar', 0)
+        py.test.raises(KeyError, context._identifier_get_local, 'bar')
+        py.test.raises(KeyError, parent._identifier_get_local, 'bar')
+        assert global_ctx._identifier_get_local('bar')

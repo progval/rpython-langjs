@@ -117,6 +117,14 @@ def test_var_scoping():
     print(x(), y, p);
     """, ["5,3,0"])
 
+def test_var_scoping_default_global():
+    yield assertv, 'd = 1; function x() { d=2;}; x(); d;', 2
+    yield assertv, 'd = 1; function x() { var d=2;}; x(); d;', 1
+    yield assertv, 'function x() { d=2;}; x(); d;', 2
+    yield assertv, 'var d = 1; function x() { d=2; }; x(); d;', 2
+    yield assertv, 'function x() { d=2;}; function y() { return d; }; x(); y();', 2
+    yield assertv, 'var d; function x() { d=2;}; function y() { return d; }; x(); y();', 2
+
 def test_function_args():
     assertv("""
     x = function (t,r) {
