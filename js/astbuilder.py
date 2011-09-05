@@ -3,30 +3,34 @@ from pypy.rlib.parsing.tree import RPythonVisitor, Symbol, Nonterminal
 from pypy.rlib.parsing.parsing import ParseError
 
 from js import operations
+from js.utils import Map
 
 class Scope(object):
     def __init__(self):
-        self.local_variables = []
+        self.local_variables = Map()
         self.declared_variables = []
 
     def __repr__(self):
         return 'Scope ' + repr(self.local_variables)
 
     def add_local(self, identifier):
-        if not self.is_local(identifier) == True:
-            self.local_variables.append(identifier)
+        if not self.is_local(identifier):
+            self.local_variables.addname(identifier)
 
     def declare_local(self, identifier):
-        if not self.is_local(identifier) == True:
+        if not self.is_local(identifier):
             self.add_local(identifier)
             if not identifier in self.declared_variables:
                 self.declared_variables.append(identifier)
 
     def is_local(self, identifier):
-        return identifier in self.local_variables
+        return self.local_variables.indexof(identifier) != self.local_variables.NOT_FOUND
 
     def get_local(self, identifier):
-        return self.local_variables.index(identifier)
+        idx = self.local_variables.indexof(identifier)
+        if idx == self.local_variables.NOT_FOUND:
+            raise ValueError
+        return idx
 
 class Scopes(object):
     def __init__(self):

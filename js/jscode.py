@@ -29,6 +29,8 @@ class JsCode(object):
         self.startlooplabel = []
         self.endlooplabel = []
         self.updatelooplabel = []
+        from js.astbuilder import Scope
+        self.scope = Scope()
 
     def emit_label(self, num = -1):
         if num == -1:
@@ -110,7 +112,9 @@ class JsCode(object):
         if self.has_labels:
             self.remove_labels()
 
-        return JsFunction(name, params, self.opcodes[:])
+        #import pdb; pdb.set_trace()
+        return JsFunction(name, params, self)
+        #return JsFunction(name, params, self.opcodes[:])
 
     def remove_labels(self):
         """ Basic optimization to remove all labels and change
@@ -157,7 +161,9 @@ class JsFunction(object):
         from pypy.rlib.debug import make_sure_not_resized
         self.name = name
         self.params = params
-        self.opcodes = make_sure_not_resized(code)
+        self.code = code
+        self.opcodes = make_sure_not_resized(code.opcodes[:])
+        self.scope = code.scope
 
     def run(self, ctx, check_stack=True):
         state = _save_stack(ctx, len(self.opcodes) * 2)
