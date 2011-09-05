@@ -93,3 +93,11 @@ class MapDict(Map):
 
     def setindex(self, idx, value):
         self.values[idx] = value
+
+def mapdict_with_map(m):
+    assert isinstance(m, Map)
+    indexes = m.indexes
+    md = MapDict(len(indexes))
+    md.indexes = indexes
+    md.next_index = m.next_index
+    return md

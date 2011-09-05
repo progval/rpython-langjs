@@ -907,3 +907,6 @@ def test_declare_local_var():
     }
     f();
     """, 12
+
+def test_empty_function_with_params():
+    assertv("x = function(x) { }; x(); false", False)

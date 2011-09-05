@@ -139,3 +139,10 @@ class WithExecutionContext(ExecutionContext):
         if self.ctx_obj.HasProperty(identifier):
             return self.ctx_obj.Get(ctx, identifier);
         return ExecutionContext.resolve_identifier(self, ctx, identifier)
+
+class FunctionContext(ExecutionContext):
+    def __init__(self, parent, func):
+        ExecutionContext.__init__(self, parent)
+        if func.scope:
+            from js.utils import mapdict_with_map
+            self.values = mapdict_with_map(func.scope.local_variables)

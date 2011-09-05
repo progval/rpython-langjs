@@ -344,10 +344,13 @@ class ASTBuilder(RPythonVisitor):
             p = []
         else:
             p = [pident.get_literal() for pident in parameters.nodes]
-        funcobj = operations.FunctionStatement(pos, identifier, p, functionbody)
-        if declaration:
-            self.funclists[-1][identifier.get_literal()] = funcobj
+        funcobj = operations.FunctionStatement(pos, identifier, p, functionbody, self.scopes.current_scope())
         self.scopes.end_scope()
+        if declaration:
+            n = identifier.get_literal()
+            # XXX functions are local variables too
+            self.scopes.add_local(n)
+            self.funclists[-1][n] = funcobj
         return funcobj
 
     def visit_functiondeclaration(self, node):

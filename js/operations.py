@@ -313,7 +313,7 @@ class MemberDot(Expression):
         bytecode.emit('LOAD_MEMBER')
 
 class FunctionStatement(Statement):
-    def __init__(self, pos, name, params, body):
+    def __init__(self, pos, name, params, body, scope):
         self.pos = pos
         if name is None:
             self.name = None
@@ -321,9 +321,11 @@ class FunctionStatement(Statement):
             self.name = name.get_literal()
         self.body = body
         self.params = params
+        self.scope = scope
 
     def emit(self, bytecode):
         code = JsCode()
+        code.scope = self.scope
         if self.body is not None:
             self.body.emit(code)
         funcobj = code.make_js_function(self.name, self.params)

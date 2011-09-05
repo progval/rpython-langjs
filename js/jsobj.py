@@ -169,11 +169,11 @@ class W_PrimitiveObject(W_Root):
         from js.jsobj import W_Root
         assert isinstance(this, W_Root)
 
-        from js.jsexecution_context import ActivationContext, ExecutionContext
+        from js.jsexecution_context import ActivationContext, FunctionContext
 
         w_Arguments = W_Arguments(self, args)
         act = ActivationContext(self.ctx, this, w_Arguments)
-        newctx = ExecutionContext(act)
+        newctx = FunctionContext(act, self.callfunc)
 
         paramn = len(self.callfunc.params)
         for i in range(paramn):
