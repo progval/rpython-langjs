@@ -112,9 +112,7 @@ class JsCode(object):
         if self.has_labels:
             self.remove_labels()
 
-        #import pdb; pdb.set_trace()
         return JsFunction(name, params, self)
-        #return JsFunction(name, params, self.opcodes[:])
 
     def remove_labels(self):
         """ Basic optimization to remove all labels and change

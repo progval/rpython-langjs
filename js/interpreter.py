@@ -3,7 +3,7 @@ import time
 from pypy.rlib import rrandom
 random = rrandom.Random(int(time.time()))
 from js.jsparser import parse, ParseError
-from js.astbuilder import ASTBuilder
+from js.astbuilder import make_ast_builder, make_eval_ast_builder
 from js.jsobj import W_Object,\
      w_Undefined, W_NewBuiltin, W_IntNumber, w_Null, create_object, W_Boolean,\
      W_FloatNumber, W_String, W_Builtin, W_Array, w_Null, newbool,\
@@ -20,8 +20,6 @@ from pypy.rlib.objectmodel import specialize
 from pypy.rlib.listsort import TimSort
 from pypy.rlib import jit
 
-ASTBUILDER = ASTBuilder()
-
 def writer(x):
     print x
 
@@ -36,8 +34,14 @@ def make_loadjs(interp):
 @jit.dont_look_inside
 def load_source(script_source, sourcename):
     temp_tree = parse(script_source)
-    ASTBUILDER.sourcename = sourcename
-    return ASTBUILDER.dispatch(temp_tree)
+    builder = make_ast_builder()
+    return builder.dispatch(temp_tree)
+
+@jit.dont_look_inside
+def eval_source(script_source, sourcename):
+    temp_tree = parse(script_source)
+    builder = make_eval_ast_builder()
+    return builder.dispatch(temp_tree)
 
 def load_file(filename):
     f = open_file_as_stream(filename)
@@ -147,7 +151,7 @@ class W_Eval(W_NewBuiltin):
             return w_Undefined
 
         try:
-            node = load_source(src, 'evalcode')
+            node = eval_source(src, 'evalcode')
         except ParseError, e:
             raise ThrowException(W_String('SyntaxError: '+str(e)))
 
@@ -335,7 +339,8 @@ class W_Function(W_NewBuiltin):
             functioncode = "function () {}"
         #remove program and sourcelements node
         funcnode = parse(functioncode).children[0].children[0]
-        ast = ASTBUILDER.dispatch(funcnode)
+        builder = make_ast_builder()
+        ast = builder.dispatch(funcnode)
         bytecode = JsCode()
         ast.emit(bytecode)
         func = bytecode.make_js_function()

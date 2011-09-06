@@ -11,7 +11,7 @@ class Scope(object):
         self.declared_variables = []
 
     def __repr__(self):
-        return 'Scope ' + repr(self.local_variables)
+        return '%s: %s; %s' % (object.__repr__(self), repr(self.local_variables), repr(self.declared_variables))
 
     def add_local(self, identifier):
         if not self.is_local(identifier):
@@ -32,26 +32,46 @@ class Scope(object):
             raise ValueError
         return idx
 
+class GlobalScope(Scope):
+    def add_local(self, identifier):
+        pass
+
+    def declare_local(self, identifier):
+        if not identifier in self.declared_variables:
+            self.declared_variables.append(identifier)
+
+    def is_local(self, identifier):
+        return False
+
+    def get_local(self, identifier):
+        raise ValueError
+
+class EvalScope(GlobalScope):
+    def declare_local(self, identifier):
+        pass
+
 class Scopes(object):
     def __init__(self):
-        self.scopes = []
+        self._scopes = []
+        self._scopes.append(GlobalScope())
 
     def current_scope(self):
-        if not self.scopes:
+        if not self._scopes:
             return None
         else:
-            return self.scopes[-1]
+            return self._scopes[-1]
 
     def new_scope(self):
-        self.scopes.append(Scope())
+        self._scopes.append(Scope())
 
     def end_scope(self):
-        self.scopes.pop()
+        self._scopes.pop()
 
     def declarations(self):
         if self.scope_present():
             return self.current_scope().declared_variables
-        return []
+        else:
+            return []
 
     def is_local(self, identifier):
         return self.scope_present() == True and self.current_scope().is_local(identifier) == True
@@ -118,7 +138,6 @@ class ASTBuilder(RPythonVisitor):
     }
 
     def __init__(self):
-        self.varlists = []
         self.funclists = []
         self.scopes = Scopes()
         self.sourcename = ""
@@ -318,18 +337,14 @@ class ASTBuilder(RPythonVisitor):
 
     def visit_sourceelements(self, node):
         pos = self.get_pos(node)
-        self.varlists.append({})
         self.funclists.append({})
         nodes=[]
         for child in node.children:
             node = self.dispatch(child)
             if node is not None:
                 nodes.append(node)
+        # XXX is this still needed or can it be dropped?
         var_decl = self.scopes.declarations()
-        if not var_decl:
-            var_decl = self.varlists.pop().keys()
-        else:
-            self.varlists.pop()
         func_decl = self.funclists.pop()
         return operations.SourceElements(pos, var_decl, func_decl, nodes, self.sourcename)
 
@@ -365,7 +380,6 @@ class ASTBuilder(RPythonVisitor):
         identifier = self.dispatch(node.children[0])
         identifier_name = identifier.get_literal()
         self.scopes.declare_local(identifier_name)
-        self.varlists[-1][identifier_name] = None
         if len(node.children) > 1:
             expr = self.dispatch(node.children[1])
         else:
@@ -605,3 +619,22 @@ class ASTBuilder(RPythonVisitor):
         body = self.dispatch(node.children[1])
         return operations.With(pos, identifier, body)
 
+ASTBUILDER = ASTBuilder()
+
+# XXX this is somewhat hackish
+def new_ast_builder():
+    b = ASTBUILDER
+    b.funclists = []
+    b.scopes = Scopes()
+    b.sourcename = ""
+    return b
+
+def make_ast_builder(sourcename = ''):
+    b = new_ast_builder() #ASTBuilder()
+    b.set_sourcename(sourcename)
+    return b
+
+def make_eval_ast_builder(sourcename = ''):
+    b = make_ast_builder(sourcename)
+    b.scopes._scopes = [EvalScope()]
+    return b
