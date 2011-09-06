@@ -94,6 +94,15 @@ class MapDict(Map):
     def setindex(self, idx, value):
         self.values[idx] = value
 
+class DynamicMapDict(MapDict):
+    def __init__(self):
+        MapDict.__init__(self, 0)
+
+    def addname(self, name):
+        while len(self.values) <= self.next_index:
+            self.values.append(None)
+        return MapDict.addname(self, name)
+
 def mapdict_with_map(m):
     assert isinstance(m, Map)
     indexes = m.indexes

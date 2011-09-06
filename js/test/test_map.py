@@ -1,6 +1,6 @@
 import py
 
-from js.utils import Map, MapDict
+from js.utils import Map, MapDict, DynamicMapDict
 
 class TestMap(object):
     def test_addname(self):
@@ -96,3 +96,13 @@ class TestMapDict(object):
         m = MapDict(2)
         py.test.raises(KeyError, m.getindex, Map.NOT_FOUND)
         py.test.raises(KeyError, m.get, 'foo')
+
+class TestDynamicMapDict(object):
+    def test_set(self):
+        m = DynamicMapDict()
+        assert len(m.values) == 0
+        m.set('foo', 4)
+        m.set('bar', 8)
+        assert m.get('foo') == 4
+        assert m.get('bar') == 8
+        assert len(m.values) == 2

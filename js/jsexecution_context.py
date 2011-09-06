@@ -1,4 +1,4 @@
-from js.utils import MapDict, StackMixin
+from js.utils import DynamicMapDict, MapDict, StackMixin
 from js.jsobj import DONT_DELETE
 
 class JSContext(object):
@@ -121,7 +121,7 @@ class GlobalContext(JSContext, StackMixin):
         JSContext.__init__(self, parent)
         StackMixin.__init__(self)
         # TODO size of gloabl context
-        self.values = MapDict(2048)
+        self.values = DynamicMapDict()
 
 class ExecutionContext(JSContext, StackMixin):
     def __init__(self, parent=None):
