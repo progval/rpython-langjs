@@ -10,10 +10,10 @@ from js.utils import StackMixin
 
 import string
 # see ECMA 8.6.1 Property attributes
-DE = 1 # DontEnum
-DD = 2 # DontDelete
-RO = 4 # ReadOnly
-IT = 8 # Internal
+DONT_ENUM = DE = 1 # DontEnum
+DONT_DELETE = DD = 2 # DontDelete
+READ_ONLY = RO = 4 # ReadOnly
+INTERNAL = IT = 8 # Internal
 
 class SeePage(NotImplementedError):
     pass
