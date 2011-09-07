@@ -532,8 +532,7 @@ class TRYCATCHBLOCK(Opcode):
                 if self.catchfunc is not None:
                     # XXX just copied, I don't know if it's right
                     from js.jsexecution_context import CatchContext
-                    newctx = CatchContext(ctx)
-                    newctx.put(self.catchparam, e.exception)
+                    newctx = CatchContext(ctx, self.catchparam, e.exception)
                     self.catchfunc.run(newctx)
                 if self.finallyfunc is not None:
                     self.finallyfunc.run(ctx)

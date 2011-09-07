@@ -154,6 +154,7 @@ class FunctionContext(ExecutionContext):
             init_mapdict_with_map(self, func.scope.local_variables)
 
 class CatchContext(ExecutionContext):
-    def __init__(self, parent=None):
+    def __init__(self, parent, param, exception):
+        self.put(param, exception)
         ExecutionContext.__init__(self, parent)
         self._map_dict_values_init_with_size(1)
