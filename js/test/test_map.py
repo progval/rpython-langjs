@@ -7,8 +7,8 @@ class TestMap(object):
         m = Map()
         m.addname('foo')
         m.addname('bar')
-        assert m.indexes['foo'] == 0
-        assert m.indexes['bar'] == 1
+        assert m._map_indexes['foo'] == 0
+        assert m._map_indexes['bar'] == 1
 
     def test_addname_return_index(self):
         m = Map()
@@ -57,10 +57,10 @@ class TestMapDict(object):
         m = MapDict(2)
         m.set('foo', 4)
         m.set('bar', 8)
-        assert m.indexes['foo'] == 0
-        assert m.indexes['bar'] == 1
-        assert m.values[0] == 4
-        assert m.values[1] == 8
+        assert m._map_indexes['foo'] == 0
+        assert m._map_indexes['bar'] == 1
+        assert m._map_dict_values[0] == 4
+        assert m._map_dict_values[1] == 8
 
     def test_set_max_size(self):
         m = MapDict(2)
@@ -72,22 +72,23 @@ class TestMapDict(object):
         m = MapDict(2)
         m.setindex(0, 4)
         m.setindex(1, 8)
-        assert m.values[0] == 4
-        assert m.values[1] == 8
+        assert m._map_dict_values[0] == 4
+        assert m._map_dict_values[1] == 8
+        assert len(m._map_dict_values) == 2
 
     def test_get(self):
         m = MapDict(2)
-        m.indexes['foo'] = 0
-        m.indexes['bar'] = 1
-        m.values[0] = 4
-        m.values[1] = 8
+        m._map_indexes['foo'] = 0
+        m._map_indexes['bar'] = 1
+        m._map_dict_values[0] = 4
+        m._map_dict_values[1] = 8
         assert m.get('foo') == 4
         assert m.get('bar') == 8
 
     def test_getindex(self):
         m = MapDict(2)
-        m.values[0] = 4
-        m.values[1] = 8
+        m._map_dict_values[0] = 4
+        m._map_dict_values[1] = 8
         assert m.getindex(0) == 4
         assert m.getindex(1) == 8
         assert m.getindex(1) == 8
@@ -100,9 +101,10 @@ class TestMapDict(object):
 class TestDynamicMapDict(object):
     def test_set(self):
         m = DynamicMapDict()
-        assert len(m.values) == 0
+        assert len(m._map_dict_values) == 0
         m.set('foo', 4)
+        assert len(m._map_dict_values) == 1
         m.set('bar', 8)
+        assert len(m._map_dict_values) == 2
         assert m.get('foo') == 4
         assert m.get('bar') == 8
-        assert len(m.values) == 2

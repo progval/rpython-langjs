@@ -41,72 +41,125 @@ class StackMixin(object):
     def check_stack(self):
         assert self.stack_pointer == 1
 
-class Map(object):
-    NOT_FOUND = -1
-    def __init__(self):
-        self.indexes = {}
-        self.next_index = 0
+class MapMixin(object):
+    _MAP_NOT_FOUND = -1
+    _mixin_ = True
 
-    def _get_next_index(self):
-        index = self.next_index
-        self.next_index += 1
+    def __init__(self):
+        self._map_indexes = {}
+        self._map_next_index = 0
+
+    def _map_get_next_index(self):
+        index = self._map_next_index
+        self._map_next_index += 1
         return index
 
+    def _map_indexof(self, name):
+        return self._map_indexes.get(name, self._MAP_NOT_FOUND)
+
+    def _map_addname(self, name):
+        if self._map_indexof(name) == self._MAP_NOT_FOUND:
+            self._map_indexes[name] = self._map_get_next_index()
+        return self._map_indexof(name)
+
+    def _map_delname(self, name):
+        self._map_indexes[name] = self._MAP_NOT_FOUND
+
+
+class Map(MapMixin):
+    NOT_FOUND = MapMixin._MAP_NOT_FOUND
+    def __init__(self):
+        MapMixin.__init__(self)
+
     def __repr__(self):
-        return "%s:\n  %s" %(object.__repr__(self), repr(self.indexes))
+        return "%s:\n  %s" %(object.__repr__(self), repr(self._map_indexes))
 
     def indexof(self, name):
-        return self.indexes.get(name, self.NOT_FOUND)
+        return self._map_indexof(name)
 
     def addname(self, name):
-        if self.indexof(name) == self.NOT_FOUND:
-            self.indexes[name] = self._get_next_index()
-        return self.indexof(name)
+        return self._map_addname(name)
 
     def delname(self, name):
-        self.indexes[name] = self.NOT_FOUND
+        self._map_delname(name)
 
-class MapDict(Map):
+class MapDictMixin(object):
+    _mixin_ = True
     def __init__(self, size = 99):
-        Map.__init__(self)
-        self.values = [None] * size
+        MapMixin.__init__(self)
+        self._map_dict_values_init_with_size(size)
 
-    def __repr__(self):
-        return "%s;\n  %s" %(Map.__repr__(self), repr(self.values))
+    def _map_dict_values_init_with_size(self, size):
+        self._map_dict_values = [None] * size
 
-    def get(self, name):
-        idx = self.indexof(name)
-        return self.getindex(idx)
+    def _map_dict_get(self, name):
+        idx = self._map_indexof(name)
+        return self._map_dict_getindex(idx)
 
-    def getindex(self, idx):
+    def _map_dict_getindex(self, idx):
         if idx < 0:
             raise KeyError
-        return self.values[idx]
+        return self._map_dict_values[idx]
+
+    def _map_dict_set(self, name, value):
+        idx = self._map_addname(name)
+        self._map_dict_setindex(idx, value)
+
+    def _map_dict_delete(self, name):
+        self._map_dict_set(name, None)
+        self._map_delname(name)
+
+    def _map_dict_setindex(self, idx, value):
+        self._map_dict_values[idx] = value
+
+class MapDict(Map, MapDictMixin):
+    def __init__(self, size = 99):
+        Map.__init__(self)
+        MapDictMixin.__init__(self, size)
+
+    #@classmethod
+    #def with_map(cls, m):
+        #self = cls(len(m.indexes))
+        #self.indexes = m.indexes
+        #self.next_index = m.next_index
+        #return self
+
+    def __repr__(self):
+        return "%s;\n  %s" %(Map.__repr__(self), repr(self._map_dict_values))
+
+    def get(self, name):
+        return self._map_dict_get(name)
+
+    def getindex(self, idx):
+        return self._map_dict_getindex(idx)
 
     def set(self, name, value):
-        idx = self.addname(name)
-        self.setindex(idx, value)
+        self._map_dict_set(name, value)
 
     def delete(self, name):
-        self.set(name, None)
-        self.delname(name)
+        self._map_dict_delete(name)
 
     def setindex(self, idx, value):
-        self.values[idx] = value
+        self._map_dict_setindex(idx, value)
 
-class DynamicMapDict(MapDict):
+class DynamicMapDictMixin(object):
+    _mixin_ = True
     def __init__(self):
-        MapDict.__init__(self, 0)
+        MapDictMixin.__init__(self, 0)
 
-    def addname(self, name):
-        while len(self.values) <= self.next_index:
-            self.values.append(None)
-        return MapDict.addname(self, name)
+    def _map_addname(self, name):
+        while len(self._map_dict_values) <= self._map_next_index:
+            self._map_dict_values.append(None)
+        return MapMixin._map_addname(self, name)
+
+class DynamicMapDict(DynamicMapDictMixin, MapDict):
+    def __init__(self):
+        DynamicMapDictMixin.__init__(self)
 
 def mapdict_with_map(m):
     assert isinstance(m, Map)
-    indexes = m.indexes
+    indexes = m._map_indexes
     md = MapDict(len(indexes))
-    md.indexes = indexes
-    md.next_index = m.next_index
+    md._map_indexes = indexes
+    md._map_next_index = m._map_next_index
     return md
