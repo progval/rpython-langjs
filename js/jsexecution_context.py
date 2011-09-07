@@ -1,9 +1,12 @@
-from js.utils import DynamicMapDict, MapDict, StackMixin
+from js.utils import StackMixin, MapMixin, MapDictMixin, DynamicMapDictMixin
 from js.jsobj import DONT_DELETE
 
-class JSContext(object):
+class JSContext(MapMixin, MapDictMixin):
     def __init__(self, parent=None):
-        self.values = MapDict()
+        #MapDictMixin.__init__(self)
+        self._map_next_index = 0
+        self._map_indexes = {}
+        self._map_dict_values = []
         self.parent = parent
         self.ctx_obj = None
 
@@ -40,24 +43,24 @@ class JSContext(object):
 
     def declare_variable(self, identifier, flags=DONT_DELETE):
         from js.jsobj import w_Undefined, Property
-        self.values.addname(identifier)
+        self._map_addname(identifier)
         p = Property(identifier, w_Undefined, flags)
         self._identifier_set_local(identifier, p)
 
     def get_local_value(self, idx):
-        val = self.values.getindex(idx)
+        val = self._map_dict_getindex(idx)
         if val is None:
             raise KeyError
         return val.value
 
     def _identifier_set_local(self, identifier, value):
-        self.values.set(identifier, value)
+        self._map_dict_set(identifier, value)
 
     def _identifier_get_local(self, identifier):
-        return self.values.get(identifier)
+        return self._map_dict_get(identifier)
 
     def _identifier_is_local(self, identifier):
-        return self.values.indexof(identifier) != self.values.NOT_FOUND
+        return self._map_indexof(identifier) != self._MAP_NOT_FOUND
 
     def _identifier_set(self, identifier, value):
         try:
@@ -83,7 +86,7 @@ class JSContext(object):
         raise KeyError
 
     def assign_local(self, idx, value):
-        prop = self.values.getindex(idx)
+        prop = self._map_dict_getindex(idx)
         prop.value = value
 
     def get_global(self):
@@ -104,26 +107,29 @@ class JSContext(object):
         self.assign(name, value)
 
     def delete_identifier(self, name):
-        self.values.delete(name)
+        self._map_dict_delete(name)
         return True
 
 class ActivationContext(JSContext):
     def __init__(self, parent, this, args):
         JSContext.__init__(self, parent)
+        self._map_dict_values_init_with_size(2)
 
         if this is not None:
             self.put('this', this)
 
         self.put('arguments', args)
 
-class GlobalContext(JSContext, StackMixin):
+class GlobalContext(DynamicMapDictMixin, JSContext, StackMixin):
+    #_virtualizable2_ = ['stack[*]', 'stack_pointer']
     def __init__(self, parent=None):
         JSContext.__init__(self, parent)
         StackMixin.__init__(self)
+        DynamicMapDictMixin.__init__(self)
         # TODO size of gloabl context
-        self.values = DynamicMapDict()
 
 class ExecutionContext(JSContext, StackMixin):
+    #_virtualizable2_ = ['stack[*]', 'stack_pointer']
     def __init__(self, parent=None):
         JSContext.__init__(self, parent)
         StackMixin.__init__(self)
@@ -144,5 +150,10 @@ class FunctionContext(ExecutionContext):
     def __init__(self, parent, func):
         ExecutionContext.__init__(self, parent)
         if func.scope:
-            from js.utils import mapdict_with_map
-            self.values = mapdict_with_map(func.scope.local_variables)
+            from js.utils import init_mapdict_with_map
+            init_mapdict_with_map(self, func.scope.local_variables)
+
+class CatchContext(ExecutionContext):
+    def __init__(self, parent=None):
+        ExecutionContext.__init__(self, parent)
+        self._map_dict_values_init_with_size(1)

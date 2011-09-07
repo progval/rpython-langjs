@@ -163,3 +163,11 @@ def mapdict_with_map(m):
     md._map_indexes = indexes
     md._map_next_index = m._map_next_index
     return md
+
+def init_mapdict_with_map(mapdict, map):
+    assert isinstance(map, MapMixin)
+    assert isinstance(mapdict, MapDictMixin)
+    indexes = map._map_indexes
+    MapDictMixin.__init__(mapdict, len(indexes))
+    mapdict._map_indexes = indexes
+    mapdict._map_next_index = map._map_next_index

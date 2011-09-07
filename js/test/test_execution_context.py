@@ -4,43 +4,49 @@ from js.jsexecution_context import ExecutionContext
 from js.execution import ThrowException
 from js.jsobj import Property, w_Undefined
 
+def new_context(parent = None, size=3):
+    context = ExecutionContext(parent)
+    context._map_dict_values_init_with_size(size)
+    return context
+
 class TestExecutionContext(object):
     def test_identifier_set_local(self):
-        context = ExecutionContext()
+        context = new_context()
         context._identifier_set_local('foo', 1)
-        assert context.values.get('foo') == 1
+        assert context._map_dict_get('foo') == 1
 
     def test_identifier_get_local(self):
-        context = ExecutionContext()
-        context.values.set('foo', 1)
+        context = new_context()
+        context._map_dict_set('foo', 1)
         assert context._identifier_get_local('foo') == 1
 
     def test_identifier_is_local(sefl):
-        context = ExecutionContext()
-        context.values.set('foo', 1)
+        context = new_context()
+        context._map_dict_set('foo', 1)
         assert context._identifier_is_local('foo') is True
         assert context._identifier_is_local('bar') is False
 
-
     def test_identifier_get(self):
-        context = ExecutionContext()
+        context = new_context()
         context._identifier_set_local('foo', 1)
         context._identifier_set_local('bar', 2)
         assert context._identifier_get('foo') == 1
         assert context._identifier_get('bar') == 2
 
     def test_identifier_get_from_parent(self):
-        parent = ExecutionContext()
+        parent = new_context()
+        context = new_context(parent)
+
         parent._identifier_set_local('foo', 1)
-        context = ExecutionContext(parent)
         context._identifier_set_local('bar', 2)
+
         assert context._identifier_get('foo') == 1
         assert context._identifier_get('bar') == 2
 
     def test_identifier_get_from_parents(self):
-        grandparent = ExecutionContext()
-        parent = ExecutionContext(grandparent)
-        context = ExecutionContext(parent)
+        grandparent = new_context()
+        parent = new_context(grandparent)
+        context = new_context(parent)
 
         grandparent._identifier_set_local('foo', 0)
         parent._identifier_set_local('foo', 1)
@@ -50,46 +56,51 @@ class TestExecutionContext(object):
         assert context._identifier_get('bar') == 2
 
     def test_identifier_get_local_precedence(self):
-        parent = ExecutionContext()
-        context = ExecutionContext(parent)
+        parent = new_context()
+        context = new_context(parent)
+
         parent._identifier_set_local('foo', 1)
         context._identifier_set_local('foo', 2)
+
         assert context._identifier_get('foo') == 2
         assert parent._identifier_get('foo') == 1
 
     def test_identifier_get_undefined_identifier(self):
-        parent = ExecutionContext()
-        context = ExecutionContext(parent)
+        parent = new_context()
+        context = new_context(parent)
         py.test.raises(KeyError, context._identifier_get, 'foo')
         py.test.raises(KeyError, parent._identifier_get, 'foo')
 
     def test_identifier_set_if_local(self):
-        context = ExecutionContext()
+        context = new_context()
+
         context._identifier_set_local('foo', 0)
         context._identifier_set_if_local('foo', 1)
+
         assert context._identifier_get_local('foo') == 1
 
     def test_identifier_set_if_local_not_local(self):
-        context = ExecutionContext()
+        context = new_context()
         py.test.raises(KeyError, context._identifier_set_if_local, 'foo', 1)
 
     def test_identifier_set_if_local_on_parent(self):
-        parent = ExecutionContext()
-        context = ExecutionContext(parent)
+        parent = new_context()
+        context = new_context(parent)
+
         parent._identifier_set_local('foo', None)
 
         context._identifier_set_if_local('foo', 1)
         assert parent._identifier_get_local('foo') == 1
 
     def test_identifier_set_if_local_not_in_parent(self):
-        parent = ExecutionContext()
-        context = ExecutionContext(parent)
+        parent = new_context()
+        context = new_context(parent)
         py.test.raises(KeyError, context._identifier_set_if_local, 'foo', 1)
 
     def test_identifier_set_if_local_on_parents(self):
-        grandparent = ExecutionContext()
-        parent = ExecutionContext(grandparent)
-        context = ExecutionContext(parent)
+        grandparent = new_context()
+        parent = new_context(grandparent)
+        context = new_context(parent)
 
         grandparent._identifier_set_local('foo', 0)
         parent._identifier_set_local('foo', 1)
@@ -104,8 +115,8 @@ class TestExecutionContext(object):
         assert grandparent._identifier_get_local('foo') == 0
 
     def test_resolve_identifier(self):
-        parent = ExecutionContext()
-        context = ExecutionContext(parent)
+        parent = new_context()
+        context = new_context(parent)
         parent._identifier_set_local('foo', Property('foo', 0))
         context._identifier_set_local('bar', Property('foo', 1))
 
@@ -115,8 +126,8 @@ class TestExecutionContext(object):
         py.test.raises(ThrowException, context.resolve_identifier, ctx, 'baz')
 
     def test_assign(self):
-        parent = ExecutionContext()
-        context = ExecutionContext(parent)
+        parent = new_context()
+        context = new_context(parent)
         p_foo = Property('foo', 0)
         p_bar = Property('foo', 1)
         parent._identifier_set_local('foo', p_foo)
@@ -129,8 +140,8 @@ class TestExecutionContext(object):
         assert p_bar.value == 8
 
     def test_assign_local_precedence(self):
-        parent = ExecutionContext()
-        context = ExecutionContext(parent)
+        parent = new_context()
+        context = new_context(parent)
         p_foo_0 = Property('foo', 0)
         p_foo_1 = Property('foo', 1)
         parent._identifier_set_local('foo', p_foo_0)
@@ -143,8 +154,8 @@ class TestExecutionContext(object):
 
     def test_declare_variable(self):
         ctx = None
-        parent = ExecutionContext()
-        context = ExecutionContext(parent)
+        parent = new_context()
+        context = new_context(parent)
 
         p_foo = Property('foo', 0)
         parent._identifier_set_local('foo', p_foo)
@@ -161,7 +172,7 @@ class TestExecutionContext(object):
         assert context.resolve_identifier(ctx, 'foo') == 42
 
     def test_get_local_value(self):
-        context = ExecutionContext()
+        context = new_context()
         context.declare_variable('foo')
         context.declare_variable('bar')
 
@@ -175,17 +186,17 @@ class TestExecutionContext(object):
         assert context.get_local_value(1) == 1
 
     def test_get_local_value_is_local(self):
-        parent = ExecutionContext()
-        context = ExecutionContext(parent)
+        parent = new_context()
+        context = new_context(parent)
 
         p_foo = Property('foo', 0)
         parent._identifier_set_local('foo', p_foo)
         py.test.raises(KeyError, context.get_local_value, 0)
 
     def test_assign_global_default(self):
-        global_ctx = ExecutionContext()
-        parent = ExecutionContext(global_ctx)
-        context = ExecutionContext(parent)
+        global_ctx = new_context()
+        parent = new_context(global_ctx)
+        context = new_context(parent)
 
         context.assign('foo', 0)
         py.test.raises(KeyError, context._identifier_get_local, 'foo')
