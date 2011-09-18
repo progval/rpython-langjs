@@ -557,8 +557,8 @@ class TRYCATCHBLOCK(Opcode):
             except ThrowException, e:
                 if self.catchfunc is not None:
                     # XXX just copied, I don't know if it's right
-                    from js.jsexecution_context import CatchContext
-                    newctx = CatchContext(ctx, self.catchparam, e.exception)
+                    from js.jsexecution_context import make_catch_context
+                    newctx = make_catch_context(ctx, self.catchparam, e.exception)
                     self.catchfunc.run(newctx)
                 if self.finallyfunc is not None:
                     self.finallyfunc.run(ctx)
@@ -627,8 +627,8 @@ class WITH_START(Opcode):
 
     def eval(self, ctx):
         obj = ctx.pop().ToObject(ctx)
-        from js.jsexecution_context import WithExecutionContext
-        self.newctx = WithExecutionContext(ctx, obj)
+        from js.jsexecution_context import make_with_context
+        self.newctx = make_with_context(ctx, obj)
 
 class WITH_END(Opcode):
     _stack_change = 0

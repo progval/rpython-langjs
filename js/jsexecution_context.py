@@ -1,16 +1,15 @@
-from js.utils import StackMixin, MapMixin, MapDictMixin, DynamicMapDictMixin
+from js.utils import StackMixin, MapMixin, MapDictMixin
 from js.jsobj import DONT_DELETE
 
-class JSContext(MapMixin, MapDictMixin):
+class ExecutionContext(MapDictMixin, MapMixin, StackMixin):
+    #_virtualizable2_ = ['stack[*]', 'stack_pointer', '_map_dict_values[*]', '_map_next_index']
     def __init__(self, parent=None):
-        self._init_js_context(parent)
-
-    def _init_js_context(self, parent=None):
-        self._init_map_dict(0)
-        self.parent = parent
-        self.ctx_obj = None
+        self._init_execution_context(parent)
 
     def resolve_identifier(self, ctx, identifier):
+        if self.ctx_obj is not None and self.ctx_obj.HasProperty(identifier):
+                return self.ctx_obj.Get(ctx, identifier);
+
         try:
             return self.get_property_value(identifier)
         except KeyError:
@@ -110,12 +109,19 @@ class JSContext(MapMixin, MapDictMixin):
         self._map_dict_delete(name)
         return True
 
-class ActivationContext(JSContext):
-    def __init__(self, parent, this, args):
-        self._init_acitvation_context(parent, this, args)
+    def _init_execution_context(self, parent):
+        self._init_map_dict(0)
+        self.parent = parent
+        self.ctx_obj = None
+        self._init_stack()
+
+    def _init_function_context(self, parent, func):
+        self._init_execution_context(parent)
+        if func.scope:
+            self._init_map_dict_with_map(func.scope.local_variables)
 
     def _init_acitvation_context(self, parent, this, args):
-        self._init_js_context(parent)
+        self._init_execution_context(parent)
         self._map_dict_values_init_with_size(2)
 
         if this is not None:
@@ -123,27 +129,10 @@ class ActivationContext(JSContext):
 
         self.put('arguments', args)
 
-class ExecutionContext(JSContext, StackMixin):
-    #_virtualizable2_ = ['stack[*]', 'stack_pointer', '_map_dict_values[*]', '_map_next_index']
-    def __init__(self, parent=None):
+    def _init_catch_context(self, parent, param, exception):
         self._init_execution_context(parent)
-
-    def _init_execution_context(self, parent):
-        self._init_js_context(parent)
-        self._init_stack()
-
-class GlobalContext(DynamicMapDictMixin, ExecutionContext):
-    def __init__(self, parent=None):
-        self._init_global_context(parent)
-
-    def _init_global_context(self, parent):
-        self._init_execution_context(parent)
-        # TODO size of gloabl context
-        self._init_dynamic_map_dict()
-
-class WithExecutionContext(ExecutionContext):
-    def __init__(self, parent, obj):
-        self._init_with_execution_context(parent, obj)
+        self._map_dict_values_init_with_size(1)
+        self.put(param, exception)
 
     def _init_with_execution_context(self, parent, obj):
         self._init_execution_context(parent)
@@ -151,25 +140,32 @@ class WithExecutionContext(ExecutionContext):
         self.stack = parent.stack
         self.stack_pointer = parent.stack_pointer
 
-    def resolve_identifier(self, ctx, identifier):
-        if self.ctx_obj.HasProperty(identifier):
-            return self.ctx_obj.Get(ctx, identifier);
-        return ExecutionContext.resolve_identifier(self, ctx, identifier)
+    def _init_global_context(self):
+        self._init_execution_context(None)
+        # TODO size of gloabl context
+        self._init_dynamic_map_dict()
 
-class FunctionContext(ExecutionContext):
-    def __init__(self, parent, func):
-        self._init_function_context(parent, func)
+def make_activation_context(parent, this, args):
+    ctx = ExecutionContext()
+    ctx._init_acitvation_context(parent, this, args)
+    return ctx
 
-    def _init_function_context(self, parent, func):
-        self._init_execution_context(parent)
-        if func.scope:
-            self._init_map_dict_with_map(func.scope.local_variables)
+def make_global_context():
+    ctx = ExecutionContext()
+    ctx._init_global_context()
+    return ctx
 
-class CatchContext(ExecutionContext):
-    def __init__(self, parent, param, exception):
-        self._init_catch_context(parent, param, exception)
+def make_with_context(parent, obj):
+    ctx = ExecutionContext()
+    ctx._init_with_execution_context(parent, obj)
+    return ctx
 
-    def _init_catch_context(self, parent, param, exception):
-        self._init_execution_context(parent)
-        self._map_dict_values_init_with_size(1)
-        self.put(param, exception)
+def make_function_context(parent, func):
+    ctx = ExecutionContext()
+    ctx._init_function_context(parent, func)
+    return ctx
+
+def make_catch_context(parent, param, exception):
+    ctx = ExecutionContext()
+    ctx._init_catch_context(parent, param, exception)
+    return ctx

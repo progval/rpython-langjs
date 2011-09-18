@@ -97,6 +97,11 @@ class MapDictMixin(object):
     def _init_map_dict(self, size = 99):
         self._init_map()
         self._map_dict_values_init_with_size(size)
+        self._map_dict_expand = False
+
+    def _init_dynamic_map_dict(self):
+        self._init_map_dict(0)
+        self._map_dict_expand = True
 
     def _init_map_dict_with_map(self, map):
         indexes = map._map_indexes
@@ -127,7 +132,14 @@ class MapDictMixin(object):
     def _map_dict_setindex(self, idx, value):
         self._map_dict_values[idx] = value
 
-class MapDict(Map, MapDictMixin):
+    def _map_addname(self, name):
+        if self._map_dict_expand:
+            while len(self._map_dict_values) <= self._map_next_index:
+                self._map_dict_values = self._map_dict_values + [None]
+
+        return self._map_addname_no_resize(name)
+
+class MapDict(MapDictMixin, Map):
     def __init__(self, size = 99):
         self._init_map_dict(size)
 
@@ -149,16 +161,6 @@ class MapDict(Map, MapDictMixin):
     def setindex(self, idx, value):
         self._map_dict_setindex(idx, value)
 
-class DynamicMapDictMixin(object):
-    _mixin_ = True
-    def _init_dynamic_map_dict(self):
-        self._init_map_dict(0)
-
-    def _map_addname(self, name):
-        while len(self._map_dict_values) <= self._map_next_index:
-            self._map_dict_values = self._map_dict_values + [None]
-        return self._map_addname_no_resize(name)
-
-class DynamicMapDict(DynamicMapDictMixin, MapDict):
+class DynamicMapDict(MapDict):
     def __init__(self):
         self._init_dynamic_map_dict()

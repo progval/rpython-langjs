@@ -722,8 +722,8 @@ class Interpreter(object):
     """Creates a js interpreter"""
     def __init__(self):
         allon = DE | DD | RO
-        from js.jsexecution_context import GlobalContext
-        ctx = GlobalContext()
+        from js.jsexecution_context import make_global_context
+        ctx = make_global_context()
         w_Global = ctx.to_context_object()
 
         w_ObjPrototype = W_Object(Prototype=None, Class='Object')
