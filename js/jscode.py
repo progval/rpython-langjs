@@ -32,6 +32,15 @@ class JsCode(object):
         from js.astbuilder import Scope
         self.scope = Scope()
 
+    def estimated_stack_size(self):
+        max_size = 0
+        moving_size = 0
+        for opcode in self.opcodes:
+            moving_size += opcode.stack_change()
+            max_size = max(moving_size, max_size)
+        assert max_size >= 0
+        return max_size
+
     def emit_label(self, num = -1):
         if num == -1:
             num = self.prealocate_label()
@@ -163,8 +172,11 @@ class JsFunction(object):
         self.opcodes = make_sure_not_resized(code.opcodes[:])
         self.scope = code.scope
 
+    def estimated_stack_size(self):
+        return self.code.estimated_stack_size()
+
     def run(self, ctx, check_stack=True):
-        state = _save_stack(ctx, len(self.opcodes) * 2)
+        state = _save_stack(ctx, self.estimated_stack_size())
 
         try:
             r = self.run_bytecode(ctx, check_stack)
