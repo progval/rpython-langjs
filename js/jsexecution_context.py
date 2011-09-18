@@ -3,10 +3,10 @@ from js.jsobj import DONT_DELETE
 
 class JSContext(MapMixin, MapDictMixin):
     def __init__(self, parent=None):
-        #MapDictMixin.__init__(self)
-        self._map_next_index = 0
-        self._map_indexes = {}
-        self._map_dict_values = []
+        self._init_js_context(parent)
+
+    def _init_js_context(self, parent=None):
+        self._init_map_dict(0)
         self.parent = parent
         self.ctx_obj = None
 
@@ -112,7 +112,10 @@ class JSContext(MapMixin, MapDictMixin):
 
 class ActivationContext(JSContext):
     def __init__(self, parent, this, args):
-        JSContext.__init__(self, parent)
+        self._init_acitvation_context(parent, this, args)
+
+    def _init_acitvation_context(self, parent, this, args):
+        self._init_js_context(parent)
         self._map_dict_values_init_with_size(2)
 
         if this is not None:
@@ -120,23 +123,30 @@ class ActivationContext(JSContext):
 
         self.put('arguments', args)
 
-class GlobalContext(DynamicMapDictMixin, JSContext, StackMixin):
-    #_virtualizable2_ = ['stack[*]', 'stack_pointer']
-    def __init__(self, parent=None):
-        JSContext.__init__(self, parent)
-        StackMixin.__init__(self)
-        DynamicMapDictMixin.__init__(self)
-        # TODO size of gloabl context
-
 class ExecutionContext(JSContext, StackMixin):
-    #_virtualizable2_ = ['stack[*]', 'stack_pointer']
+    #_virtualizable2_ = ['stack[*]', 'stack_pointer', '_map_dict_values[*]', '_map_next_index']
     def __init__(self, parent=None):
-        JSContext.__init__(self, parent)
-        StackMixin.__init__(self)
+        self._init_execution_context(parent)
+
+    def _init_execution_context(self, parent):
+        self._init_js_context(parent)
+        self._init_stack()
+
+class GlobalContext(DynamicMapDictMixin, ExecutionContext):
+    def __init__(self, parent=None):
+        self._init_global_context(parent)
+
+    def _init_global_context(self, parent):
+        self._init_execution_context(parent)
+        # TODO size of gloabl context
+        self._init_dynamic_map_dict()
 
 class WithExecutionContext(ExecutionContext):
     def __init__(self, parent, obj):
-        ExecutionContext.__init__(self, parent)
+        self._init_with_execution_context(parent, obj)
+
+    def _init_with_execution_context(self, parent, obj):
+        self._init_execution_context(parent)
         self.ctx_obj = obj
         self.stack = parent.stack
         self.stack_pointer = parent.stack_pointer
@@ -148,13 +158,18 @@ class WithExecutionContext(ExecutionContext):
 
 class FunctionContext(ExecutionContext):
     def __init__(self, parent, func):
-        ExecutionContext.__init__(self, parent)
+        self._init_function_context(parent, func)
+
+    def _init_function_context(self, parent, func):
+        self._init_execution_context(parent)
         if func.scope:
-            from js.utils import init_mapdict_with_map
-            init_mapdict_with_map(self, func.scope.local_variables)
+            self._init_map_dict_with_map(func.scope.local_variables)
 
 class CatchContext(ExecutionContext):
     def __init__(self, parent, param, exception):
-        self.put(param, exception)
-        ExecutionContext.__init__(self, parent)
+        self._init_catch_context(parent, param, exception)
+
+    def _init_catch_context(self, parent, param, exception):
+        self._init_execution_context(parent)
         self._map_dict_values_init_with_size(1)
+        self.put(param, exception)

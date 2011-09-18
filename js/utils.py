@@ -5,6 +5,9 @@ from pypy.rlib import jit, debug
 class StackMixin(object):
     _mixin_ = True
     def __init__(self):
+        self._init_stack()
+
+    def _init_stack(self):
         self.stack = [None]
         self.stack_pointer = 0
 
@@ -46,6 +49,9 @@ class MapMixin(object):
     _mixin_ = True
 
     def __init__(self):
+        self._init_map()
+
+    def _init_map(self):
         self._map_indexes = {}
         self._map_next_index = 0
 
@@ -58,6 +64,9 @@ class MapMixin(object):
         return self._map_indexes.get(name, self._MAP_NOT_FOUND)
 
     def _map_addname(self, name):
+        return self._map_addname_no_resize(name)
+
+    def _map_addname_no_resize(self, name):
         if self._map_indexof(name) == self._MAP_NOT_FOUND:
             self._map_indexes[name] = self._map_get_next_index()
         return self._map_indexof(name)
@@ -65,11 +74,8 @@ class MapMixin(object):
     def _map_delname(self, name):
         self._map_indexes[name] = self._MAP_NOT_FOUND
 
-
 class Map(MapMixin):
     NOT_FOUND = MapMixin._MAP_NOT_FOUND
-    def __init__(self):
-        MapMixin.__init__(self)
 
     def __repr__(self):
         return "%s:\n  %s" %(object.__repr__(self), repr(self._map_indexes))
@@ -86,8 +92,17 @@ class Map(MapMixin):
 class MapDictMixin(object):
     _mixin_ = True
     def __init__(self, size = 99):
-        MapMixin.__init__(self)
+        self._init_map_dict(size)
+
+    def _init_map_dict(self, size = 99):
+        self._init_map()
         self._map_dict_values_init_with_size(size)
+
+    def _init_map_dict_with_map(self, map):
+        indexes = map._map_indexes
+        self._map_dict_values_init_with_size(len(indexes))
+        self._map_indexes = indexes
+        self._map_next_index = map._map_next_index
 
     def _map_dict_values_init_with_size(self, size):
         self._map_dict_values = [None] * size
@@ -114,15 +129,7 @@ class MapDictMixin(object):
 
 class MapDict(Map, MapDictMixin):
     def __init__(self, size = 99):
-        Map.__init__(self)
-        MapDictMixin.__init__(self, size)
-
-    #@classmethod
-    #def with_map(cls, m):
-        #self = cls(len(m.indexes))
-        #self.indexes = m.indexes
-        #self.next_index = m.next_index
-        #return self
+        self._init_map_dict(size)
 
     def __repr__(self):
         return "%s;\n  %s" %(Map.__repr__(self), repr(self._map_dict_values))
@@ -144,30 +151,14 @@ class MapDict(Map, MapDictMixin):
 
 class DynamicMapDictMixin(object):
     _mixin_ = True
-    def __init__(self):
-        MapDictMixin.__init__(self, 0)
+    def _init_dynamic_map_dict(self):
+        self._init_map_dict(0)
 
     def _map_addname(self, name):
         while len(self._map_dict_values) <= self._map_next_index:
-            self._map_dict_values.append(None)
-        return MapMixin._map_addname(self, name)
+            self._map_dict_values = self._map_dict_values + [None]
+        return self._map_addname_no_resize(name)
 
 class DynamicMapDict(DynamicMapDictMixin, MapDict):
     def __init__(self):
-        DynamicMapDictMixin.__init__(self)
-
-def mapdict_with_map(m):
-    assert isinstance(m, Map)
-    indexes = m._map_indexes
-    md = MapDict(len(indexes))
-    md._map_indexes = indexes
-    md._map_next_index = m._map_next_index
-    return md
-
-def init_mapdict_with_map(mapdict, map):
-    assert isinstance(map, MapMixin)
-    assert isinstance(mapdict, MapDictMixin)
-    indexes = map._map_indexes
-    MapDictMixin.__init__(mapdict, len(indexes))
-    mapdict._map_indexes = indexes
-    mapdict._map_next_index = map._map_next_index
+        self._init_dynamic_map_dict()
