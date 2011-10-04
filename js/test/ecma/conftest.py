@@ -20,7 +20,7 @@ def pytest_addoption(parser):
 import py
 
 from _pytest.runner import Failed
-from js.interpreter import *
+from js.interpreter import Interpreter, load_file, W_Builtin, W_IntNumber, W_Eval
 from js.jsobj import W_Array, W_String
 from js import interpreter
 from js.execution import JsBaseExcept
@@ -46,6 +46,7 @@ class JSTestFile(pytest.File):
     def collect(self):
         if self.session.config.getvalue("ecma") is not True:
             pytest.skip("ECMA tests disabled, run with --ecma")
+
 
         self.init_interp()
         #actually run the file :)

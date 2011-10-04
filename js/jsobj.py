@@ -167,8 +167,9 @@ class W_PrimitiveObject(W_Root):
         if self.callfunc is None: # XXX Not sure if I should raise it here
             raise JsTypeError('not a function')
         # TODO
-        from js.jsobj import W_Root
-        assert isinstance(this, W_Root)
+        if this:
+            from js.jsobj import W_Root
+            assert isinstance(this, W_Root)
 
         from js.jsexecution_context import make_activation_context, make_function_context
 
