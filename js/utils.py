@@ -7,8 +7,8 @@ class StackMixin(object):
     def __init__(self):
         self._init_stack()
 
-    def _init_stack(self):
-        self.stack = [None]
+    def _init_stack(self, size = 1):
+        self.stack = [None] * size
         self.stack_pointer = 0
 
     def pop(self):
@@ -130,6 +130,7 @@ class MapDictMixin(object):
         self._map_delname(name)
 
     def _map_dict_setindex(self, idx, value):
+        assert idx >= 0
         self._map_dict_values[idx] = value
 
     def _map_addname(self, name):

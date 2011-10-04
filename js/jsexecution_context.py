@@ -1,14 +1,16 @@
 from js.utils import StackMixin, MapMixin, MapDictMixin
 from js.jsobj import DONT_DELETE
 
+from pypy.rlib import jit, debug
+
 class ExecutionContext(MapDictMixin, MapMixin, StackMixin):
-    #_virtualizable2_ = ['stack[*]', 'stack_pointer', '_map_dict_values[*]', '_map_next_index']
+    _virtualizable2_ = ['stack[*]', 'stack_pointer', '_map_dict_values[*]', '_map_next_index']
     def __init__(self, parent=None):
         self._init_execution_context(parent)
 
     def resolve_identifier(self, ctx, identifier):
         if self.ctx_obj is not None and self.ctx_obj.HasProperty(identifier):
-                return self.ctx_obj.Get(ctx, identifier);
+            return self.ctx_obj.Get(ctx, identifier);
 
         try:
             return self.get_property_value(identifier)
@@ -110,17 +112,20 @@ class ExecutionContext(MapDictMixin, MapMixin, StackMixin):
         return True
 
     def _init_execution_context(self, parent):
+        self = jit.hint(self, access_directly=True, fresh_virtualizable=True)
         self._init_map_dict(0)
         self.parent = parent
         self.ctx_obj = None
         self._init_stack()
 
     def _init_function_context(self, parent, func):
+        self = jit.hint(self, access_directly=True, fresh_virtualizable=True)
         self._init_execution_context(parent)
         if func.scope:
             self._init_map_dict_with_map(func.scope.local_variables)
 
     def _init_acitvation_context(self, parent, this, args):
+        self = jit.hint(self, access_directly=True, fresh_virtualizable=True)
         self._init_execution_context(parent)
         self._map_dict_values_init_with_size(2)
 
@@ -130,15 +135,16 @@ class ExecutionContext(MapDictMixin, MapMixin, StackMixin):
         self.put('arguments', args)
 
     def _init_catch_context(self, parent, param, exception):
+        self = jit.hint(self, access_directly=True, fresh_virtualizable=True)
         self._init_execution_context(parent)
         self._map_dict_values_init_with_size(1)
         self.put(param, exception)
 
     def _init_with_execution_context(self, parent, obj):
+        self = jit.hint(self, access_directly=True, fresh_virtualizable=True)
         self._init_execution_context(parent)
         self.ctx_obj = obj
-        self.stack = parent.stack
-        self.stack_pointer = parent.stack_pointer
+        self._init_stack(len(parent.stack))
 
     def _init_global_context(self):
         self._init_execution_context(None)

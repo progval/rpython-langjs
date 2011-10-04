@@ -151,8 +151,7 @@ def _save_stack(ctx, size):
     old_stack = ctx.stack
     old_stack_pointer = ctx.stack_pointer
 
-    ctx.stack_pointer = 0
-    ctx.stack = [None] * size
+    ctx._init_stack(size)
     return old_stack, old_stack_pointer
 
 @jit.dont_look_inside
