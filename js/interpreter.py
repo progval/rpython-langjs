@@ -8,7 +8,7 @@ from js.jsobj import W_Object,\
      w_Undefined, W_NewBuiltin, W_IntNumber, w_Null, create_object, W_Boolean,\
      W_FloatNumber, W_String, W_Builtin, W_Array, w_Null, newbool,\
      isnull_or_undefined, W_PrimitiveObject, W_ListObject, W_BaseNumber,\
-     DE, DD, RO, IT
+     DONT_DELETE, DONT_ENUM, READ_ONLY, INTERNAL
 from js.execution import ThrowException, JsTypeError
 from js.jscode import JsCode
 
@@ -321,7 +321,7 @@ class W_PropertyIsEnumerable(W_NewBuiltin):
     def Call(self, ctx, args=[], this=None):
         if len(args) >= 1:
             propname = args[0].ToString(ctx)
-            if propname in this.propdict and not this.propdict[propname].flags & DE:
+            if propname in this.propdict and not this.propdict[propname].flags & DONT_ENUM:
                 return newbool(True)
         return newbool(False)
 
@@ -721,7 +721,7 @@ def put_values(ctx, obj, dictvalues):
 class Interpreter(object):
     """Creates a js interpreter"""
     def __init__(self):
-        allon = DE | DD | RO
+        allon = DONT_ENUM | DONT_DELETE | READ_ONLY
         from js.jsexecution_context import make_global_context
         ctx = make_global_context()
         w_Global = ctx.to_context_object()
@@ -807,13 +807,13 @@ class Interpreter(object):
             '__proto__': w_FncPrototype,
             'length'   : W_IntNumber(1),
         })
-        w_Number.propdict['prototype'].flags |= RO
-        w_Number.Put(ctx, 'MAX_VALUE', W_FloatNumber(1.7976931348623157e308), flags = RO|DD)
-        w_Number.Put(ctx, 'MIN_VALUE', W_FloatNumber(0), flags = RO|DD)
-        w_Number.Put(ctx, 'NaN', W_FloatNumber(NAN), flags = RO|DD)
+        w_Number.propdict['prototype'].flags |= READ_ONLY
+        w_Number.Put(ctx, 'MAX_VALUE', W_FloatNumber(1.7976931348623157e308), flags = READ_ONLY | DONT_DELETE)
+        w_Number.Put(ctx, 'MIN_VALUE', W_FloatNumber(0), flags = READ_ONLY | DONT_DELETE)
+        w_Number.Put(ctx, 'NaN', W_FloatNumber(NAN), flags = READ_ONLY | DONT_DELETE)
         # ^^^ this is exactly in test case suite
-        w_Number.Put(ctx, 'POSITIVE_INFINITY', W_FloatNumber(INFINITY), flags = RO|DD)
-        w_Number.Put(ctx, 'NEGATIVE_INFINITY', W_FloatNumber(-INFINITY), flags = RO|DD)
+        w_Number.Put(ctx, 'POSITIVE_INFINITY', W_FloatNumber(INFINITY), flags = READ_ONLY | DONT_DELETE)
+        w_Number.Put(ctx, 'NEGATIVE_INFINITY', W_FloatNumber(-INFINITY), flags = READ_ONLY | DONT_DELETE)
 
 
         w_Global.Put(ctx, 'Number', w_Number)
@@ -908,9 +908,9 @@ class Interpreter(object):
 
         w_Global.Put(ctx, 'Date', w_Date)
 
-        w_Global.Put(ctx, 'NaN', W_FloatNumber(NAN), flags = DE|DD)
-        w_Global.Put(ctx, 'Infinity', W_FloatNumber(INFINITY), flags = DE|DD)
-        w_Global.Put(ctx, 'undefined', w_Undefined, flags = DE|DD)
+        w_Global.Put(ctx, 'NaN', W_FloatNumber(NAN), flags = DONT_ENUM | DONT_DELETE)
+        w_Global.Put(ctx, 'Infinity', W_FloatNumber(INFINITY), flags = DONT_ENUM | DONT_DELETE)
+        w_Global.Put(ctx, 'undefined', w_Undefined, flags = DONT_ENUM | DONT_DELETE)
         w_Global.Put(ctx, 'eval', W_Eval(ctx))
         w_Global.Put(ctx, 'parseInt', W_ParseInt(ctx))
         w_Global.Put(ctx, 'parseFloat', W_ParseFloat(ctx))

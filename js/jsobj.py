@@ -138,8 +138,7 @@ class W_ContextObject(W_Root):
 
     def Delete(self, name):
         try:
-            from jsobj import DD
-            if self.context.get_property_flags(name) & DD:
+            if self.context.get_property_flags(name) & DONT_DELETE:
                 return False
             self.context.delete_identifier(name)
         except KeyError:
@@ -153,7 +152,7 @@ class W_PrimitiveObject(W_Root):
         self.Prototype = Prototype
         if Prototype is None:
             Prototype = w_Undefined
-        self.propdict['prototype'] = Property('prototype', Prototype, flags = DE|DD)
+        self.propdict['prototype'] = Property('prototype', Prototype, flags = DONT_ENUM | DONT_DELETE)
         self.Class = Class
         self.callfunc = callfunc
         if callfunc is not None:
@@ -166,6 +165,7 @@ class W_PrimitiveObject(W_Root):
     def Call(self, ctx, args=[], this=None):
         if self.callfunc is None: # XXX Not sure if I should raise it here
             raise JsTypeError('not a function')
+
         # TODO
         if this:
             from js.jsobj import W_Root
@@ -236,7 +236,7 @@ class W_PrimitiveObject(W_Root):
 
     def Delete(self, P):
         if P in self.propdict:
-            if self.propdict[P].flags & DD:
+            if self.propdict[P].flags & DONT_DELETE:
                 return False
             del self.propdict[P]
             return True
@@ -311,7 +311,7 @@ class W_NewBuiltin(W_PrimitiveObject):
         W_PrimitiveObject.__init__(self, ctx, Prototype, Class, Value, callfunc)
 
         if self.length != -1:
-            self.Put(ctx, 'length', W_IntNumber(self.length), flags = DE|DD|RO)
+            self.Put(ctx, 'length', W_IntNumber(self.length), flags = DONT_ENUM|DONT_DELETE|READ_ONLY)
 
 
     def Call(self, ctx, args=[], this = None):
@@ -369,7 +369,7 @@ class W_Array(W_ListObject):
     def __init__(self, ctx=None, Prototype=None, Class='Array',
                  Value=w_Undefined, callfunc=None):
         W_ListObject.__init__(self, ctx, Prototype, Class, Value, callfunc)
-        self.Put(ctx, 'length', W_IntNumber(0), flags = DD)
+        self.Put(ctx, 'length', W_IntNumber(0), flags = DONT_DELETE)
         self.length = r_uint(0)
 
     def set_length(self, newlength):
@@ -448,7 +448,7 @@ class W_String(W_Primitive):
 
     def ToObject(self, ctx):
         o = create_object(ctx, 'String', Value=self)
-        o.Put(ctx, 'length', W_IntNumber(len(self.strval)), flags = RO|DD|DE)
+        o.Put(ctx, 'length', W_IntNumber(len(self.strval)), flags = READ_ONLY | DONT_DELETE | DONT_ENUM)
         return o
 
     def ToString(self, ctx=None):
@@ -624,7 +624,7 @@ def create_object(ctx, prototypename, callfunc=None, Value=w_Undefined):
     proto = ctx.get_global().Get(ctx, prototypename).Get(ctx, 'prototype')
     obj = W_Object(ctx, callfunc = callfunc,Prototype=proto,
                     Class = proto.Class, Value = Value)
-    obj.Put(ctx, '__proto__', proto, DE|DD|RO)
+    obj.Put(ctx, '__proto__', proto, DONT_ENUM | DONT_DELETE | READ_ONLY)
     return obj
 
 def isnull_or_undefined(obj):

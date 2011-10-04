@@ -176,7 +176,7 @@ class LOAD_FUNCTION(Opcode):
                           callfunc=self.funcobj)
         w_func.Put(ctx, 'length', W_IntNumber(len(self.funcobj.params)))
         w_obj = create_object(ctx, 'Object')
-        w_obj.Put(ctx, 'constructor', w_func, flags = jsobj.DE)
+        w_obj.Put(ctx, 'constructor', w_func, flags = jsobj.DONT_ENUM)
         w_func.Put(ctx, 'prototype', w_obj)
         ctx.append(w_func)
 
@@ -468,7 +468,7 @@ class DECLARE_FUNCTION(Opcode):
         w_func = W_Object(ctx=ctx, Prototype=proto, Class='Function', callfunc=self.funcobj)
         w_func.Put(ctx, 'length', W_IntNumber(len(self.funcobj.params)))
         w_obj = create_object(ctx, 'Object')
-        w_obj.Put(ctx, 'constructor', w_func, flags = jsobj.DE)
+        w_obj.Put(ctx, 'constructor', w_func, flags = jsobj.DONT_ENUM)
         w_func.Put(ctx, 'prototype', w_obj)
         if self.funcobj.name is not None:
             ctx.put(self.funcobj.name, w_func)
@@ -594,7 +594,7 @@ class LOAD_ITERATOR(Opcode):
     _stack_change = 0
     def eval(self, ctx):
         obj = ctx.pop().ToObject(ctx)
-        props = [prop.value for prop in obj.propdict.values() if not prop.flags & jsobj.DE]
+        props = [prop.value for prop in obj.propdict.values() if not prop.flags & jsobj.DONT_ENUM]
         ctx.append(W_Iterator(props))
 
 class JUMP_IF_ITERATOR_EMPTY(BaseJump):
