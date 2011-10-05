@@ -135,10 +135,13 @@ class MapDictMixin(object):
 
     def _map_addname(self, name):
         if self._map_dict_expand:
-            while len(self._map_dict_values) <= self._map_next_index:
-                self._map_dict_values = self._map_dict_values + [None]
-
+            _resize_map_dict(self)
         return self._map_addname_no_resize(name)
+
+@jit.dont_look_inside
+def _resize_map_dict(map_dict_obj):
+    while len(map_dict_obj._map_dict_values) <= map_dict_obj._map_next_index:
+        map_dict_obj._map_dict_values = map_dict_obj._map_dict_values + [None]
 
 class MapDict(MapDictMixin, Map):
     def __init__(self, size = 99):
