@@ -20,39 +20,44 @@ class ExecutionContext(MapDictMixin, MapMixin, StackMixin):
             raise ThrowException(W_String("ReferenceError: %s is not defined" % identifier))
 
     def get_property_value(self, name):
-        return self._get_property(name).value
+        return self._identifier_get(name)
 
     def get_property_flags(self, name):
-        return self._get_property(name).flags
+        self._identifier_get(name)
+        idx = self._map_indexof(name)
+        return self._property_flags.get(idx, 0)
 
-    def _get_property(self,name):
-        from js.jsobj import Property
-        p = self._identifier_get(name)
-        assert isinstance(p, Property)
-        return p
+    def set_property_value(self, name, value):
+        self._identifier_set(name, value)
+
+    def set_local_property_value(self, name, value):
+        self._identifier_set_local(name, value)
+
+    def set_property_flags(self, name, flags):
+        idx = self._map_indexof(name)
+        self._property_flags[idx] = flags
 
     def assign(self, name, value):
-        from js.jsobj import RO, Property
+        from js.jsobj import READ_ONLY, Property
         assert name is not None
         try:
-            p = self._get_property(name)
-            if p.flags & RO:
+            if self.get_property_flags(name) & READ_ONLY:
                 return
-            p.value = value
+            self.set_property_value(name, value)
         except KeyError:
             self.get_global_context().put(name, value, flags=0)
 
     def declare_variable(self, identifier, flags=DONT_DELETE):
         from js.jsobj import w_Undefined, Property
         self._map_addname(identifier)
-        p = Property(identifier, w_Undefined, flags)
-        self._identifier_set_local(identifier, p)
+        self.set_local_property_value(identifier, w_Undefined)
+        self.set_property_flags(identifier, flags)
 
     def get_local_value(self, idx):
         val = self._map_dict_getindex(idx)
         if val is None:
             raise KeyError
-        return val.value
+        return val
 
     def _identifier_set_local(self, identifier, value):
         self._map_dict_set(identifier, value)
@@ -87,8 +92,8 @@ class ExecutionContext(MapDictMixin, MapMixin, StackMixin):
         raise KeyError
 
     def assign_local(self, idx, value):
-        prop = self._map_dict_getindex(idx)
-        prop.value = value
+        self._map_dict_getindex(idx)
+        self._map_dict_setindex(idx, value)
 
     def get_global(self):
         return self.get_global_context().to_context_object()
@@ -117,6 +122,7 @@ class ExecutionContext(MapDictMixin, MapMixin, StackMixin):
         self.parent = parent
         self.ctx_obj = None
         self._init_stack()
+        self._property_flags = {}
 
     def _init_function_context(self, parent, func):
         self = jit.hint(self, access_directly=True, fresh_virtualizable=True)

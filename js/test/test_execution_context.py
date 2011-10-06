@@ -117,8 +117,8 @@ class TestExecutionContext(object):
     def test_resolve_identifier(self):
         parent = new_context()
         context = new_context(parent)
-        parent._identifier_set_local('foo', Property('foo', 0))
-        context._identifier_set_local('bar', Property('foo', 1))
+        parent._identifier_set_local('foo', 0)
+        context._identifier_set_local('bar', 1)
 
         ctx = None
         assert context.resolve_identifier(ctx, 'foo') == 0
@@ -128,37 +128,32 @@ class TestExecutionContext(object):
     def test_assign(self):
         parent = new_context()
         context = new_context(parent)
-        p_foo = Property('foo', 0)
-        p_bar = Property('foo', 1)
-        parent._identifier_set_local('foo', p_foo)
-        context._identifier_set_local('bar', p_bar)
+        parent._identifier_set_local('foo', 0)
+        context._identifier_set_local('bar', 1)
 
         context.assign('foo', 4)
         context.assign('bar', 8)
 
-        assert p_foo.value == 4
-        assert p_bar.value == 8
+        assert context.get_property_value('foo') == 4
+        assert context.get_property_value('bar') == 8
 
     def test_assign_local_precedence(self):
         parent = new_context()
         context = new_context(parent)
-        p_foo_0 = Property('foo', 0)
-        p_foo_1 = Property('foo', 1)
-        parent._identifier_set_local('foo', p_foo_0)
-        context._identifier_set_local('foo', p_foo_1)
+        parent._identifier_set_local('foo', 0)
+        context._identifier_set_local('foo', 1)
 
         context.assign('foo', 42)
 
-        assert p_foo_0.value == 0
-        assert p_foo_1.value == 42
+        assert parent.get_property_value('foo') == 0
+        assert context.get_property_value('foo') == 42
 
     def test_declare_variable(self):
         ctx = None
         parent = new_context()
         context = new_context(parent)
 
-        p_foo = Property('foo', 0)
-        parent._identifier_set_local('foo', p_foo)
+        parent._identifier_set_local('foo', 0)
 
         assert context.resolve_identifier(ctx, 'foo') == 0
 
@@ -167,8 +162,8 @@ class TestExecutionContext(object):
 
         context.assign('foo', 42)
 
-        assert p_foo.value == 0
-        assert context._identifier_get_local('foo').value == 42
+        assert parent.get_property_value('foo') == 0
+        assert context._identifier_get_local('foo') == 42
         assert context.resolve_identifier(ctx, 'foo') == 42
 
     def test_get_local_value(self):
@@ -189,8 +184,7 @@ class TestExecutionContext(object):
         parent = new_context()
         context = new_context(parent)
 
-        p_foo = Property('foo', 0)
-        parent._identifier_set_local('foo', p_foo)
+        parent._identifier_set_local('foo', 0)
         py.test.raises(KeyError, context.get_local_value, 0)
 
     def test_assign_global_default(self):
@@ -198,11 +192,11 @@ class TestExecutionContext(object):
         parent = new_context(global_ctx)
         context = new_context(parent)
 
-        context.assign('foo', 0)
+        context.assign('foo', 23)
         py.test.raises(KeyError, context._identifier_get_local, 'foo')
         py.test.raises(KeyError, parent._identifier_get_local, 'foo')
-        assert global_ctx._identifier_get_local('foo')
-        parent.assign('bar', 0)
+        assert global_ctx._identifier_get_local('foo') == 23
+        parent.assign('bar', 42)
         py.test.raises(KeyError, context._identifier_get_local, 'bar')
         py.test.raises(KeyError, parent._identifier_get_local, 'bar')
-        assert global_ctx._identifier_get_local('bar')
+        assert global_ctx._identifier_get_local('bar') == 42
