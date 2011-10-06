@@ -213,21 +213,22 @@ class W_PrimitiveObject(W_Root):
         return self.Prototype.Get(ctx, P) # go down the prototype chain
 
     def CanPut(self, P):
-        if P in self.propdict:
-            if self.propdict[P].flags & RO: return False
+        property = self.propdict.get(P, None)
+        if property is not None:
+            if property.flags & RO: return False
             return True
         if self.Prototype is None: return True
         return self.Prototype.CanPut(P)
 
     def Put(self, ctx, P, V, flags = 0):
+        property = self.propdict.get(P, None)
+        if property is not None:
+            property.value = V
+            property.flags |= flags
+            return
 
         if not self.CanPut(P): return
-        if P in self.propdict:
-            prop = self.propdict[P]
-            prop.value = V
-            prop.flags |= flags
-        else:
-            self.propdict[P] = Property(P, V, flags = flags)
+        self.propdict[P] = Property(P, V, flags = flags)
 
     def HasProperty(self, P):
         if P in self.propdict: return True
