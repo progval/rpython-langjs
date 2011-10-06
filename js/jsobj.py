@@ -146,13 +146,12 @@ class W_ContextObject(W_Root):
         return True
 
 class W_PrimitiveObject(W_Root):
-    def __init__(self, ctx=None, Prototype=None, Class='Object',
-                 Value=w_Undefined, callfunc=None):
-        self.propdict = {}
+    def __init__(self, ctx=None, Prototype=None, Class='Object', Value=w_Undefined, callfunc=None):
+        self._propdict = {}
         self.Prototype = Prototype
         if Prototype is None:
             Prototype = w_Undefined
-        self.propdict['prototype'] = Property('prototype', Prototype, flags = DONT_ENUM | DONT_DELETE)
+        self._set_property('prototype', Prototype, DONT_ENUM | DONT_DELETE)
         self.Class = Class
         self.callfunc = callfunc
         if callfunc is not None:
@@ -160,6 +159,46 @@ class W_PrimitiveObject(W_Root):
         else:
             self.Scope = None
         self.Value = Value
+
+    def _set_property(self, name, value, flags):
+        p = self._propdict.get(name, None)
+        if p is None:
+            p = Property(name, value, flags)
+            self._propdict[name] = p
+        else:
+            p.value = value
+            p.falgs = flags
+
+    def _set_property_value(self, name, value):
+        self._get_property(name).value = value
+
+    def _set_property_flags(self, name, flags):
+        self._get_property(name).flags = flags
+
+    def _get_property_value(self, name):
+        p = self._get_property(name)
+        if p is None:
+            raise KeyError
+        return p.value
+
+
+    def _get_property_flags(self, name):
+        p = self._get_property(name)
+        if p is None:
+            raise KeyError
+        return p.flags
+
+    def _get_property(self, name):
+        return self._propdict.get(name, None)
+
+    def _has_property(self, name):
+        return name in self._propdict
+
+    def _delete_property(self, name):
+        del self._propdict[name]
+
+    def _get_property_keys(self):
+        return self._propdict.keys()
 
     #@jit.unroll_safe
     def Call(self, ctx, args=[], this=None):
@@ -206,40 +245,39 @@ class W_PrimitiveObject(W_Root):
 
     def Get(self, ctx, P):
         try:
-            return self.propdict[P].value
+            return self._get_property_value(P)
         except KeyError:
             if self.Prototype is None:
                 return w_Undefined
         return self.Prototype.Get(ctx, P) # go down the prototype chain
 
     def CanPut(self, P):
-        property = self.propdict.get(P, None)
-        if property is not None:
-            if property.flags & RO: return False
+        if self._has_property(P):
+            if self._get_property_flags(P) & READ_ONLY: return False
             return True
         if self.Prototype is None: return True
         return self.Prototype.CanPut(P)
 
     def Put(self, ctx, P, V, flags = 0):
-        property = self.propdict.get(P, None)
-        if property is not None:
-            property.value = V
-            property.flags |= flags
+        if self._has_property(P):
+            self._set_property_value(P, V)
+            f = self._get_property_flags(P) | flags
+            self._set_property_flags(P, f)
             return
 
         if not self.CanPut(P): return
-        self.propdict[P] = Property(P, V, flags = flags)
+        self._set_property(P, V, flags)
 
     def HasProperty(self, P):
-        if P in self.propdict: return True
+        if self._has_property(P): return True
         if self.Prototype is None: return False
         return self.Prototype.HasProperty(P)
 
     def Delete(self, P):
-        if P in self.propdict:
-            if self.propdict[P].flags & DONT_DELETE:
+        if self._has_property(P):
+            if self._get_property_flags(P) & DONT_DELETE:
                 return False
-            del self.propdict[P]
+            self._delete_property(P)
             return True
         return True
 
@@ -343,13 +381,13 @@ class W_ListObject(W_PrimitiveObject):
     def tolist(self):
         l = []
         for i in range(self.length):
-            l.append(self.propdict[str(i)].value)
+            l.append(self._get_property_value(str(i)))
         return l
 
 class W_Arguments(W_ListObject):
     def __init__(self, callee, args):
         W_PrimitiveObject.__init__(self, Class='Arguments')
-        del self.propdict["prototype"]
+        self._delete_property('prototype')
         # XXX None can be dangerous here
         self.Put(None, 'callee', callee)
         self.Put(None, 'length', W_IntNumber(len(args)))
@@ -361,14 +399,13 @@ class ActivationObject(W_PrimitiveObject):
     """The object used on function calls to hold arguments and this"""
     def __init__(self):
         W_PrimitiveObject.__init__(self, Class='Activation')
-        del self.propdict["prototype"]
+        self._delete_property('prototype')
 
     def __repr__(self):
         return str(self.propdict)
 
 class W_Array(W_ListObject):
-    def __init__(self, ctx=None, Prototype=None, Class='Array',
-                 Value=w_Undefined, callfunc=None):
+    def __init__(self, ctx=None, Prototype=None, Class='Array', Value=w_Undefined, callfunc=None):
         W_ListObject.__init__(self, ctx, Prototype, Class, Value, callfunc)
         self.Put(ctx, 'length', W_IntNumber(0), flags = DONT_DELETE)
         self.length = r_uint(0)
@@ -378,20 +415,20 @@ class W_Array(W_ListObject):
             i = newlength
             while i < self.length:
                 key = str(i)
-                if key in self.propdict:
-                    del self.propdict[key]
+                if key in self._get_property_keys():
+                    self._delete_property(key)
                 i += 1
 
         self.length = newlength
-        self.propdict['length'].value = W_FloatNumber(newlength)
+        self._set_property_value('length', W_FloatNumber(newlength))
 
     def Put(self, ctx, P, V, flags = 0):
         if not self.CanPut(P): return
-        if not P in self.propdict:
-            self.propdict[P] = Property(P, V, flags = flags)
+        if not self._has_property(P):
+            self._set_property(P,V,flags)
         else:
             if P != 'length':
-                self.propdict[P].value = V
+                self._set_property_value(P, V)
             else:
                 length = V.ToUInt32(ctx)
                 if length != V.ToNumber(ctx):

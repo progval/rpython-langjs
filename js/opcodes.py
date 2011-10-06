@@ -594,7 +594,12 @@ class LOAD_ITERATOR(Opcode):
     _stack_change = 0
     def eval(self, ctx):
         obj = ctx.pop().ToObject(ctx)
-        props = [prop.value for prop in obj.propdict.values() if not prop.flags & jsobj.DONT_ENUM]
+        props = []
+
+        for prop in obj._get_property_keys():
+            if not obj._get_property_flags(prop) & jsobj.DONT_ENUM:
+                props.append(obj._get_property_value(prop))
+
         ctx.append(W_Iterator(props))
 
 class JUMP_IF_ITERATOR_EMPTY(BaseJump):

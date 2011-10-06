@@ -807,7 +807,8 @@ class Interpreter(object):
             '__proto__': w_FncPrototype,
             'length'   : W_IntNumber(1),
         })
-        w_Number.propdict['prototype'].flags |= READ_ONLY
+        f = w_Number._get_property_flags('prototype') | READ_ONLY
+        w_Number._set_property_flags('prototype', f)
         w_Number.Put(ctx, 'MAX_VALUE', W_FloatNumber(1.7976931348623157e308), flags = READ_ONLY | DONT_DELETE)
         w_Number.Put(ctx, 'MIN_VALUE', W_FloatNumber(0), flags = READ_ONLY | DONT_DELETE)
         w_Number.Put(ctx, 'NaN', W_FloatNumber(NAN), flags = READ_ONLY | DONT_DELETE)
