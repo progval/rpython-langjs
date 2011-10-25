@@ -15,6 +15,12 @@ DONT_DELETE = DD = 2 # DontDelete
 READ_ONLY = RO = 4 # ReadOnly
 INTERNAL = IT = 8 # Internal
 
+from js.object_map import MapRoot
+ROOT_MAP = MapRoot()
+
+def _get_root_map():
+    return ROOT_MAP
+
 class SeePage(NotImplementedError):
     pass
 
@@ -147,8 +153,9 @@ class W_ContextObject(W_Root):
 
 class W_PrimitiveObject(W_Root):
     def __init__(self, ctx=None, Prototype=None, Class='Object', Value=w_Undefined, callfunc=None):
-        self._propdict = {}
         self.Prototype = Prototype
+        self.property_map = _get_root_map()
+        self.property_values = []
         if Prototype is None:
             Prototype = w_Undefined
         self._set_property('prototype', Prototype, DONT_ENUM | DONT_DELETE)
@@ -161,44 +168,56 @@ class W_PrimitiveObject(W_Root):
         self.Value = Value
 
     def _set_property(self, name, value, flags):
-        p = self._propdict.get(name, None)
-        if p is None:
-            p = Property(name, value, flags)
-            self._propdict[name] = p
-        else:
-            p.value = value
-            p.falgs = flags
+        if self.property_map.lookup(name) == self.property_map.NOT_FOUND:
+            self.property_map = self.property_map.add(name, flags)
+        self._set_property_value(name, value)
+        self._set_property_flags(name, flags)
 
     def _set_property_value(self, name, value):
-        self._get_property(name).value = value
+        idx = self.property_map.lookup(name)
+        l = len(self.property_values)
+
+        if l <= idx:
+            self.property_values = self.property_values + ([None] * (idx - l + 1))
+
+        self.property_values[idx] = value
 
     def _set_property_flags(self, name, flags):
-        self._get_property(name).flags = flags
+        self.property_map = self.property_map.set_flags(name, flags)
 
     def _get_property_value(self, name):
-        p = self._get_property(name)
-        if p is None:
+        idx = self.property_map.lookup(name)
+        if idx == self.property_map.NOT_FOUND:
             raise KeyError
-        return p.value
-
+        return self.property_values[idx]
 
     def _get_property_flags(self, name):
-        p = self._get_property(name)
-        if p is None:
+        flag = self.property_map.lookup_flag(name)
+        if flag == self.property_map.NOT_FOUND:
             raise KeyError
-        return p.flags
-
-    def _get_property(self, name):
-        return self._propdict.get(name, None)
+        return flag
 
     def _has_property(self, name):
-        return name in self._propdict
+        return self.property_map.lookup(name) != self.property_map.NOT_FOUND
 
     def _delete_property(self, name):
-        del self._propdict[name]
+        idx = self.property_map.lookup(name)
+        old_map = self.property_map
+        new_map = self.property_map.delete(name)
+        new_keys = new_map.keys()
+        new_values = [None] * len(new_keys)
+        old_values = self.property_values
+
+        for key in new_keys:
+            old_index = old_map.lookup(key)
+            new_index = new_map.lookup(key)
+            new_values[new_index] = old_values[old_index]
+
+        self.property_values = new_values
+        self.property_map = new_map
 
     def _get_property_keys(self):
-        return self._propdict.keys()
+        return self.property_map.keys()
 
     #@jit.unroll_safe
     def Call(self, ctx, args=[], this=None):
@@ -331,18 +350,15 @@ def str_builtin(ctx, args, this):
     return W_String(this.ToString(ctx))
 
 class W_Object(W_PrimitiveObject):
-    def __init__(self, ctx=None, Prototype=None, Class='Object',
-                 Value=w_Undefined, callfunc=None):
-        W_PrimitiveObject.__init__(self, ctx, Prototype,
-                                   Class, Value, callfunc)
+    def __init__(self, ctx=None, Prototype=None, Class='Object', Value=w_Undefined, callfunc=None):
+        W_PrimitiveObject.__init__(self, ctx, Prototype, Class, Value, callfunc)
 
     def ToNumber(self, ctx):
         return self.Get(ctx, 'valueOf').Call(ctx, args=[], this=self).ToNumber(ctx)
 
 class W_NewBuiltin(W_PrimitiveObject):
     length = -1
-    def __init__(self, ctx, Prototype=None, Class='function',
-                 Value=w_Undefined, callfunc=None):
+    def __init__(self, ctx, Prototype=None, Class='function', Value=w_Undefined, callfunc=None):
         if Prototype is None:
             proto = ctx.get_global().Get(ctx, 'Function').Get(ctx, 'prototype')
             Prototype = proto
@@ -402,7 +418,7 @@ class ActivationObject(W_PrimitiveObject):
         self._delete_property('prototype')
 
     def __repr__(self):
-        return str(self.propdict)
+        return str(self.property_map)
 
 class W_Array(W_ListObject):
     def __init__(self, ctx=None, Prototype=None, Class='Array', Value=w_Undefined, callfunc=None):
@@ -660,8 +676,7 @@ class W_Iterator(W_Root):
 
 def create_object(ctx, prototypename, callfunc=None, Value=w_Undefined):
     proto = ctx.get_global().Get(ctx, prototypename).Get(ctx, 'prototype')
-    obj = W_Object(ctx, callfunc = callfunc,Prototype=proto,
-                    Class = proto.Class, Value = Value)
+    obj = W_Object(ctx, callfunc = callfunc,Prototype=proto, Class = proto.Class, Value = Value)
     obj.Put(ctx, '__proto__', proto, DONT_ENUM | DONT_DELETE | READ_ONLY)
     return obj
 

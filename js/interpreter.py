@@ -302,7 +302,7 @@ class W_HasOwnProperty(W_NewBuiltin):
     def Call(self, ctx, args=[], this=None):
         if len(args) >= 1:
             propname = args[0].ToString(ctx)
-            if propname in this.propdict:
+            if propname in self._get_property_keys():
                 return newbool(True)
         return newbool(False)
 
@@ -321,7 +321,7 @@ class W_PropertyIsEnumerable(W_NewBuiltin):
     def Call(self, ctx, args=[], this=None):
         if len(args) >= 1:
             propname = args[0].ToString(ctx)
-            if propname in this.propdict and not this.propdict[propname].flags & DONT_ENUM:
+            if self._has_property(propname) and not self._get_property_flags(propname) & DONT_ENUM:
                 return newbool(True)
         return newbool(False)
 
@@ -728,8 +728,7 @@ class Interpreter(object):
 
         w_ObjPrototype = W_Object(Prototype=None, Class='Object')
 
-        w_Function = W_Function(ctx, Class='Function',
-                              Prototype=w_ObjPrototype)
+        w_Function = W_Function(ctx, Class='Function', Prototype=w_ObjPrototype)
         w_FncPrototype = W_Function(ctx, Class='Function', Prototype=w_ObjPrototype)#W_Object(Prototype=None, Class='Function')
 
         w_Function.Put(ctx, 'length', W_IntNumber(1), flags = allon)
