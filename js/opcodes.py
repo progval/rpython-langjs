@@ -7,6 +7,7 @@ from js.execution import JsTypeError, ReturnException, ThrowException
 from js.baseop import plus, sub, compare, AbstractEC, StrictEC,\
      compare_e, increment, decrement, commonnew, mult, division, uminus, mod
 from pypy.rlib.rarithmetic import intmask
+from pypy.rlib import jit
 
 class Opcode(object):
     _stack_change = 1
@@ -196,9 +197,11 @@ class LOAD_FUNCTION(Opcode):
 #         return 'STORE_VAR "%s"' % self.name
 
 class LOAD_OBJECT(Opcode):
+    _immutable_fields_ = ["counter"]
     def __init__(self, counter):
         self.counter = counter
 
+    @jit.unroll_safe
     def eval(self, ctx):
         w_obj = create_object(ctx, 'Object')
         for _ in range(self.counter):
