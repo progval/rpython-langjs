@@ -20,7 +20,8 @@ def pytest_addoption(parser):
 import py
 
 from _pytest.runner import Failed
-from js.interpreter import Interpreter, load_file, W_Builtin, W_IntNumber, W_Eval
+from js.interpreter import Interpreter, load_file
+from js.builtins import W_Builtin, W_IntNumber, W_Eval
 from js.jsobj import W_Array, W_String
 from js import interpreter
 from js.execution import JsBaseExcept
