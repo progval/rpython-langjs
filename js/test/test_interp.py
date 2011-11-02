@@ -15,7 +15,7 @@ def test_simple():
     bytecode.emit('POP')
     func = bytecode.make_js_function()
     res = func.run(ExecutionContext(), check_stack=False)
-    assert res.ToNumber(None) == 6.0
+    assert res.ToNumber() == 6.0
 
 def assertp(code, prints):
     l = []
@@ -26,7 +26,7 @@ def assertp(code, prints):
     try:
         jsint.run(interpreter.load_source(code, ''))
     except ThrowException, excpt:
-        l.append("uncaught exception: "+str(excpt.exception.ToString(ctx)))
+        l.append("uncaught exception: "+str(excpt.exception.ToString()))
     print l, prints
     if isinstance(prints, list):
         assert l == prints
@@ -53,7 +53,7 @@ def assertv(code, value):
     elif isinstance(value, float):
         assert code_val.ToNumber() == value
     else:
-        assert code_val.ToString(jsint.global_context) == value
+        assert code_val.ToString() == value
 
 def asserte(code, value):
     jsint = interpreter.Interpreter()

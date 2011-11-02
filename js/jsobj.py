@@ -32,21 +32,21 @@ class W_Root(object):
     def ToBoolean(self):
         raise NotImplementedError(self.__class__)
 
-    def ToPrimitive(self, ctx, hint=""):
+    def ToPrimitive(self, hint=""):
         return self
 
-    def ToString(self, ctx):
+    def ToString(self):
         return ''
 
-    def ToObject(self, ctx):
+    def ToObject(self):
         # XXX should raise not implemented
         return self
 
-    def ToNumber(self, ctx = None):
+    def ToNumber(self):
         return 0.0
 
-    def ToInteger(self, ctx):
-        return int(self.ToNumber(ctx = None))
+    def ToInteger(self):
+        return int(self.ToNumber())
 
     def ToInt32(self):
         return r_int32(int(self.ToNumber()))
@@ -60,17 +60,17 @@ class W_Root(object):
     def Put(self, P, V, flags = 0):
         raise NotImplementedError(self.__class__)
 
-    def PutValue(self, w, ctx):
+    def PutValue(self, w):
         pass
 
     def CanPut(self, P):
         return False
 
-    def Call(self, ctx, args=[], this=None):
+    def Call(self, args=[], this=None):
         raise NotImplementedError(self.__class__)
 
     def __str__(self):
-        return self.ToString(ctx=None)
+        return self.ToString()
 
     def type(self):
         raise NotImplementedError(self.__class__)
@@ -88,16 +88,16 @@ class W_Undefined(W_Root):
     def __str__(self):
         return "w_undefined"
 
-    def ToInteger(self, ctx):
+    def ToInteger(self):
         return 0
 
-    def ToNumber(self, ctx = None):
+    def ToNumber(self):
         return NAN
 
     def ToBoolean(self):
         return False
 
-    def ToString(self, ctx):
+    def ToString(self):
         return "undefined"
 
     def type(self):
@@ -113,7 +113,7 @@ class W_Null(W_Root):
     def ToBoolean(self):
         return False
 
-    def ToString(self, ctx):
+    def ToString(self):
         return "null"
 
     def type(self):
@@ -152,8 +152,8 @@ class W_ContextObject(W_Root):
         return True
 
 class W_PrimitiveObject(W_Root):
-    _immutable_fields_ = ['Class', 'Property', 'Scope', 'Value']
-    def __init__(self, ctx=None, Prototype=None, Class='Object', Value=w_Undefined):
+    _immutable_fields_ = ['Class', 'Prototype', 'Scope', 'Value']
+    def __init__(self, Prototype=None, Class='Object', Value=w_Undefined):
         self.Prototype = Prototype
         self.property_map = root_map()
         self.property_values = []
@@ -217,19 +217,21 @@ class W_PrimitiveObject(W_Root):
     def _get_property_keys(self):
         return self.property_map.keys()
 
-    def Call(self, ctx, args=[], this=None):
+    def Call(self, args=[], this=None):
         raise JsTypeError('not a function')
 
-    def Construct(self, ctx, args=[]):
+    def Construct(self, args=[]):
         obj = W_Object(Class='Object')
         prot = self.Get('prototype')
         if isinstance(prot, W_PrimitiveObject):
             obj.Prototype = prot
         else: # would love to test this
             #but I fail to find a case that falls into this
-            obj.Prototype = ctx.get_global().Get('Object').Get('prototype')
+            #obj.Prototype = ctx.get_global().Get('Object').Get('prototype')
+            from js.builtins import get_builtin_prototype
+            obj.Prototype = get_builtin_prototype('Object')
         try: #this is a hack to be compatible to spidermonkey
-            self.Call(ctx, args, this=obj)
+            self.Call(args, this=obj)
             return obj
         except ReturnException, e:
             return e.value
@@ -272,36 +274,37 @@ class W_PrimitiveObject(W_Root):
             return True
         return True
 
-    def internal_def_value(self, ctx, tryone, trytwo):
+    def internal_def_value(self, tryone, trytwo):
+        # XXX: redo this!
         t1 = self.Get(tryone)
         if isinstance(t1, W_PrimitiveObject):
-            val = t1.Call(ctx, this=self)
+            val = t1.Call(this=self)
             if isinstance(val, W_Primitive):
                 return val
         t2 = self.Get(trytwo)
         if isinstance(t2, W_PrimitiveObject):
-            val = t2.Call(ctx, this=self)
+            val = t2.Call(this=self)
             if isinstance(val, W_Primitive):
                 return val
         raise JsTypeError
 
-    def DefaultValue(self, ctx, hint=""):
+    def DefaultValue(self,  hint=""):
         if hint == "String":
-            return self.internal_def_value(ctx, "toString", "valueOf")
+            return self.internal_def_value("toString", "valueOf")
         else: # hint can only be empty, String or Number
-            return self.internal_def_value(ctx, "valueOf", "toString")
+            return self.internal_def_value("valueOf", "toString")
 
     ToPrimitive = DefaultValue
 
     def ToBoolean(self):
         return True
 
-    def ToString(self, ctx):
+    def ToString(self):
         try:
-            res = self.ToPrimitive(ctx, 'String')
+            res = self.ToPrimitive('String')
         except JsTypeError:
             return "[object %s]"%(self.Class,)
-        return res.ToString(ctx)
+        return res.ToString()
 
     def __str__(self):
         return "<Object class: %s>" % self.Class
@@ -309,30 +312,22 @@ class W_PrimitiveObject(W_Root):
     def type(self):
         return 'object'
 
-def str_builtin(ctx, args, this):
-    return W_String(this.ToString(ctx))
-
 class W_Object(W_PrimitiveObject):
-    def __init__(self, ctx=None, Prototype=None, Class='Object', Value=w_Undefined):
-        W_PrimitiveObject.__init__(self, ctx, Prototype, Class, Value)
+    def __init__(self, Prototype=None, Class='Object', Value=w_Undefined):
+        W_PrimitiveObject.__init__(self, Prototype, Class, Value)
 
-    def ToNumber(self, ctx = None):
-        return self.Get('valueOf').Call(ctx, args=[], this=self).ToNumber(ctx)
+    def ToNumber(self):
+        return self.Get('valueOf').Call(args=[], this=self).ToNumber()
 
 class W_CallableObject(W_Object):
     _immutable_fields_ = ['callfunc', 'ctx']
     def __init__(self, ctx, Prototype, callfunc):
-        W_Object.__init__(self, ctx, Prototype, 'Function')
+        W_Object.__init__(self, Prototype, 'Function')
         self.ctx = ctx
         self.callfunc = callfunc
 
     @jit.unroll_safe
-    def Call(self, ctx, args=[], this=None):
-        # TODO
-        if this:
-            from js.jsobj import W_Root
-            assert isinstance(this, W_Root)
-
+    def Call(self, args=[], this=None):
         from js.jsexecution_context import make_activation_context, make_function_context
 
         w_Arguments = W_Arguments(self, args)
@@ -357,42 +352,42 @@ class W_CallableObject(W_Object):
 
 class W_Primitive(W_Root):
     """unifying parent for primitives"""
-    def ToPrimitive(self, ctx, hint=""):
+    def ToPrimitive(self, hint=""):
         return self
-
 
 class W_NewBuiltin(W_PrimitiveObject):
     length = -1
-    def __init__(self, ctx, Prototype=None, Class='function', Value=w_Undefined):
+    def __init__(self, Prototype=None, Class='function', Value=w_Undefined):
         if Prototype is None:
-            proto = ctx.get_global().Get('Function').Get('prototype')
+            #proto = ctx.get_global().Get('Function').Get('prototype')
+            from js.builtins import get_builtin_prototype
+            proto = get_builtin_prototype('Function')
             Prototype = proto
 
-        W_PrimitiveObject.__init__(self, ctx, Prototype, Class, Value)
+        W_PrimitiveObject.__init__(self, Prototype, Class, Value)
 
         if self.length != -1:
             self.Put('length', W_IntNumber(self.length), flags = DONT_ENUM|DONT_DELETE|READ_ONLY)
 
-
-    def Call(self, ctx, args=[], this = None):
+    def Call(self, args=[], this = None):
         raise NotImplementedError
 
     def type(self):
         return self.Class
 
 class W_Builtin(W_PrimitiveObject):
-    def __init__(self, builtin=None, ctx=None, Prototype=None, Class='function', Value=w_Undefined):
-        W_PrimitiveObject.__init__(self, ctx, Prototype, Class, Value)
+    def __init__(self, builtin=None, Prototype=None, Class='function', Value=w_Undefined):
+        W_PrimitiveObject.__init__(self, Prototype, Class, Value)
         self.set_builtin_call(builtin)
 
     def set_builtin_call(self, callfuncbi):
         self.callfuncbi = callfuncbi
 
-    def Call(self, ctx, args=[], this = None):
-        return self.callfuncbi(ctx, args, this)
+    def Call(self, args=[], this = None):
+        return self.callfuncbi(args, this)
 
-    def Construct(self, ctx, args=[]):
-        return self.callfuncbi(ctx, args, None)
+    def Construct(self, args=[]):
+        return self.callfuncbi(args, None)
 
     def type(self):
         return self.Class
@@ -425,8 +420,8 @@ class ActivationObject(W_PrimitiveObject):
         return str(self.property_map)
 
 class W_Array(W_ListObject):
-    def __init__(self, ctx=None, Prototype=None, Class='Array', Value=w_Undefined):
-        W_ListObject.__init__(self, ctx, Prototype, Class, Value)
+    def __init__(self, Prototype=None, Class='Array', Value=w_Undefined):
+        W_ListObject.__init__(self, Prototype, Class, Value)
         self.Put('length', W_IntNumber(0), flags = DONT_DELETE)
         self.length = r_uint(0)
 
@@ -474,15 +469,15 @@ class W_Boolean(W_Primitive):
     def __init__(self, boolval):
         self.boolval = bool(boolval)
 
-    def ToObject(self, ctx):
-        return create_object(ctx, 'Boolean', Value=self)
+    def ToObject(self):
+        return create_object('Boolean', Value=self)
 
-    def ToString(self, ctx=None):
+    def ToString(self):
         if self.boolval == True:
             return "true"
         return "false"
 
-    def ToNumber(self, ctx = None):
+    def ToNumber(self):
         if self.boolval:
             return 1.0
         return 0.0
@@ -505,12 +500,12 @@ class W_String(W_Primitive):
     def __repr__(self):
         return 'W_String(%s)' % (self.strval,)
 
-    def ToObject(self, ctx):
-        o = create_object(ctx, 'String', Value=self)
+    def ToObject(self):
+        o = create_object('String', Value=self)
         o.Put('length', W_IntNumber(len(self.strval)), flags = READ_ONLY | DONT_DELETE | DONT_ENUM)
         return o
 
-    def ToString(self, ctx=None):
+    def ToString(self):
         return self.strval
 
     def ToBoolean(self):
@@ -525,7 +520,7 @@ class W_String(W_Primitive):
     def GetPropertyName(self):
         return self.ToString()
 
-    def ToNumber(self, ctx = None):
+    def ToNumber(self):
         if not self.strval:
             return 0.0
         try:
@@ -544,8 +539,8 @@ class W_BaseNumber(W_Primitive):
     """ Base class for numbers, both known to be floats
     and those known to be integers
     """
-    def ToObject(self, ctx):
-        return create_object(ctx, 'Number', Value=self)
+    def ToObject(self):
+        return create_object('Number', Value=self)
 
     def Get(self, P):
         return w_Undefined
@@ -561,14 +556,14 @@ class W_IntNumber(W_BaseNumber):
         W_BaseNumber.__init__(self)
         self.intval = intmask(intval)
 
-    def ToString(self, ctx=None):
+    def ToString(self):
         # XXX incomplete, this doesn't follow the 9.8.1 recommendation
         return str(self.intval)
 
     def ToBoolean(self):
         return bool(self.intval)
 
-    def ToNumber(self, ctx = None):
+    def ToNumber(self):
         # XXX
         return float(self.intval)
 
@@ -598,7 +593,7 @@ class W_FloatNumber(W_BaseNumber):
         W_BaseNumber.__init__(self)
         self.floatval = float(floatval)
 
-    def ToString(self, ctx = None):
+    def ToString(self):
         # XXX incomplete, this doesn't follow the 9.8.1 recommendation
         if isnan(self.floatval):
             return 'NaN'
@@ -624,10 +619,10 @@ class W_FloatNumber(W_BaseNumber):
             return False
         return bool(self.floatval)
 
-    def ToNumber(self, ctx = None):
+    def ToNumber(self):
         return self.floatval
 
-    def ToInteger(self, ctx):
+    def ToInteger(self):
         if isnan(self.floatval):
             return 0
 
@@ -653,7 +648,7 @@ class W_List(W_Root):
     def __init__(self, list_w):
         self.list_w = list_w
 
-    def ToString(self, ctx = None):
+    def ToString(self):
         raise SeePage(42)
 
     def ToBoolean(self):
@@ -679,11 +674,13 @@ class W_Iterator(W_Root):
     def empty(self):
         return len(self.elements_w) == 0
 
-def create_object(ctx, prototypename, Value=w_Undefined):
-    proto = ctx.get_global().Get(prototypename).Get('prototype')
+def create_object(prototypename, Value=w_Undefined):
+    #proto = ctx.get_global().Get(prototypename).Get('prototype')
+    from js.builtins import get_builtin_prototype
+    proto = get_builtin_prototype(prototypename)
     # TODO get Object prototype from interp.w_Object
     assert isinstance(proto, W_PrimitiveObject)
-    obj = W_Object(ctx, Prototype=proto, Class = proto.Class, Value = Value)
+    obj = W_Object(Prototype=proto, Class = proto.Class, Value = Value)
     obj.Put('__proto__', proto, DONT_ENUM | DONT_DELETE | READ_ONLY)
     return obj
 

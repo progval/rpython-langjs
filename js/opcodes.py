@@ -129,7 +129,7 @@ class LOAD_ARRAY(Opcode):
         # TODO get array prototype?
         # builtins make_array??
         assert isinstance(proto, W_PrimitiveObject)
-        array = W_Array(ctx, Prototype=proto, Class = proto.Class)
+        array = W_Array(Prototype=proto, Class = proto.Class)
         for i in range(self.counter):
             array.Put(str(self.counter - i - 1), ctx.pop())
         ctx.append(array)
@@ -160,10 +160,12 @@ class LOAD_FUNCTION(Opcode):
         self.funcobj = funcobj
 
     def eval(self, ctx):
-        proto = ctx.get_global().Get('Function').Get('prototype')
+        #proto = ctx.get_global().Get('Function').Get('prototype')
+        from js.builtins import get_builtin_prototype
+        proto = get_builtin_prototype('Function')
         w_func = W_CallableObject(ctx, proto, self.funcobj)
         w_func.Put('length', W_IntNumber(len(self.funcobj.params)))
-        w_obj = create_object(ctx, 'Object')
+        w_obj = create_object('Object')
         w_obj.Put('constructor', w_func, flags = jsobj.DONT_ENUM)
         w_func.Put('prototype', w_obj)
         ctx.append(w_func)
@@ -190,9 +192,9 @@ class LOAD_OBJECT(Opcode):
 
     @jit.unroll_safe
     def eval(self, ctx):
-        w_obj = create_object(ctx, 'Object')
+        w_obj = create_object('Object')
         for _ in range(self.counter):
-            name = ctx.pop().ToString(ctx)
+            name = ctx.pop().ToString()
             w_elem = ctx.pop()
             w_obj.Put(name, w_elem)
         ctx.append(w_obj)
@@ -203,8 +205,8 @@ class LOAD_OBJECT(Opcode):
 class LOAD_MEMBER(Opcode):
     _stack_change = -1
     def eval(self, ctx):
-        w_obj = ctx.pop().ToObject(ctx)
-        name = ctx.pop().ToString(ctx)
+        w_obj = ctx.pop().ToObject()
+        name = ctx.pop().ToString()
         ctx.append(w_obj.Get(name))
 
 class COMMA(BaseUnaryOperation):
@@ -222,7 +224,7 @@ class IN(BaseBinaryOperation):
     def operation(self, ctx, left, right):
         if not isinstance(right, W_Object):
             raise ThrowException(W_String("TypeError"))
-        name = left.ToString(ctx)
+        name = left.ToString()
         return newbool(right.HasProperty(name))
 
 class TYPEOF(BaseUnaryOperation):
@@ -306,7 +308,7 @@ class UPLUS(BaseUnaryOperation):
             return
         if isinstance(ctx.top(), W_FloatNumber):
             return
-        ctx.append(W_FloatNumber(ctx.pop().ToNumber(ctx)))
+        ctx.append(W_FloatNumber(ctx.pop().ToNumber()))
 
 class UMINUS(BaseUnaryOperation):
     def eval(self, ctx):
@@ -366,8 +368,8 @@ class STORE_MEMBER(Opcode):
         left = ctx.pop()
         member = ctx.pop()
         value = ctx.pop()
-        name = member.ToString(ctx)
-        left.ToObject(ctx).Put(name, value)
+        name = member.ToString()
+        left.ToObject().Put(name, value)
         ctx.append(value)
 
 class STORE(Opcode):
@@ -454,10 +456,12 @@ class DECLARE_FUNCTION(Opcode):
 
     def eval(self, ctx):
         # function declaration actyally don't run anything
-        proto = ctx.get_global().Get('Function').Get('prototype')
+        #proto = ctx.get_global().Get('Function').Get('prototype')
+        from js.builtins import get_builtin_prototype
+        proto = get_builtin_prototype('Function')
         w_func = W_CallableObject(ctx, proto, self.funcobj)
         w_func.Put('length', W_IntNumber(len(self.funcobj.params)))
-        w_obj = create_object(ctx, 'Object')
+        w_obj = create_object('Object')
         w_obj.Put('constructor', w_func, flags = jsobj.DONT_ENUM)
         w_func.Put('prototype', w_obj)
         if self.funcobj.name is not None:
@@ -495,12 +499,12 @@ class POP(Opcode):
 
 def common_call(ctx, r1, args, this, name):
     if not isinstance(r1, W_PrimitiveObject):
-        raise ThrowException(W_String("%s is not a callable (%s)"%(r1.ToString(ctx), name)))
+        raise ThrowException(W_String("%s is not a callable (%s)"%(r1.ToString(), name)))
     jit.promote(r1)
     try:
-        res = r1.Call(ctx=ctx, args=args.tolist(), this=this)
+        res = r1.Call(args.tolist(), this)
     except JsTypeError:
-        raise ThrowException(W_String("%s is not a function (%s)"%(r1.ToString(ctx), name)))
+        raise ThrowException(W_String("%s is not a function (%s)"%(r1.ToString(), name)))
     return res
 
 class CALL(Opcode):
@@ -508,7 +512,7 @@ class CALL(Opcode):
     def eval(self, ctx):
         r1 = ctx.pop()
         args = ctx.pop()
-        name = r1.ToString(ctx)
+        name = r1.ToString()
         this = ctx.to_context_object()
         #XXX hack, this should be comming from context
         ctx.append(common_call(ctx, r1, args, this, name))
@@ -517,9 +521,9 @@ class CALL_METHOD(Opcode):
     _stack_change = -2
     def eval(self, ctx):
         method = ctx.pop()
-        what = ctx.pop().ToObject(ctx)
+        what = ctx.pop().ToObject()
         args = ctx.pop()
-        name = method.ToString(ctx)
+        name = method.ToString()
         r1 = what.Get(name)
         ctx.append(common_call(ctx, r1, args, what, name))
 
@@ -584,7 +588,7 @@ class NEW_NO_ARGS(Opcode):
 class LOAD_ITERATOR(Opcode):
     _stack_change = 0
     def eval(self, ctx):
-        obj = ctx.pop().ToObject(ctx)
+        obj = ctx.pop().ToObject()
         props = []
         assert isinstance(obj, W_PrimitiveObject)
 
@@ -623,7 +627,7 @@ class WITH_START(Opcode):
         self.newctx = None
 
     def eval(self, ctx):
-        obj = ctx.pop().ToObject(ctx)
+        obj = ctx.pop().ToObject()
         from js.jsexecution_context import make_with_context
         self.newctx = make_with_context(ctx, obj)
 
@@ -644,8 +648,8 @@ class DELETE(Opcode):
 class DELETE_MEMBER(Opcode):
     _stack_change = 0
     def eval(self, ctx):
-        what = ctx.pop().ToString(ctx)
-        obj = ctx.pop().ToObject(ctx)
+        what = ctx.pop().ToString()
+        obj = ctx.pop().ToObject()
         ctx.append(newbool(obj.Delete(what)))
 
 class LOAD_LOCAL(Opcode):

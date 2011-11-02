@@ -34,7 +34,7 @@ rootdir = py.path.local(__file__).dirpath()
 def overriden_evaljs(ctx, args, this):
     try:
         w_eval = W_Eval(ctx)
-        return w_eval.Call(ctx, args, this)
+        return w_eval.Call(args, this)
     except JsBaseExcept:
         return W_String("error")
 
