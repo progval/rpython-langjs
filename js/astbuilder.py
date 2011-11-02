@@ -3,8 +3,6 @@ from pypy.rlib.parsing.tree import RPythonVisitor, Symbol, Nonterminal
 from pypy.rlib.parsing.parsing import ParseError
 
 from js import operations
-from js.utils import Map
-
 from js.object_map import ROOT_MAP
 
 def _get_root_map():
