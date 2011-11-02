@@ -97,3 +97,8 @@ class MapNode(Map):
         else:
             n = self.back.set_flags(name, flags)
             return n.add(self.name, self.flags)
+
+ROOT_MAP = MapRoot()
+
+def root_map():
+    return ROOT_MAP

@@ -7,6 +7,7 @@ from js.execution import ThrowException, JsTypeError, RangeError, ReturnExceptio
 from pypy.rlib.jit import hint
 from pypy.rlib import jit, debug
 from js.utils import StackMixin
+from js.object_map import root_map
 
 import string
 # see ECMA 8.6.1 Property attributes
@@ -15,11 +16,6 @@ DONT_DELETE = DD = 2 # DontDelete
 READ_ONLY = RO = 4 # ReadOnly
 INTERNAL = IT = 8 # Internal
 
-from js.object_map import MapRoot
-ROOT_MAP = MapRoot()
-
-def _get_root_map():
-    return ROOT_MAP
 
 class SeePage(NotImplementedError):
     pass
@@ -154,7 +150,7 @@ class W_ContextObject(W_Root):
 class W_PrimitiveObject(W_Root):
     def __init__(self, ctx=None, Prototype=None, Class='Object', Value=w_Undefined, callfunc=None):
         self.Prototype = Prototype
-        self.property_map = _get_root_map()
+        self.property_map = root_map()
         self.property_values = []
         if Prototype is None:
             Prototype = w_Undefined
