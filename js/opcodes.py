@@ -1,7 +1,7 @@
 from js.jsobj import W_IntNumber, W_FloatNumber, W_String,\
      W_Array, W_PrimitiveObject, ActivationObject,\
      create_object, W_Object, w_Undefined, newbool,\
-     w_True, w_False, W_List, w_Null, W_Iterator, W_Root
+     w_True, w_False, W_List, w_Null, W_Iterator, W_Root, W_CallableObject
 import js.jsobj as jsobj
 from js.execution import JsTypeError, ReturnException, ThrowException
 from js.baseop import plus, sub, compare, AbstractEC, StrictEC,\
@@ -175,8 +175,7 @@ class LOAD_FUNCTION(Opcode):
 
     def eval(self, ctx):
         proto = ctx.get_global().Get(ctx, 'Function').Get(ctx, 'prototype')
-        w_func = W_Object(ctx=ctx, Prototype=proto, Class='Function',
-                          callfunc=self.funcobj)
+        w_func = W_CallableObject(ctx, proto, self.funcobj)
         w_func.Put(ctx, 'length', W_IntNumber(len(self.funcobj.params)))
         w_obj = create_object(ctx, 'Object')
         w_obj.Put(ctx, 'constructor', w_func, flags = jsobj.DONT_ENUM)
@@ -470,7 +469,7 @@ class DECLARE_FUNCTION(Opcode):
     def eval(self, ctx):
         # function declaration actyally don't run anything
         proto = ctx.get_global().Get(ctx, 'Function').Get(ctx, 'prototype')
-        w_func = W_Object(ctx=ctx, Prototype=proto, Class='Function', callfunc=self.funcobj)
+        w_func = W_CallableObject(ctx, proto, self.funcobj)
         w_func.Put(ctx, 'length', W_IntNumber(len(self.funcobj.params)))
         w_obj = create_object(ctx, 'Object')
         w_obj.Put(ctx, 'constructor', w_func, flags = jsobj.DONT_ENUM)

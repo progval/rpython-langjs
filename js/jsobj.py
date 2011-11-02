@@ -176,8 +176,8 @@ class W_ContextObject(W_Root):
         return True
 
 class W_PrimitiveObject(W_Root):
-    _immutable_fields_ = ['Class', 'callfunc', 'Property', 'ctx', 'Scope', 'Value']
-    def __init__(self, ctx=None, Prototype=None, Class='Object', Value=w_Undefined, callfunc=None):
+    _immutable_fields_ = ['Class', 'Property', 'Scope', 'Value']
+    def __init__(self, ctx=None, Prototype=None, Class='Object', Value=w_Undefined):
         self.Prototype = Prototype
         self.property_map = root_map()
         self.property_values = []
@@ -185,11 +185,7 @@ class W_PrimitiveObject(W_Root):
             Prototype = w_Undefined
         self._set_property('prototype', Prototype, DONT_ENUM | DONT_DELETE)
         self.Class = Class
-        self.callfunc = callfunc
-        if callfunc is not None:
-            self.ctx = ctx
-        else:
-            self.Scope = None
+        self.Scope = None
         self.Value = Value
 
     def _set_property(self, name, value, flags):
@@ -245,34 +241,8 @@ class W_PrimitiveObject(W_Root):
     def _get_property_keys(self):
         return self.property_map.keys()
 
-    @jit.unroll_safe
     def Call(self, ctx, args=[], this=None):
-        if self.callfunc is None: # XXX Not sure if I should raise it here
-            raise JsTypeError('not a function')
-
-        # TODO
-        if this:
-            from js.jsobj import W_Root
-            assert isinstance(this, W_Root)
-
-        from js.jsexecution_context import make_activation_context, make_function_context
-
-        w_Arguments = W_Arguments(self, args)
-        act = make_activation_context(self.ctx, this, w_Arguments)
-        newctx = make_function_context(act, self.callfunc)
-
-        paramn = len(self.callfunc.params)
-        for i in range(paramn):
-            paramname = self.callfunc.params[i]
-            try:
-                value = args[i]
-            except IndexError:
-                value = w_Undefined
-            newctx.declare_variable(paramname)
-            newctx.assign(paramname, value)
-
-        val = self.callfunc.run(ctx=newctx)
-        return val
+        raise JsTypeError('not a function')
 
     def Construct(self, ctx, args=[]):
         obj = W_Object(Class='Object')
@@ -361,35 +331,68 @@ class W_PrimitiveObject(W_Root):
         return "<Object class: %s>" % self.Class
 
     def type(self):
-        if self.callfunc is not None:
-            return 'function'
-        else:
-            return 'object'
+        return 'object'
 
+def str_builtin(ctx, args, this):
+    return W_String(this.ToString(ctx))
+
+class W_Object(W_PrimitiveObject):
+    def __init__(self, ctx=None, Prototype=None, Class='Object', Value=w_Undefined):
+        W_PrimitiveObject.__init__(self, ctx, Prototype, Class, Value)
+
+    def ToNumber(self, ctx):
+        return self.Get(ctx, 'valueOf').Call(ctx, args=[], this=self).ToNumber(ctx)
+
+class W_CallableObject(W_Object):
+    _immutable_fields_ = ['callfunc', 'ctx']
+    def __init__(self, ctx, Prototype, callfunc):
+        W_Object.__init__(self, ctx, Prototype, 'Function')
+        self.ctx = ctx
+        self.callfunc = callfunc
+
+    @jit.unroll_safe
+    def Call(self, ctx, args=[], this=None):
+        # TODO
+        if this:
+            from js.jsobj import W_Root
+            assert isinstance(this, W_Root)
+
+        from js.jsexecution_context import make_activation_context, make_function_context
+
+        w_Arguments = W_Arguments(self, args)
+        act = make_activation_context(self.ctx, this, w_Arguments)
+        newctx = make_function_context(act, self.callfunc)
+
+        paramn = len(self.callfunc.params)
+        for i in range(paramn):
+            paramname = self.callfunc.params[i]
+            try:
+                value = args[i]
+            except IndexError:
+                value = w_Undefined
+            newctx.declare_variable(paramname)
+            newctx.assign(paramname, value)
+
+        val = self.callfunc.run(ctx=newctx)
+        return val
+
+    def type(self):
+        return 'function'
 
 class W_Primitive(W_Root):
     """unifying parent for primitives"""
     def ToPrimitive(self, ctx, hint=""):
         return self
 
-def str_builtin(ctx, args, this):
-    return W_String(this.ToString(ctx))
-
-class W_Object(W_PrimitiveObject):
-    def __init__(self, ctx=None, Prototype=None, Class='Object', Value=w_Undefined, callfunc=None):
-        W_PrimitiveObject.__init__(self, ctx, Prototype, Class, Value, callfunc)
-
-    def ToNumber(self, ctx):
-        return self.Get(ctx, 'valueOf').Call(ctx, args=[], this=self).ToNumber(ctx)
 
 class W_NewBuiltin(W_PrimitiveObject):
     length = -1
-    def __init__(self, ctx, Prototype=None, Class='function', Value=w_Undefined, callfunc=None):
+    def __init__(self, ctx, Prototype=None, Class='function', Value=w_Undefined):
         if Prototype is None:
             proto = ctx.get_global().Get(ctx, 'Function').Get(ctx, 'prototype')
             Prototype = proto
 
-        W_PrimitiveObject.__init__(self, ctx, Prototype, Class, Value, callfunc)
+        W_PrimitiveObject.__init__(self, ctx, Prototype, Class, Value)
 
         if self.length != -1:
             self.Put(ctx, 'length', W_IntNumber(self.length), flags = DONT_ENUM|DONT_DELETE|READ_ONLY)
@@ -402,9 +405,8 @@ class W_NewBuiltin(W_PrimitiveObject):
         return self.Class
 
 class W_Builtin(W_PrimitiveObject):
-    def __init__(self, builtin=None, ctx=None, Prototype=None, Class='function',
-                 Value=w_Undefined, callfunc=None):
-        W_PrimitiveObject.__init__(self, ctx, Prototype, Class, Value, callfunc)
+    def __init__(self, builtin=None, ctx=None, Prototype=None, Class='function', Value=w_Undefined):
+        W_PrimitiveObject.__init__(self, ctx, Prototype, Class, Value)
         self.set_builtin_call(builtin)
 
     def set_builtin_call(self, callfuncbi):
@@ -448,8 +450,8 @@ class ActivationObject(W_PrimitiveObject):
         return str(self.property_map)
 
 class W_Array(W_ListObject):
-    def __init__(self, ctx=None, Prototype=None, Class='Array', Value=w_Undefined, callfunc=None):
-        W_ListObject.__init__(self, ctx, Prototype, Class, Value, callfunc)
+    def __init__(self, ctx=None, Prototype=None, Class='Array', Value=w_Undefined):
+        W_ListObject.__init__(self, ctx, Prototype, Class, Value)
         self.Put(ctx, 'length', W_IntNumber(0), flags = DONT_DELETE)
         self.length = r_uint(0)
 
@@ -702,11 +704,11 @@ class W_Iterator(W_Root):
     def empty(self):
         return len(self.elements_w) == 0
 
-def create_object(ctx, prototypename, callfunc=None, Value=w_Undefined):
+def create_object(ctx, prototypename, Value=w_Undefined):
     proto = ctx.get_global().Get(ctx, prototypename).Get(ctx, 'prototype')
     # TODO get Object prototype from interp.w_Object
     assert isinstance(proto, W_PrimitiveObject)
-    obj = W_Object(ctx, callfunc = callfunc,Prototype=proto, Class = proto.Class, Value = Value)
+    obj = W_Object(ctx, Prototype=proto, Class = proto.Class, Value = Value)
     obj.Put(ctx, '__proto__', proto, DONT_ENUM | DONT_DELETE | READ_ONLY)
     return obj
 

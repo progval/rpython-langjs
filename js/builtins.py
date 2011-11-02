@@ -474,8 +474,8 @@ class W_ArraySort(W_NewBuiltin):
         return this
 
 class W_NativeObject(W_Object):
-    def __init__(self, Class, Prototype, ctx=None, Value=w_Undefined, callfunc=None):
-        W_Object.__init__(self, ctx, Prototype, Class, Value, callfunc)
+    def __init__(self, Class, Prototype, ctx=None, Value=w_Undefined):
+        W_Object.__init__(self, ctx, Prototype, Class, Value)
 
 
 class W_DateObject(W_NativeObject):
