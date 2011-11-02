@@ -53,10 +53,11 @@ class W_Eval(W_NewBuiltin):
     length = 1
     def Call(self, ctx, args=[], this=None):
         if len(args) >= 1:
-            if  isinstance(args[0], W_String):
-                src = args[0].strval
+            arg0 = args[0]
+            if  isinstance(arg0, W_String):
+                src = arg0.strval
             else:
-                return args[0]
+                return arg0
         else:
             return w_Undefined
 
@@ -241,6 +242,7 @@ class W_ToUpperCase(W_NewBuiltin):
 
 class W_ToString(W_NewBuiltin):
     def Call(self, ctx, args=[], this=None):
+        assert isinstance(this, W_PrimitiveObject)
         return W_String("[object %s]"%this.Class)
 
 class W_ValueOf(W_NewBuiltin):
@@ -258,12 +260,15 @@ class W_HasOwnProperty(W_NewBuiltin):
 
 class W_IsPrototypeOf(W_NewBuiltin):
     def Call(self, ctx, args=[], this=None):
-        if len(args) >= 1 and isinstance(args[0], W_PrimitiveObject):
+        w_obj = args[0]
+        if len(args) >= 1 and isinstance(w_obj, W_PrimitiveObject):
             O = this
-            V = args[0].Prototype
+            assert isinstance(w_obj, W_PrimitiveObject)
+            V = w_obj.Prototype
             while V is not None:
                 if O == V:
                     return newbool(True)
+                assert isinstance(V, W_PrimitiveObject)
                 V = V.Prototype
         return newbool(False)
 
@@ -304,6 +309,7 @@ functionstring= 'function (arguments go here!) {\n'+ \
                 '}'
 class W_FToString(W_NewBuiltin):
     def Call(self, ctx, args=[], this=None):
+        assert isinstance(this, W_PrimitiveObject)
         if this.Class == 'Function':
             return W_String(functionstring)
         else:
@@ -321,12 +327,7 @@ class W_Apply(W_NewBuiltin):
 
         try:
             arrayArgs = args[1]
-            if isinstance(arrayArgs, W_ListObject):
-                callargs = arrayArgs.tolist()
-            elif isnull_or_undefined(arrayArgs):
-                callargs = []
-            else:
-                raise JsTypeError('arrayArgs is not an Array or Arguments object')
+            callargs = arrayArgs.tolist()
         except IndexError:
             callargs = []
         return this.Call(ctx, callargs, this=thisArg)
@@ -348,6 +349,7 @@ class W_ValueToString(W_NewBuiltin):
     "this is the toString function for objects with Value"
     mytype = ''
     def Call(self, ctx, args=[], this=None):
+        assert isinstance(this, W_PrimitiveObject)
         if this.Value.type() != self.mytype:
             raise JsTypeError('Wrong type')
         return W_String(this.Value.ToString(ctx))
@@ -504,6 +506,7 @@ def get_value_of(type):
     class W_ValueValueOf(W_NewBuiltin):
         "this is the valueOf function for objects with Value"
         def Call(self, ctx, args=[], this=None):
+            assert isinstance(this, W_PrimitiveObject)
             if type != this.Class:
                 raise JsTypeError('%s.prototype.valueOf called with incompatible type' % self.type())
             return this.Value
@@ -615,9 +618,11 @@ def _ishex(ch):
 def unescapejs(ctx, args, this):
     # XXX consider using StringBuilder here
     res = []
-    if not isinstance(args[0], W_String):
+    w_string = args[0]
+    if not isinstance(w_string, W_String):
         raise JsTypeError(W_String("Expected string"))
-    strval = args[0].strval
+    assert isinstance(w_string, W_String)
+    strval = w_string.strval
     lgt = len(strval)
     i = 0
     while i < lgt:
@@ -697,6 +702,8 @@ class W_StringObject(W_NativeObject):
 
 def create_array(ctx, elements=[]):
     proto = ctx.get_global().Get(ctx, 'Array').Get(ctx, 'prototype')
+    # TODO do not get array prototype from global context?
+    assert isinstance(proto, W_PrimitiveObject)
     array = W_Array(ctx, Prototype=proto, Class = proto.Class)
     i = 0
     while i < len(elements):

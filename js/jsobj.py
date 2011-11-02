@@ -34,9 +34,13 @@ def internal_property(name, value):
     return Property(name, value, True, True, True, True)
 
 class W_Root(object):
-    _immutable_fields_ = ['strval']
+    _settled_ = True
+    _attrs_ = []
     def __init__(self):
         pass
+
+    def tolist(self):
+        raise JsTypeError('arrayArgs is not an Array or Arguments object')
     #def GetValue(self):
     #    return self
 
@@ -74,6 +78,9 @@ class W_Root(object):
     def PutValue(self, w, ctx):
         pass
 
+    def CanPut(self, P):
+        return False
+
     def Call(self, ctx, args=[], this=None):
         raise NotImplementedError(self.__class__)
 
@@ -84,6 +91,21 @@ class W_Root(object):
         raise NotImplementedError(self.__class__)
 
     def GetPropertyName(self):
+        raise NotImplementedError(self.__class__)
+
+    def HasProperty(self, identifier):
+        return False
+
+    def Delete(self, name):
+        return False
+
+    def _get_property_keys(self):
+        raise NotImplementedError(self.__class__)
+
+    def _get_property_flags(self, prop):
+        raise NotImplementedError(self.__class__)
+
+    def _get_property_value(self, prop):
         raise NotImplementedError(self.__class__)
 
 class W_Undefined(W_Root):
@@ -105,6 +127,9 @@ class W_Undefined(W_Root):
     def type(self):
         return 'undefined'
 
+    def tolist(self):
+        return []
+
 class W_Null(W_Root):
     def __str__(self):
         return "null"
@@ -117,6 +142,9 @@ class W_Null(W_Root):
 
     def type(self):
         return 'null'
+
+    def tolist(self):
+        return []
 
 w_Undefined = W_Undefined()
 w_Null = W_Null()
@@ -148,6 +176,7 @@ class W_ContextObject(W_Root):
         return True
 
 class W_PrimitiveObject(W_Root):
+    _immutable_fields_ = ['Class', 'callfunc', 'Property', 'ctx', 'Scope', 'Value']
     def __init__(self, ctx=None, Prototype=None, Class='Object', Value=w_Undefined, callfunc=None):
         self.Prototype = Prototype
         self.property_map = root_map()
@@ -196,6 +225,7 @@ class W_PrimitiveObject(W_Root):
     def _has_property(self, name):
         return self.property_map.lookup(name) != self.property_map.NOT_FOUND
 
+    @jit.unroll_safe
     def _delete_property(self, name):
         idx = self.property_map.lookup(name)
         old_map = self.property_map
@@ -215,7 +245,7 @@ class W_PrimitiveObject(W_Root):
     def _get_property_keys(self):
         return self.property_map.keys()
 
-    #@jit.unroll_safe
+    @jit.unroll_safe
     def Call(self, ctx, args=[], this=None):
         if self.callfunc is None: # XXX Not sure if I should raise it here
             raise JsTypeError('not a function')
@@ -397,6 +427,7 @@ class W_ListObject(W_PrimitiveObject):
         return l
 
 class W_Arguments(W_ListObject):
+    @jit.unroll_safe
     def __init__(self, callee, args):
         W_PrimitiveObject.__init__(self, Class='Arguments')
         self._delete_property('prototype')
@@ -489,6 +520,7 @@ class W_Boolean(W_Primitive):
         return "<W_Bool "+str(self.boolval)+" >"
 
 class W_String(W_Primitive):
+    _immutable_fields_ = ['strval']
     def __init__(self, strval):
         W_Primitive.__init__(self)
         self.strval = strval
@@ -672,6 +704,8 @@ class W_Iterator(W_Root):
 
 def create_object(ctx, prototypename, callfunc=None, Value=w_Undefined):
     proto = ctx.get_global().Get(ctx, prototypename).Get(ctx, 'prototype')
+    # TODO get Object prototype from interp.w_Object
+    assert isinstance(proto, W_PrimitiveObject)
     obj = W_Object(ctx, callfunc = callfunc,Prototype=proto, Class = proto.Class, Value = Value)
     obj.Put(ctx, '__proto__', proto, DONT_ENUM | DONT_DELETE | READ_ONLY)
     return obj

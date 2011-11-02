@@ -141,6 +141,8 @@ class LOAD_ARRAY(Opcode):
 
     def eval(self, ctx):
         proto = ctx.get_global().Get(ctx, 'Array').Get(ctx, 'prototype')
+        # TODO get array prototype?
+        assert isinstance(proto, W_PrimitiveObject)
         array = W_Array(ctx, Prototype=proto, Class = proto.Class)
         for i in range(self.counter):
             array.Put(ctx, str(self.counter - i - 1), ctx.pop())
@@ -509,6 +511,7 @@ class POP(Opcode):
 def common_call(ctx, r1, args, this, name):
     if not isinstance(r1, W_PrimitiveObject):
         raise ThrowException(W_String("%s is not a callable (%s)"%(r1.ToString(ctx), name)))
+    jit.promote(r1)
     try:
         res = r1.Call(ctx=ctx, args=args.tolist(), this=this)
     except JsTypeError:
