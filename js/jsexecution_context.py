@@ -36,7 +36,7 @@ class ExecutionContext(StackMixin):
         self._identifier_set_flags(name, flags)
 
     def assign(self, name, value):
-        from js.jsobj import READ_ONLY, Property
+        from js.jsobj import READ_ONLY
         assert name is not None
         try:
             if self.get_property_flags(name) & READ_ONLY:
@@ -46,7 +46,7 @@ class ExecutionContext(StackMixin):
             self.get_global_context().put(name, value, flags=0)
 
     def declare_variable(self, identifier, flags=DONT_DELETE):
-        from js.jsobj import w_Undefined, Property
+        from js.jsobj import w_Undefined
         self._map_addname(identifier)
         self.set_local_property_value(identifier, w_Undefined)
         self.set_property_flags(identifier, flags)

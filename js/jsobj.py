@@ -20,19 +20,6 @@ INTERNAL = IT = 8 # Internal
 class SeePage(NotImplementedError):
     pass
 
-class Property(object):
-    def __init__(self, name, value, flags = 0):
-        self.name = name
-        self.value = value
-        self.flags = flags
-
-    def __repr__(self):
-        return "|%s : %s %d|"%(self.name, self.value, self.flags)
-
-def internal_property(name, value):
-    """return a internal property with the right attributes"""
-    return Property(name, value, True, True, True, True)
-
 class W_Root(object):
     _settled_ = True
     _attrs_ = []

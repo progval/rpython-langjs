@@ -2,7 +2,7 @@ import py
 
 from js.jsexecution_context import ExecutionContext
 from js.execution import ThrowException
-from js.jsobj import Property, w_Undefined
+from js.jsobj import w_Undefined
 
 def new_context(parent = None, size=3):
     context = ExecutionContext(parent)
