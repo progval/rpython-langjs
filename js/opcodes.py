@@ -120,21 +120,6 @@ class LOAD_VARIABLE(Opcode):
     def __repr__(self):
         return 'LOAD_VARIABLE "%s"' % (self.identifier,)
 
-class LOAD_REALVAR(Opcode):
-    def __init__(self, depth, identifier):
-        self.depth = depth
-        self.identifier = identifier
-
-    def eval(self, ctx):
-        raise NotImplementedError()
-        # XXX
-        # scope = ctx.scope[self.depth]
-        # stack.append(scope.Get(ctx, self.identifier))
-        #stack.append(W_Reference(self.identifier, scope))
-
-    def __repr__(self):
-        return 'LOAD_VARIABLE "%s"' % (self.identifier,)
-
 class LOAD_ARRAY(Opcode):
     def __init__(self, counter):
         self.counter = counter
