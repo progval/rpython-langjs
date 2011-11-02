@@ -78,7 +78,7 @@ class W_ParseInt(W_NewBuiltin):
             return W_FloatNumber(NAN)
         s = args[0].ToString(ctx).strip(" ")
         if len(args) > 1:
-            radix = args[1].ToInt32(ctx)
+            radix = args[1].ToInt32()
         else:
             radix = 10
         if len(s) >= 2 and (s.startswith('0x') or s.startswith('0X')) :
@@ -109,7 +109,7 @@ class W_FromCharCode(W_NewBuiltin):
     def Call(self, ctx, args=[], this=None):
         temp = []
         for arg in args:
-            i = arg.ToInt32(ctx) % 65536 # XXX should be uint16
+            i = arg.ToInt32() % 65536 # XXX should be uint16
             temp.append(chr(i))
         return W_String(''.join(temp))
 
@@ -118,7 +118,7 @@ class W_CharAt(W_NewBuiltin):
     def Call(self, ctx, args=[], this=None):
         string = this.ToString(ctx)
         if len(args)>=1:
-            pos = args[0].ToInt32(ctx)
+            pos = args[0].ToInt32()
             if (not pos >=0) or (pos > len(string) - 1):
                 return W_String('')
         else:
@@ -129,7 +129,7 @@ class W_CharCodeAt(W_NewBuiltin):
     def Call(self, ctx, args=[], this=None):
         string = this.ToString(ctx)
         if len(args)>=1:
-            pos = args[0].ToInt32(ctx)
+            pos = args[0].ToInt32()
             if pos < 0 or pos > len(string) - 1:
                 return W_FloatNumber(NAN)
         else:
@@ -213,7 +213,7 @@ class W_Split(W_NewBuiltin):
             separator = args[0].ToString(ctx)
 
         if len(args) >= 2:
-            limit = args[1].ToUInt32(ctx)
+            limit = args[1].ToUInt32()
             raise ThrowException(W_String("limit not implemented"))
             # array = string.split(separator, limit)
         else:
@@ -223,7 +223,7 @@ class W_Split(W_NewBuiltin):
         i = 0
         while i < len(array):
             w_str = W_String(array[i])
-            w_array.Put(ctx, str(i), w_str)
+            w_array.Put(str(i), w_str)
             i += 1
 
         return w_array
@@ -381,17 +381,17 @@ class W_ArrayJoin(W_NewBuiltin):
 
 class W_ArrayPush(W_NewBuiltin):
     def Call(self, ctx, args=[], this=None):
-        n = this.Get('length').ToUInt32(ctx)
+        n = this.Get('length').ToUInt32()
         for arg in args:
-            this.Put(ctx, str(n), arg)
+            this.Put(str(n), arg)
             n += 1
         j = W_IntNumber(n)
-        this.Put(ctx, 'length', j);
+        this.Put('length', j);
         return j
 
 class W_ArrayPop(W_NewBuiltin):
     def Call(self, ctx, args=[], this=None):
-        len = this.Get('length').ToUInt32(ctx)
+        len = this.Get('length').ToUInt32()
         if(len == 0):
             return w_Undefined
         else:
@@ -399,13 +399,13 @@ class W_ArrayPop(W_NewBuiltin):
             indxstr = str(indx)
             element = this.Get(indxstr)
             this.Delete(indxstr)
-            this.Put(ctx, 'length', W_IntNumber(indx))
+            this.Put('length', W_IntNumber(indx))
             return element
 
 class W_ArrayReverse(W_NewBuiltin):
     length = 0
     def Call(self, ctx, args=[], this=None):
-        r2 = this.Get('length').ToUInt32(ctx)
+        r2 = this.Get('length').ToUInt32()
         k = r_uint(0)
         r3 = r_uint(math.floor( float(r2)/2.0 ))
         if r3 == k:
@@ -419,8 +419,8 @@ class W_ArrayReverse(W_NewBuiltin):
             r9 = this.Get(r7)
             r10 = this.Get(r8)
 
-            this.Put(ctx, r7, r10)
-            this.Put(ctx, r8, r9)
+            this.Put(r7, r10)
+            this.Put(r8, r9)
             k += 1
 
         return this
@@ -429,7 +429,7 @@ class W_ArraySort(W_NewBuiltin):
     length = 1
     #XXX: further optimize this function
     def Call(self, ctx, args=[], this=None):
-        length = this.Get('length').ToUInt32(ctx)
+        length = this.Get('length').ToUInt32()
 
         # According to ECMA-262 15.4.4.11, non-existing properties always come after
         # existing values. Undefined is always greater than any other value.
@@ -458,13 +458,13 @@ class W_ArraySort(W_NewBuiltin):
         # put sorted values back
         values = sorter.list
         for i in range(len(values)):
-            this.Put(ctx, str(i), values[i])
+            this.Put(str(i), values[i])
 
         # append undefined values
         newlength = len(values)
         while undefs > 0:
             undefs -= 1
-            this.Put(ctx, str(newlength), w_Undefined)
+            this.Put(str(newlength), w_Undefined)
             newlength += 1
 
         # delete non-existing elements on the end
@@ -499,7 +499,7 @@ def pypy_repr(ctx, args, this):
 
 def put_values(ctx, obj, dictvalues):
     for key,value in dictvalues.iteritems():
-        obj.Put(ctx, key, value)
+        obj.Put(key, value)
 
 @specialize.memo()
 def get_value_of(type):
@@ -513,7 +513,7 @@ def get_value_of(type):
     return W_ValueValueOf
 
 def common_join(ctx, this, sep=','):
-    length = this.Get('length').ToUInt32(ctx)
+    length = this.Get('length').ToUInt32()
     l = []
     i = 0
     while i < length:
@@ -535,7 +535,7 @@ class Sorter(TimSort):
 
     def lt(self, a, b):
         if self.compare_fn:
-            result = self.compare_fn.Call(self.ctx, [a, b]).ToInt32(self.ctx)
+            result = self.compare_fn.Call(self.ctx, [a, b]).ToInt32()
             return result == -1
         return a.ToString(self.ctx) < b.ToString(self.ctx)
 
@@ -707,7 +707,7 @@ def create_array(ctx, elements=[]):
     array = W_Array(ctx, Prototype=proto, Class = proto.Class)
     i = 0
     while i < len(elements):
-        array.Put(ctx, str(i), elements[i])
+        array.Put(str(i), elements[i])
         i += 1
 
     return array
@@ -716,7 +716,7 @@ class W_ArrayObject(W_NativeObject):
     def Call(self, ctx, args=[], this=None):
         if len(args) == 1 and isinstance(args[0], W_BaseNumber):
             array = create_array(ctx)
-            array.Put(ctx, 'length', args[0])
+            array.Put('length', args[0])
         else:
             array = create_array(ctx, args)
         return array
@@ -735,19 +735,19 @@ def setup_builtins(interp):
     w_Function = W_Function(ctx, Class='Function', Prototype=w_ObjPrototype)
     w_FncPrototype = W_Function(ctx, Class='Function', Prototype=w_ObjPrototype)#W_Object(Prototype=None, Class='Function')
 
-    w_Function.Put(ctx, 'length', W_IntNumber(1), flags = allon)
-    w_Global.Put(ctx, 'Function', w_Function)
+    w_Function.Put('length', W_IntNumber(1), flags = allon)
+    w_Global.Put('Function', w_Function)
 
     w_Object = W_ObjectObject('Object', w_FncPrototype)
-    w_Object.Put(ctx, 'prototype', w_ObjPrototype, flags = allon)
-    w_Object.Put(ctx, 'length', W_IntNumber(1), flags = allon)
+    w_Object.Put('prototype', w_ObjPrototype, flags = allon)
+    w_Object.Put('length', W_IntNumber(1), flags = allon)
     w_Global.Prototype = w_ObjPrototype
 
-    w_Object.Put(ctx, 'prototype', w_ObjPrototype, flags = allon)
-    w_Global.Put(ctx, 'Object', w_Object)
+    w_Object.Put('prototype', w_ObjPrototype, flags = allon)
+    w_Global.Put('Object', w_Object)
 
-    w_Function.Put(ctx, 'prototype', w_FncPrototype, flags = allon)
-    w_Function.Put(ctx, 'constructor', w_Function, flags=allon)
+    w_Function.Put('prototype', w_FncPrototype, flags = allon)
+    w_Function.Put('constructor', w_Function, flags=allon)
 
     toString = W_ToString(ctx)
 
@@ -774,8 +774,8 @@ def setup_builtins(interp):
     })
 
     w_Boolean = W_BooleanObject('Boolean', w_FncPrototype)
-    w_Boolean.Put(ctx, 'constructor', w_FncPrototype, flags = allon)
-    w_Boolean.Put(ctx, 'length', W_IntNumber(1), flags = allon)
+    w_Boolean.Put('constructor', w_FncPrototype, flags = allon)
+    w_Boolean.Put('length', W_IntNumber(1), flags = allon)
 
     w_BoolPrototype = create_object(ctx, 'Object', Value=newbool(False))
     w_BoolPrototype.Class = 'Boolean'
@@ -787,8 +787,8 @@ def setup_builtins(interp):
         'valueOf': get_value_of('Boolean')(ctx),
     })
 
-    w_Boolean.Put(ctx, 'prototype', w_BoolPrototype, flags = allon)
-    w_Global.Put(ctx, 'Boolean', w_Boolean)
+    w_Boolean.Put('prototype', w_BoolPrototype, flags = allon)
+    w_Global.Put('Boolean', w_Boolean)
 
     #Number
     w_Number = W_NumberObject('Number', w_FncPrototype)
@@ -812,15 +812,15 @@ def setup_builtins(interp):
     })
     f = w_Number._get_property_flags('prototype') | READ_ONLY
     w_Number._set_property_flags('prototype', f)
-    w_Number.Put(ctx, 'MAX_VALUE', W_FloatNumber(1.7976931348623157e308), flags = READ_ONLY | DONT_DELETE)
-    w_Number.Put(ctx, 'MIN_VALUE', W_FloatNumber(0), flags = READ_ONLY | DONT_DELETE)
-    w_Number.Put(ctx, 'NaN', W_FloatNumber(NAN), flags = READ_ONLY | DONT_DELETE)
+    w_Number.Put('MAX_VALUE', W_FloatNumber(1.7976931348623157e308), flags = READ_ONLY | DONT_DELETE)
+    w_Number.Put('MIN_VALUE', W_FloatNumber(0), flags = READ_ONLY | DONT_DELETE)
+    w_Number.Put('NaN', W_FloatNumber(NAN), flags = READ_ONLY | DONT_DELETE)
     # ^^^ this is exactly in test case suite
-    w_Number.Put(ctx, 'POSITIVE_INFINITY', W_FloatNumber(INFINITY), flags = READ_ONLY | DONT_DELETE)
-    w_Number.Put(ctx, 'NEGATIVE_INFINITY', W_FloatNumber(-INFINITY), flags = READ_ONLY | DONT_DELETE)
+    w_Number.Put('POSITIVE_INFINITY', W_FloatNumber(INFINITY), flags = READ_ONLY | DONT_DELETE)
+    w_Number.Put('NEGATIVE_INFINITY', W_FloatNumber(-INFINITY), flags = READ_ONLY | DONT_DELETE)
 
 
-    w_Global.Put(ctx, 'Number', w_Number)
+    w_Global.Put('Number', w_Number)
 
 
     #String
@@ -828,7 +828,7 @@ def setup_builtins(interp):
 
     w_StrPrototype = create_object(ctx, 'Object', Value=W_String(''))
     w_StrPrototype.Class = 'String'
-    w_StrPrototype.Put(ctx, 'length', W_IntNumber(0))
+    w_StrPrototype.Put('length', W_IntNumber(0))
 
     put_values(ctx, w_StrPrototype, {
         'constructor': w_String,
@@ -846,9 +846,9 @@ def setup_builtins(interp):
         'toUpperCase': W_ToUpperCase(ctx)
     })
 
-    w_String.Put(ctx, 'prototype', w_StrPrototype, flags=allon)
-    w_String.Put(ctx, 'fromCharCode', W_FromCharCode(ctx))
-    w_Global.Put(ctx, 'String', w_String)
+    w_String.Put('prototype', w_StrPrototype, flags=allon)
+    w_String.Put('fromCharCode', W_FromCharCode(ctx))
+    w_Global.Put('String', w_String)
 
     w_Array = W_ArrayObject('Array', w_FncPrototype)
 
@@ -865,36 +865,36 @@ def setup_builtins(interp):
         'pop': W_ArrayPop(ctx),
     })
 
-    w_Array.Put(ctx, 'prototype', w_ArrPrototype, flags = allon)
-    w_Array.Put(ctx, '__proto__', w_FncPrototype, flags = allon)
-    w_Array.Put(ctx, 'length', W_IntNumber(1), flags = allon)
-    w_Global.Put(ctx, 'Array', w_Array)
+    w_Array.Put('prototype', w_ArrPrototype, flags = allon)
+    w_Array.Put('__proto__', w_FncPrototype, flags = allon)
+    w_Array.Put('length', W_IntNumber(1), flags = allon)
+    w_Global.Put('Array', w_Array)
 
 
     #Math
     w_math = W_Object(Class='Math')
-    w_Global.Put(ctx, 'Math', w_math)
-    w_math.Put(ctx, '__proto__',  w_ObjPrototype)
-    w_math.Put(ctx, 'prototype', w_ObjPrototype, flags = allon)
-    w_math.Put(ctx, 'abs', W_Builtin(absjs, Class='function'))
-    w_math.Put(ctx, 'floor', W_Builtin(floorjs, Class='function'))
-    w_math.Put(ctx, 'round', W_Builtin(roundjs, Class='function'))
-    w_math.Put(ctx, 'pow', W_Builtin(powjs, Class='function'))
-    w_math.Put(ctx, 'sqrt', W_Builtin(sqrtjs, Class='function'))
-    w_math.Put(ctx, 'log', W_Builtin(logjs, Class='function'))
-    w_math.Put(ctx, 'E', W_FloatNumber(math.e), flags=allon)
-    w_math.Put(ctx, 'LN2', W_FloatNumber(math.log(2)), flags=allon)
-    w_math.Put(ctx, 'LN10', W_FloatNumber(math.log(10)), flags=allon)
+    w_Global.Put('Math', w_math)
+    w_math.Put('__proto__',  w_ObjPrototype)
+    w_math.Put('prototype', w_ObjPrototype, flags = allon)
+    w_math.Put('abs', W_Builtin(absjs, Class='function'))
+    w_math.Put('floor', W_Builtin(floorjs, Class='function'))
+    w_math.Put('round', W_Builtin(roundjs, Class='function'))
+    w_math.Put('pow', W_Builtin(powjs, Class='function'))
+    w_math.Put('sqrt', W_Builtin(sqrtjs, Class='function'))
+    w_math.Put('log', W_Builtin(logjs, Class='function'))
+    w_math.Put('E', W_FloatNumber(math.e), flags=allon)
+    w_math.Put('LN2', W_FloatNumber(math.log(2)), flags=allon)
+    w_math.Put('LN10', W_FloatNumber(math.log(10)), flags=allon)
     log2e = math.log(math.e) / math.log(2) # rpython supports log with one argument only
-    w_math.Put(ctx, 'LOG2E', W_FloatNumber(log2e), flags=allon)
-    w_math.Put(ctx, 'LOG10E', W_FloatNumber(math.log10(math.e)), flags=allon)
-    w_math.Put(ctx, 'PI', W_FloatNumber(math.pi), flags=allon)
-    w_math.Put(ctx, 'SQRT1_2', W_FloatNumber(math.sqrt(0.5)), flags=allon)
-    w_math.Put(ctx, 'SQRT2', W_FloatNumber(math.sqrt(2)), flags=allon)
-    w_math.Put(ctx, 'random', W_Builtin(randomjs, Class='function'))
-    w_math.Put(ctx, 'min', W_Builtin(minjs, Class='function'))
-    w_math.Put(ctx, 'max', W_Builtin(maxjs, Class='function'))
-    w_Global.Put(ctx, 'version', W_Builtin(versionjs), flags=allon)
+    w_math.Put('LOG2E', W_FloatNumber(log2e), flags=allon)
+    w_math.Put('LOG10E', W_FloatNumber(math.log10(math.e)), flags=allon)
+    w_math.Put('PI', W_FloatNumber(math.pi), flags=allon)
+    w_math.Put('SQRT1_2', W_FloatNumber(math.sqrt(0.5)), flags=allon)
+    w_math.Put('SQRT2', W_FloatNumber(math.sqrt(2)), flags=allon)
+    w_math.Put('random', W_Builtin(randomjs, Class='function'))
+    w_math.Put('min', W_Builtin(minjs, Class='function'))
+    w_math.Put('max', W_Builtin(maxjs, Class='function'))
+    w_Global.Put('version', W_Builtin(versionjs), flags=allon)
 
     #Date
     w_Date = W_DateObject('Date', w_FncPrototype)
@@ -908,28 +908,28 @@ def setup_builtins(interp):
         'getTime': get_value_of('Date')(ctx)
     })
 
-    w_Date.Put(ctx, 'prototype', w_DatePrototype, flags=allon)
+    w_Date.Put('prototype', w_DatePrototype, flags=allon)
 
-    w_Global.Put(ctx, 'Date', w_Date)
+    w_Global.Put('Date', w_Date)
 
-    w_Global.Put(ctx, 'NaN', W_FloatNumber(NAN), flags = DONT_ENUM | DONT_DELETE)
-    w_Global.Put(ctx, 'Infinity', W_FloatNumber(INFINITY), flags = DONT_ENUM | DONT_DELETE)
-    w_Global.Put(ctx, 'undefined', w_Undefined, flags = DONT_ENUM | DONT_DELETE)
-    w_Global.Put(ctx, 'eval', W_Eval(ctx))
-    w_Global.Put(ctx, 'parseInt', W_ParseInt(ctx))
-    w_Global.Put(ctx, 'parseFloat', W_ParseFloat(ctx))
-    w_Global.Put(ctx, 'isNaN', W_Builtin(isnanjs))
-    w_Global.Put(ctx, 'isFinite', W_Builtin(isfinitejs))
-    w_Global.Put(ctx, 'print', W_Builtin(printjs))
-    w_Global.Put(ctx, 'alert', W_Builtin(noop))
-    w_Global.Put(ctx, 'unescape', W_Builtin(unescapejs))
+    w_Global.Put('NaN', W_FloatNumber(NAN), flags = DONT_ENUM | DONT_DELETE)
+    w_Global.Put('Infinity', W_FloatNumber(INFINITY), flags = DONT_ENUM | DONT_DELETE)
+    w_Global.Put('undefined', w_Undefined, flags = DONT_ENUM | DONT_DELETE)
+    w_Global.Put('eval', W_Eval(ctx))
+    w_Global.Put('parseInt', W_ParseInt(ctx))
+    w_Global.Put('parseFloat', W_ParseFloat(ctx))
+    w_Global.Put('isNaN', W_Builtin(isnanjs))
+    w_Global.Put('isFinite', W_Builtin(isfinitejs))
+    w_Global.Put('print', W_Builtin(printjs))
+    w_Global.Put('alert', W_Builtin(noop))
+    w_Global.Put('unescape', W_Builtin(unescapejs))
 
-    w_Global.Put(ctx, 'this', w_Global)
+    w_Global.Put('this', w_Global)
 
     # debugging
     if not we_are_translated():
-        w_Global.Put(ctx, 'pypy_repr', W_Builtin(pypy_repr))
+        w_Global.Put('pypy_repr', W_Builtin(pypy_repr))
 
-    w_Global.Put(ctx, 'load', W_Builtin(make_loadjs(interp)))
+    w_Global.Put('load', W_Builtin(make_loadjs(interp)))
 
     return (ctx, w_Global, w_Object)

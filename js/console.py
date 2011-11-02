@@ -32,7 +32,7 @@ class W_Load(W_NewBuiltin):
     def __init__(self, ctx, interpreter):
         W_NewBuiltin.__init__(self, ctx)
         self.interpreter = interpreter
-    
+
     def Call(self, ctx, args=[], this=None):
         if len(args) >= 1:
             filename = args[0].ToString(self.interpreter.global_context)
@@ -56,13 +56,13 @@ class JSConsole(object):
     def __init__(self):
         interp = Interpreter()
         ctx = interp.global_context
-        
-        interp.w_Global.Put(ctx, 'quit', W_Quit(ctx))
-        interp.w_Global.Put(ctx, 'load', W_Load(ctx, interp))
-        interp.w_Global.Put(ctx, 'readline', W_ReadLine(ctx))
-        
+
+        interp.w_Global.Put('quit', W_Quit(ctx))
+        interp.w_Global.Put('load', W_Load(ctx, interp))
+        interp.w_Global.Put('readline', W_ReadLine(ctx))
+
         self.interpreter = interp
-    
+
     def runsource(self, source, filename='<input>'):
         try:
             ast = load_source(source, filename)
@@ -74,11 +74,11 @@ class JSConsole(object):
                 # syntax error
                 self.showsyntaxerror(filename, exc)
                 return False
-        
+
         # execute it
         self.runcode(ast)
         return False
-    
+
     def runcode(self, ast):
         """Run the javascript code in the AST. All exceptions raised
         by javascript code must be caught and handled here. When an
@@ -97,36 +97,36 @@ class JSConsole(object):
             raise
         except ThrowException, exc:
             self.showtraceback(exc)
-    
+
     def showtraceback(self, exc):
         printmessage(exc.exception.ToString(self.interpreter.global_context))
         printmessage('\n')
-    
+
     def showsyntaxerror(self, filename, exc):
         printmessage(' ' * 4 + \
                   ' ' * exc.source_pos.columnno + \
                   '^\n')
         printmessage('Syntax Error\n')
-    
+
     def interact(self):
         printmessage('PyPy JavaScript Interpreter\n')
         printmessage(self.prompt_ok)
-        
+
         # input for the current statement
         lines = []
-        
+
         while True:
             try:
                 line = readline()
             except SystemExit, e:
                 printmessage('\n')
                 return
-            
+
             lines.append(line)
-            
+
             source = ''.join(lines)
             need_more = self.runsource(source)
-            
+
             if need_more:
                 printmessage(self.prompt_more)
             else:

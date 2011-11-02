@@ -42,22 +42,22 @@ class W_Root(object):
         # XXX should raise not implemented
         return self
 
-    def ToNumber(self, ctx):
+    def ToNumber(self, ctx = None):
         return 0.0
 
     def ToInteger(self, ctx):
-        return int(self.ToNumber(ctx))
+        return int(self.ToNumber(ctx = None))
 
-    def ToInt32(self, ctx):
-        return r_int32(int(self.ToNumber(ctx)))
+    def ToInt32(self):
+        return r_int32(int(self.ToNumber()))
 
-    def ToUInt32(self, ctx):
+    def ToUInt32(self):
         return r_uint32(0)
 
     def Get(self, P):
         raise NotImplementedError(self.__class__)
 
-    def Put(self, ctx, P, V, flags = 0):
+    def Put(self, P, V, flags = 0):
         raise NotImplementedError(self.__class__)
 
     def PutValue(self, w, ctx):
@@ -91,7 +91,7 @@ class W_Undefined(W_Root):
     def ToInteger(self, ctx):
         return 0
 
-    def ToNumber(self, ctx):
+    def ToNumber(self, ctx = None):
         return NAN
 
     def ToBoolean(self):
@@ -139,7 +139,7 @@ class W_ContextObject(W_Root):
             from js.jsobj import w_Undefined
             return w_Undefined
 
-    def Put(self, ctx, P, V, flags = 0):
+    def Put(self, P, V, flags = 0):
         self.context.put(P, V)
 
     def Delete(self, name):
@@ -249,7 +249,7 @@ class W_PrimitiveObject(W_Root):
         if self.Prototype is None: return True
         return self.Prototype.CanPut(P)
 
-    def Put(self, ctx, P, V, flags = 0):
+    def Put(self, P, V, flags = 0):
         if self._has_property(P):
             self._set_property_value(P, V)
             f = self._get_property_flags(P) | flags
@@ -316,7 +316,7 @@ class W_Object(W_PrimitiveObject):
     def __init__(self, ctx=None, Prototype=None, Class='Object', Value=w_Undefined):
         W_PrimitiveObject.__init__(self, ctx, Prototype, Class, Value)
 
-    def ToNumber(self, ctx):
+    def ToNumber(self, ctx = None):
         return self.Get('valueOf').Call(ctx, args=[], this=self).ToNumber(ctx)
 
 class W_CallableObject(W_Object):
@@ -371,7 +371,7 @@ class W_NewBuiltin(W_PrimitiveObject):
         W_PrimitiveObject.__init__(self, ctx, Prototype, Class, Value)
 
         if self.length != -1:
-            self.Put(ctx, 'length', W_IntNumber(self.length), flags = DONT_ENUM|DONT_DELETE|READ_ONLY)
+            self.Put('length', W_IntNumber(self.length), flags = DONT_ENUM|DONT_DELETE|READ_ONLY)
 
 
     def Call(self, ctx, args=[], this = None):
@@ -409,11 +409,10 @@ class W_Arguments(W_ListObject):
     def __init__(self, callee, args):
         W_PrimitiveObject.__init__(self, Class='Arguments')
         self._delete_property('prototype')
-        # XXX None can be dangerous here
-        self.Put(None, 'callee', callee)
-        self.Put(None, 'length', W_IntNumber(len(args)))
+        self.Put('callee', callee)
+        self.Put('length', W_IntNumber(len(args)))
         for i in range(len(args)):
-            self.Put(None, str(i), args[i])
+            self.Put(str(i), args[i])
         self.length = len(args)
 
 class ActivationObject(W_PrimitiveObject):
@@ -428,7 +427,7 @@ class ActivationObject(W_PrimitiveObject):
 class W_Array(W_ListObject):
     def __init__(self, ctx=None, Prototype=None, Class='Array', Value=w_Undefined):
         W_ListObject.__init__(self, ctx, Prototype, Class, Value)
-        self.Put(ctx, 'length', W_IntNumber(0), flags = DONT_DELETE)
+        self.Put('length', W_IntNumber(0), flags = DONT_DELETE)
         self.length = r_uint(0)
 
     def set_length(self, newlength):
@@ -443,7 +442,7 @@ class W_Array(W_ListObject):
         self.length = newlength
         self._set_property_value('length', W_FloatNumber(newlength))
 
-    def Put(self, ctx, P, V, flags = 0):
+    def Put(self, P, V, flags = 0):
         if not self.CanPut(P): return
         if not self._has_property(P):
             self._set_property(P,V,flags)
@@ -451,8 +450,8 @@ class W_Array(W_ListObject):
             if P != 'length':
                 self._set_property_value(P, V)
             else:
-                length = V.ToUInt32(ctx)
-                if length != V.ToNumber(ctx):
+                length = V.ToUInt32()
+                if length != V.ToNumber():
                     raise RangeError()
 
                 self.set_length(length)
@@ -483,7 +482,7 @@ class W_Boolean(W_Primitive):
             return "true"
         return "false"
 
-    def ToNumber(self, ctx):
+    def ToNumber(self, ctx = None):
         if self.boolval:
             return 1.0
         return 0.0
@@ -508,7 +507,7 @@ class W_String(W_Primitive):
 
     def ToObject(self, ctx):
         o = create_object(ctx, 'String', Value=self)
-        o.Put(ctx, 'length', W_IntNumber(len(self.strval)), flags = READ_ONLY | DONT_DELETE | DONT_ENUM)
+        o.Put('length', W_IntNumber(len(self.strval)), flags = READ_ONLY | DONT_DELETE | DONT_ENUM)
         return o
 
     def ToString(self, ctx=None):
@@ -526,7 +525,7 @@ class W_String(W_Primitive):
     def GetPropertyName(self):
         return self.ToString()
 
-    def ToNumber(self, ctx):
+    def ToNumber(self, ctx = None):
         if not self.strval:
             return 0.0
         try:
@@ -569,14 +568,14 @@ class W_IntNumber(W_BaseNumber):
     def ToBoolean(self):
         return bool(self.intval)
 
-    def ToNumber(self, ctx):
+    def ToNumber(self, ctx = None):
         # XXX
         return float(self.intval)
 
-    def ToInt32(self, ctx):
+    def ToInt32(self):
         return r_int32(self.intval)
 
-    def ToUInt32(self, ctx):
+    def ToUInt32(self):
         return r_uint32(self.intval)
 
     def GetPropertyName(self):
@@ -625,7 +624,7 @@ class W_FloatNumber(W_BaseNumber):
             return False
         return bool(self.floatval)
 
-    def ToNumber(self, ctx):
+    def ToNumber(self, ctx = None):
         return self.floatval
 
     def ToInteger(self, ctx):
@@ -637,12 +636,12 @@ class W_FloatNumber(W_BaseNumber):
 
         return intmask(int(self.floatval))
 
-    def ToInt32(self, ctx):
+    def ToInt32(self):
         if isnan(self.floatval) or isinf(self.floatval):
             return 0
         return r_int32(int(self.floatval))
 
-    def ToUInt32(self, ctx):
+    def ToUInt32(self):
         if isnan(self.floatval) or isinf(self.floatval):
             return r_uint(0)
         return r_uint32(int(self.floatval))
@@ -685,7 +684,7 @@ def create_object(ctx, prototypename, Value=w_Undefined):
     # TODO get Object prototype from interp.w_Object
     assert isinstance(proto, W_PrimitiveObject)
     obj = W_Object(ctx, Prototype=proto, Class = proto.Class, Value = Value)
-    obj.Put(ctx, '__proto__', proto, DONT_ENUM | DONT_DELETE | READ_ONLY)
+    obj.Put('__proto__', proto, DONT_ENUM | DONT_DELETE | READ_ONLY)
     return obj
 
 def isnull_or_undefined(obj):

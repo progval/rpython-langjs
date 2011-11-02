@@ -52,9 +52,9 @@ class JSInterpreter(code.InteractiveConsole):
         code.InteractiveConsole.__init__(self, locals, filename)
         self.interpreter = Interpreter()
         ctx = self.interpreter.global_context
-        self.interpreter.w_Global.Put(ctx, 'quit', W_Builtin(quitjs))
-        self.interpreter.w_Global.Put(ctx, 'trace', W_Builtin(tracejs))
-        self.interpreter.w_Global.Put(ctx, 'debug', W_Builtin(debugjs))
+        self.interpreter.w_Global.Put('quit', W_Builtin(quitjs))
+        self.interpreter.w_Global.Put('trace', W_Builtin(tracejs))
+        self.interpreter.w_Global.Put('debug', W_Builtin(debugjs))
 
     def runcodefromfile(self, filename):
         f = open_file_as_stream(filename)

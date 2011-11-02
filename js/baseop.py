@@ -44,8 +44,8 @@ def decrement(ctx, nleft, constval=1):
 def sub(ctx, nleft, nright):
     if isinstance(nleft, W_IntNumber) and isinstance(nright, W_IntNumber):
         # XXX fff
-        ileft = nleft.ToInt32(ctx)
-        iright = nright.ToInt32(ctx)
+        ileft = nleft.ToInt32()
+        iright = nright.ToInt32()
         try:
             return W_IntNumber(ovfcheck(ileft - iright))
         except OverflowError:

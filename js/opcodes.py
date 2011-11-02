@@ -38,8 +38,8 @@ class BaseBinaryComparison(Opcode):
 class BaseBinaryBitwiseOp(Opcode):
     _stack_change = 0
     def eval(self, ctx):
-        s5 = ctx.pop().ToInt32(ctx)
-        s6 = ctx.pop().ToInt32(ctx)
+        s5 = ctx.pop().ToInt32()
+        s6 = ctx.pop().ToInt32()
         ctx.append(self.operation(ctx, s5, s6))
 
     def operation(self, ctx, op1, op2):
@@ -131,7 +131,7 @@ class LOAD_ARRAY(Opcode):
         assert isinstance(proto, W_PrimitiveObject)
         array = W_Array(ctx, Prototype=proto, Class = proto.Class)
         for i in range(self.counter):
-            array.Put(ctx, str(self.counter - i - 1), ctx.pop())
+            array.Put(str(self.counter - i - 1), ctx.pop())
         ctx.append(array)
 
     def stack_change(self):
@@ -162,10 +162,10 @@ class LOAD_FUNCTION(Opcode):
     def eval(self, ctx):
         proto = ctx.get_global().Get('Function').Get('prototype')
         w_func = W_CallableObject(ctx, proto, self.funcobj)
-        w_func.Put(ctx, 'length', W_IntNumber(len(self.funcobj.params)))
+        w_func.Put('length', W_IntNumber(len(self.funcobj.params)))
         w_obj = create_object(ctx, 'Object')
-        w_obj.Put(ctx, 'constructor', w_func, flags = jsobj.DONT_ENUM)
-        w_func.Put(ctx, 'prototype', w_obj)
+        w_obj.Put('constructor', w_func, flags = jsobj.DONT_ENUM)
+        w_func.Put('prototype', w_obj)
         ctx.append(w_func)
 
     def __repr__(self):
@@ -194,7 +194,7 @@ class LOAD_OBJECT(Opcode):
         for _ in range(self.counter):
             name = ctx.pop().ToString(ctx)
             w_elem = ctx.pop()
-            w_obj.Put(ctx, name, w_elem)
+            w_obj.Put(name, w_elem)
         ctx.append(w_obj)
 
     def __repr__(self):
@@ -266,26 +266,26 @@ class BITOR(BaseBinaryBitwiseOp):
 
 class BITNOT(BaseUnaryOperation):
     def eval(self, ctx):
-        op = ctx.pop().ToInt32(ctx)
+        op = ctx.pop().ToInt32()
         ctx.append(W_IntNumber(~op))
 
 class URSH(BaseBinaryBitwiseOp):
     def eval(self, ctx):
-        op2 = ctx.pop().ToUInt32(ctx)
-        op1 = ctx.pop().ToUInt32(ctx)
+        op2 = ctx.pop().ToUInt32()
+        op1 = ctx.pop().ToUInt32()
         # XXX check if it could fit into int
         ctx.append(W_FloatNumber(op1 >> (op2 & 0x1F)))
 
 class RSH(BaseBinaryBitwiseOp):
     def eval(self, ctx):
-        op2 = ctx.pop().ToUInt32(ctx)
-        op1 = ctx.pop().ToInt32(ctx)
+        op2 = ctx.pop().ToUInt32()
+        op1 = ctx.pop().ToInt32()
         ctx.append(W_IntNumber(op1 >> intmask(op2 & 0x1F)))
 
 class LSH(BaseBinaryBitwiseOp):
     def eval(self, ctx):
-        op2 = ctx.pop().ToUInt32(ctx)
-        op1 = ctx.pop().ToInt32(ctx)
+        op2 = ctx.pop().ToUInt32()
+        op1 = ctx.pop().ToInt32()
         ctx.append(W_IntNumber(op1 << intmask(op2 & 0x1F)))
 
 class MUL(BaseBinaryOperation):
@@ -367,7 +367,7 @@ class STORE_MEMBER(Opcode):
         member = ctx.pop()
         value = ctx.pop()
         name = member.ToString(ctx)
-        left.ToObject(ctx).Put(ctx, name, value)
+        left.ToObject(ctx).Put(name, value)
         ctx.append(value)
 
 class STORE(Opcode):
@@ -456,10 +456,10 @@ class DECLARE_FUNCTION(Opcode):
         # function declaration actyally don't run anything
         proto = ctx.get_global().Get('Function').Get('prototype')
         w_func = W_CallableObject(ctx, proto, self.funcobj)
-        w_func.Put(ctx, 'length', W_IntNumber(len(self.funcobj.params)))
+        w_func.Put('length', W_IntNumber(len(self.funcobj.params)))
         w_obj = create_object(ctx, 'Object')
-        w_obj.Put(ctx, 'constructor', w_func, flags = jsobj.DONT_ENUM)
-        w_func.Put(ctx, 'prototype', w_obj)
+        w_obj.Put('constructor', w_func, flags = jsobj.DONT_ENUM)
+        w_func.Put('prototype', w_obj)
         if self.funcobj.name is not None:
             ctx.put(self.funcobj.name, w_func)
 

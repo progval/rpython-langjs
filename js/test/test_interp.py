@@ -49,9 +49,9 @@ def assertv(code, value):
     elif isinstance(value, bool):
         assert code_val.ToBoolean() == value
     elif isinstance(value, int):
-        assert code_val.ToInt32(jsint.global_context) == value
+        assert code_val.ToInt32() == value
     elif isinstance(value, float):
-        assert code_val.ToNumber(jsint.global_context) == value
+        assert code_val.ToNumber() == value
     else:
         assert code_val.ToString(jsint.global_context) == value
 
