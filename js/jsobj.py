@@ -41,8 +41,6 @@ class W_Root(object):
 
     def tolist(self):
         raise JsTypeError('arrayArgs is not an Array or Arguments object')
-    #def GetValue(self):
-    #    return self
 
     def ToBoolean(self):
         raise NotImplementedError(self.__class__)
@@ -98,15 +96,6 @@ class W_Root(object):
 
     def Delete(self, name):
         return False
-
-    def _get_property_keys(self):
-        raise NotImplementedError(self.__class__)
-
-    def _get_property_flags(self, prop):
-        raise NotImplementedError(self.__class__)
-
-    def _get_property_value(self, prop):
-        raise NotImplementedError(self.__class__)
 
 class W_Undefined(W_Root):
     def __str__(self):

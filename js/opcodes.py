@@ -600,6 +600,7 @@ class LOAD_ITERATOR(Opcode):
     def eval(self, ctx):
         obj = ctx.pop().ToObject(ctx)
         props = []
+        assert isinstance(obj, W_PrimitiveObject)
 
         for prop in obj._get_property_keys():
             if not obj._get_property_flags(prop) & jsobj.DONT_ENUM:
