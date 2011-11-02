@@ -1,10 +1,11 @@
-from js.utils import StackMixin, MapMixin, MapDictMixin
+from js.utils import StackMixin
 from js.jsobj import DONT_DELETE
+from js.object_map import root_map
 
 from pypy.rlib import jit, debug
 
-class ExecutionContext(MapDictMixin, MapMixin, StackMixin):
-    _virtualizable2_ = ['stack[*]', 'stack_pointer', '_map_dict_values[*]', '_map_next_index']
+class ExecutionContext(StackMixin):
+    _virtualizable2_ = ['stack[*]', 'stack_pointer', '_map_dict_values[*]']
     def __init__(self, parent=None):
         self._init_execution_context(parent)
 
@@ -23,9 +24,7 @@ class ExecutionContext(MapDictMixin, MapMixin, StackMixin):
         return self._identifier_get(name)
 
     def get_property_flags(self, name):
-        self._identifier_get(name)
-        idx = self._map_indexof(name)
-        return self._property_flags.get(idx, 0)
+        return self._identifier_get_flags(name)
 
     def set_property_value(self, name, value):
         self._identifier_set(name, value)
@@ -34,8 +33,7 @@ class ExecutionContext(MapDictMixin, MapMixin, StackMixin):
         self._identifier_set_local(name, value)
 
     def set_property_flags(self, name, flags):
-        idx = self._map_indexof(name)
-        self._property_flags[idx] = flags
+        self._identifier_set_flags(name, flags)
 
     def assign(self, name, value):
         from js.jsobj import READ_ONLY, Property
@@ -66,7 +64,7 @@ class ExecutionContext(MapDictMixin, MapMixin, StackMixin):
         return self._map_dict_get(identifier)
 
     def _identifier_is_local(self, identifier):
-        return self._map_indexof(identifier) != self._MAP_NOT_FOUND
+        return self._map_indexof(identifier) != self._variables_map.NOT_FOUND
 
     def _identifier_set(self, identifier, value):
         try:
@@ -90,6 +88,35 @@ class ExecutionContext(MapDictMixin, MapMixin, StackMixin):
             if self.parent:
                 return self.parent._identifier_get(identifier)
         raise KeyError
+
+    def _identifier_get_flags_local(self, identifier):
+        idx = self._variables_map.lookup_flag(identifier)
+        if idx < 0:
+            raise KeyError
+        return idx
+
+    def _identifier_get_flags(self, identifier):
+        try:
+            return self._identifier_get_flags_local(identifier)
+        except KeyError:
+            if self.parent:
+                return self.parent._identifier_get_flags(identifier)
+        raise KeyError
+
+    def _identifier_set_flags(self, identifier, value):
+        self._identifier_set_flags_if_local(identifier, value)
+
+    def _identifier_set_flags_if_local(self, identifier, flags):
+        if self._identifier_is_local(identifier):
+            self._identifier_set_flags_local(identifier, flags)
+            return
+        elif self.parent:
+            self.parent._identifier_set_flags_if_local(identifier, flags)
+            return
+        raise KeyError
+
+    def _identifier_set_flags_local(self, identifier, flags):
+        self._variables_map = self._variables_map.set_flags(identifier, flags)
 
     def assign_local(self, idx, value):
         self._map_dict_getindex(idx)
@@ -122,7 +149,7 @@ class ExecutionContext(MapDictMixin, MapMixin, StackMixin):
         self.parent = parent
         self.ctx_obj = None
         self._init_stack()
-        self._property_flags = {}
+        self._variables_map = root_map()
 
     def _init_function_context(self, parent, func):
         self = jit.hint(self, access_directly=True, fresh_virtualizable=True)
@@ -156,6 +183,61 @@ class ExecutionContext(MapDictMixin, MapMixin, StackMixin):
         self._init_execution_context(None)
         # TODO size of gloabl context
         self._init_dynamic_map_dict()
+
+    def _init_map_dict(self, size=99):
+        self._map_dict_values_init_with_size(size)
+        self._map_dict_expand = False
+
+    def _map_dict_values_init_with_size(self, size):
+        self._map_dict_values = [None] * size
+
+    def _map_dict_set(self, name, value):
+        idx = self._map_addname(name)
+        self._map_dict_setindex(idx, value)
+
+    def _map_addname(self, name):
+        if self._map_dict_expand:
+            _resize_map_dict(self)
+        return self._map_addname_no_resize(name)
+
+    def _map_addname_no_resize(self, name):
+        if self._map_indexof(name) == self._variables_map.NOT_FOUND:
+            self._variables_map = self._variables_map.add(name)
+        return self._map_indexof(name)
+
+    def _map_indexof(self, name):
+        return self._variables_map.lookup(name)
+
+    def _map_dict_setindex(self, idx, value):
+        assert idx >= 0
+        self._map_dict_values[idx] = value
+
+    def _map_dict_getindex(self, idx):
+        if idx < 0:
+            raise KeyError
+        return self._map_dict_values[idx]
+
+    def _map_dict_get(self, name):
+        idx = self._map_indexof(name)
+        return self._map_dict_getindex(idx)
+
+    def _init_dynamic_map_dict(self):
+        self._init_map_dict(0)
+        self._map_dict_expand = True
+
+    def _init_map_dict_with_map(self, other_map):
+        self._variables_map = other_map
+        self._map_dict_values_init_with_size(len(self._variables_map.keys()))
+
+    def _map_dict_delete(self, name):
+        # TODO flags and stuff
+        self._map_dict_set(name, None)
+        self._variables_map = self._variables_map.delete(name)
+
+@jit.dont_look_inside
+def _resize_map_dict(map_dict_obj):
+    while len(map_dict_obj._map_dict_values) <= (len(map_dict_obj._variables_map.keys())):
+        map_dict_obj._map_dict_values = map_dict_obj._map_dict_values + [None]
 
 def make_activation_context(parent, this, args):
     ctx = ExecutionContext()

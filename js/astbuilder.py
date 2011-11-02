@@ -5,9 +5,14 @@ from pypy.rlib.parsing.parsing import ParseError
 from js import operations
 from js.utils import Map
 
+from js.object_map import ROOT_MAP
+
+def _get_root_map():
+    return ROOT_MAP
+
 class Scope(object):
     def __init__(self):
-        self.local_variables = Map()
+        self.local_variables = ROOT_MAP
         self.declared_variables = []
 
     def __repr__(self):
@@ -15,7 +20,7 @@ class Scope(object):
 
     def add_local(self, identifier):
         if not self.is_local(identifier):
-            self.local_variables.addname(identifier)
+            self.local_variables = self.local_variables.add(identifier)
 
     def declare_local(self, identifier):
         if not self.is_local(identifier):
@@ -24,10 +29,10 @@ class Scope(object):
                 self.declared_variables.append(identifier)
 
     def is_local(self, identifier):
-        return self.local_variables.indexof(identifier) != self.local_variables.NOT_FOUND
+        return self.local_variables.lookup(identifier) != self.local_variables.NOT_FOUND
 
     def get_local(self, identifier):
-        idx = self.local_variables.indexof(identifier)
+        idx = self.local_variables.lookup(identifier)
         if idx == self.local_variables.NOT_FOUND:
             raise ValueError
         return idx
