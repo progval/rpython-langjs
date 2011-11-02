@@ -381,7 +381,7 @@ class W_ArrayJoin(W_NewBuiltin):
 
 class W_ArrayPush(W_NewBuiltin):
     def Call(self, ctx, args=[], this=None):
-        n = this.Get(ctx, 'length').ToUInt32(ctx)
+        n = this.Get('length').ToUInt32(ctx)
         for arg in args:
             this.Put(ctx, str(n), arg)
             n += 1
@@ -391,13 +391,13 @@ class W_ArrayPush(W_NewBuiltin):
 
 class W_ArrayPop(W_NewBuiltin):
     def Call(self, ctx, args=[], this=None):
-        len = this.Get(ctx, 'length').ToUInt32(ctx)
+        len = this.Get('length').ToUInt32(ctx)
         if(len == 0):
             return w_Undefined
         else:
             indx = len-1
             indxstr = str(indx)
-            element = this.Get(ctx, indxstr)
+            element = this.Get(indxstr)
             this.Delete(indxstr)
             this.Put(ctx, 'length', W_IntNumber(indx))
             return element
@@ -405,7 +405,7 @@ class W_ArrayPop(W_NewBuiltin):
 class W_ArrayReverse(W_NewBuiltin):
     length = 0
     def Call(self, ctx, args=[], this=None):
-        r2 = this.Get(ctx, 'length').ToUInt32(ctx)
+        r2 = this.Get('length').ToUInt32(ctx)
         k = r_uint(0)
         r3 = r_uint(math.floor( float(r2)/2.0 ))
         if r3 == k:
@@ -416,8 +416,8 @@ class W_ArrayReverse(W_NewBuiltin):
             r7 = str(k)
             r8 = str(r6)
 
-            r9 = this.Get(ctx, r7)
-            r10 = this.Get(ctx, r8)
+            r9 = this.Get(r7)
+            r10 = this.Get(r8)
 
             this.Put(ctx, r7, r10)
             this.Put(ctx, r8, r9)
@@ -429,7 +429,7 @@ class W_ArraySort(W_NewBuiltin):
     length = 1
     #XXX: further optimize this function
     def Call(self, ctx, args=[], this=None):
-        length = this.Get(ctx, 'length').ToUInt32(ctx)
+        length = this.Get('length').ToUInt32(ctx)
 
         # According to ECMA-262 15.4.4.11, non-existing properties always come after
         # existing values. Undefined is always greater than any other value.
@@ -442,7 +442,7 @@ class W_ArraySort(W_NewBuiltin):
             if not this.HasProperty(P):
                 # non existing property
                 continue
-            obj = this.Get(ctx, str(i))
+            obj = this.Get(str(i))
             if obj is w_Undefined:
                 undefs += 1
                 continue
@@ -513,11 +513,11 @@ def get_value_of(type):
     return W_ValueValueOf
 
 def common_join(ctx, this, sep=','):
-    length = this.Get(ctx, 'length').ToUInt32(ctx)
+    length = this.Get('length').ToUInt32(ctx)
     l = []
     i = 0
     while i < length:
-        item = this.Get(ctx, str(i))
+        item = this.Get(str(i))
         if isnull_or_undefined(item):
             item_string = ''
         else:
@@ -701,7 +701,7 @@ class W_StringObject(W_NativeObject):
         return Value.ToObject(ctx)
 
 def create_array(ctx, elements=[]):
-    proto = ctx.get_global().Get(ctx, 'Array').Get(ctx, 'prototype')
+    proto = ctx.get_global().Get('Array').Get('prototype')
     # TODO do not get array prototype from global context?
     assert isinstance(proto, W_PrimitiveObject)
     array = W_Array(ctx, Prototype=proto, Class = proto.Class)

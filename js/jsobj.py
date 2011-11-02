@@ -54,7 +54,7 @@ class W_Root(object):
     def ToUInt32(self, ctx):
         return r_uint32(0)
 
-    def Get(self, ctx, P):
+    def Get(self, P):
         raise NotImplementedError(self.__class__)
 
     def Put(self, ctx, P, V, flags = 0):
@@ -132,7 +132,7 @@ class W_ContextObject(W_Root):
     def __repr__(self):
         return '<W_ContextObject (%s)>' % (repr(self.context),)
 
-    def Get(self, ctx, name):
+    def Get(self, name):
         try:
             return self.context.get_property_value(name)
         except KeyError:
@@ -222,25 +222,25 @@ class W_PrimitiveObject(W_Root):
 
     def Construct(self, ctx, args=[]):
         obj = W_Object(Class='Object')
-        prot = self.Get(ctx, 'prototype')
+        prot = self.Get('prototype')
         if isinstance(prot, W_PrimitiveObject):
             obj.Prototype = prot
         else: # would love to test this
             #but I fail to find a case that falls into this
-            obj.Prototype = ctx.get_global().Get(ctx, 'Object').Get(ctx, 'prototype')
+            obj.Prototype = ctx.get_global().Get('Object').Get('prototype')
         try: #this is a hack to be compatible to spidermonkey
             self.Call(ctx, args, this=obj)
             return obj
         except ReturnException, e:
             return e.value
 
-    def Get(self, ctx, P):
+    def Get(self, P):
         try:
             return self._get_property_value(P)
         except KeyError:
             if self.Prototype is None:
                 return w_Undefined
-        return self.Prototype.Get(ctx, P) # go down the prototype chain
+        return self.Prototype.Get(P) # go down the prototype chain
 
     def CanPut(self, P):
         if self._has_property(P):
@@ -273,12 +273,12 @@ class W_PrimitiveObject(W_Root):
         return True
 
     def internal_def_value(self, ctx, tryone, trytwo):
-        t1 = self.Get(ctx, tryone)
+        t1 = self.Get(tryone)
         if isinstance(t1, W_PrimitiveObject):
             val = t1.Call(ctx, this=self)
             if isinstance(val, W_Primitive):
                 return val
-        t2 = self.Get(ctx, trytwo)
+        t2 = self.Get(trytwo)
         if isinstance(t2, W_PrimitiveObject):
             val = t2.Call(ctx, this=self)
             if isinstance(val, W_Primitive):
@@ -317,7 +317,7 @@ class W_Object(W_PrimitiveObject):
         W_PrimitiveObject.__init__(self, ctx, Prototype, Class, Value)
 
     def ToNumber(self, ctx):
-        return self.Get(ctx, 'valueOf').Call(ctx, args=[], this=self).ToNumber(ctx)
+        return self.Get('valueOf').Call(ctx, args=[], this=self).ToNumber(ctx)
 
 class W_CallableObject(W_Object):
     _immutable_fields_ = ['callfunc', 'ctx']
@@ -365,7 +365,7 @@ class W_NewBuiltin(W_PrimitiveObject):
     length = -1
     def __init__(self, ctx, Prototype=None, Class='function', Value=w_Undefined):
         if Prototype is None:
-            proto = ctx.get_global().Get(ctx, 'Function').Get(ctx, 'prototype')
+            proto = ctx.get_global().Get('Function').Get('prototype')
             Prototype = proto
 
         W_PrimitiveObject.__init__(self, ctx, Prototype, Class, Value)
@@ -548,7 +548,7 @@ class W_BaseNumber(W_Primitive):
     def ToObject(self, ctx):
         return create_object(ctx, 'Number', Value=self)
 
-    def Get(self, ctx, P):
+    def Get(self, P):
         return w_Undefined
 
     def type(self):
@@ -681,7 +681,7 @@ class W_Iterator(W_Root):
         return len(self.elements_w) == 0
 
 def create_object(ctx, prototypename, Value=w_Undefined):
-    proto = ctx.get_global().Get(ctx, prototypename).Get(ctx, 'prototype')
+    proto = ctx.get_global().Get(prototypename).Get('prototype')
     # TODO get Object prototype from interp.w_Object
     assert isinstance(proto, W_PrimitiveObject)
     obj = W_Object(ctx, Prototype=proto, Class = proto.Class, Value = Value)

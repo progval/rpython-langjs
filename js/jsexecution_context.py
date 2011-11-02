@@ -11,7 +11,7 @@ class ExecutionContext(StackMixin):
 
     def resolve_identifier(self, ctx, identifier):
         if self.ctx_obj is not None and self.ctx_obj.HasProperty(identifier):
-            return self.ctx_obj.Get(ctx, identifier);
+            return self.ctx_obj.Get(identifier);
 
         try:
             return self.get_property_value(identifier)

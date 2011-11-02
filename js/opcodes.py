@@ -125,8 +125,9 @@ class LOAD_ARRAY(Opcode):
         self.counter = counter
 
     def eval(self, ctx):
-        proto = ctx.get_global().Get(ctx, 'Array').Get(ctx, 'prototype')
+        proto = ctx.get_global().Get('Array').Get('prototype')
         # TODO get array prototype?
+        # builtins make_array??
         assert isinstance(proto, W_PrimitiveObject)
         array = W_Array(ctx, Prototype=proto, Class = proto.Class)
         for i in range(self.counter):
@@ -159,7 +160,7 @@ class LOAD_FUNCTION(Opcode):
         self.funcobj = funcobj
 
     def eval(self, ctx):
-        proto = ctx.get_global().Get(ctx, 'Function').Get(ctx, 'prototype')
+        proto = ctx.get_global().Get('Function').Get('prototype')
         w_func = W_CallableObject(ctx, proto, self.funcobj)
         w_func.Put(ctx, 'length', W_IntNumber(len(self.funcobj.params)))
         w_obj = create_object(ctx, 'Object')
@@ -204,7 +205,7 @@ class LOAD_MEMBER(Opcode):
     def eval(self, ctx):
         w_obj = ctx.pop().ToObject(ctx)
         name = ctx.pop().ToString(ctx)
-        ctx.append(w_obj.Get(ctx, name))
+        ctx.append(w_obj.Get(name))
 
 class COMMA(BaseUnaryOperation):
     def eval(self, ctx):
@@ -453,7 +454,7 @@ class DECLARE_FUNCTION(Opcode):
 
     def eval(self, ctx):
         # function declaration actyally don't run anything
-        proto = ctx.get_global().Get(ctx, 'Function').Get(ctx, 'prototype')
+        proto = ctx.get_global().Get('Function').Get('prototype')
         w_func = W_CallableObject(ctx, proto, self.funcobj)
         w_func.Put(ctx, 'length', W_IntNumber(len(self.funcobj.params)))
         w_obj = create_object(ctx, 'Object')
@@ -519,7 +520,7 @@ class CALL_METHOD(Opcode):
         what = ctx.pop().ToObject(ctx)
         args = ctx.pop()
         name = method.ToString(ctx)
-        r1 = what.Get(ctx, name)
+        r1 = what.Get(name)
         ctx.append(common_call(ctx, r1, args, what, name))
 
 class DUP(Opcode):
