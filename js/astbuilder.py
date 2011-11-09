@@ -9,6 +9,7 @@ def _get_root_map():
     return ROOT_MAP
 
 class Scope(object):
+    _immutable_fields_ = ['local_variables']
     def __init__(self):
         self.local_variables = ROOT_MAP
         self.declared_variables = []

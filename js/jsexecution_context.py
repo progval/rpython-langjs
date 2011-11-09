@@ -143,19 +143,20 @@ class ExecutionContext(StackMixin):
         self._map_dict_delete(name)
         return True
 
-    def _init_execution_context(self, parent):
+    def _init_execution_context(self, parent, stack_size=1):
         self = jit.hint(self, access_directly=True, fresh_virtualizable=True)
         self._init_map_dict(0)
         self.parent = parent
         self.ctx_obj = None
-        self._init_stack()
+        self._init_stack(stack_size)
         self._variables_map = root_map()
 
     def _init_function_context(self, parent, func):
         self = jit.hint(self, access_directly=True, fresh_virtualizable=True)
-        self._init_execution_context(parent)
-        if func.scope:
-            self._init_map_dict_with_map(func.scope.local_variables)
+        self._init_execution_context(parent, func.estimated_stack_size())
+        local_variables = func.local_variables()
+        if local_variables is not None:
+            self._init_map_dict_with_map(local_variables)
 
     def _init_acitvation_context(self, parent, this, args):
         self = jit.hint(self, access_directly=True, fresh_virtualizable=True)

@@ -167,7 +167,7 @@ def _restore_stack(ctx, state):
     ctx.stack = old_stack
 
 class JsFunction(object):
-    _immutable_fields_ = ["opcodes[*]"]
+    _immutable_fields_ = ["opcodes[*]", 'name', 'params', 'code', 'scope']
 
     def __init__(self, name, params, code):
         from pypy.rlib.debug import make_sure_not_resized
@@ -179,6 +179,10 @@ class JsFunction(object):
 
     def estimated_stack_size(self):
         return self.code.estimated_stack_size()
+
+    def local_variables(self):
+        if self.scope:
+            return self.scope.local_variables
 
     def run(self, ctx, check_stack=True, save_stack=True):
         state = ([], 0)
