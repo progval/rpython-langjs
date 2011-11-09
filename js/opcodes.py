@@ -484,12 +484,12 @@ class POP(Opcode):
 
 def common_call(ctx, r1, args, this, name):
     if not isinstance(r1, W_PrimitiveObject):
-        raise ThrowException(W_String("%s is not a callable (%s)"%(r1.ToString(), name)))
+        raise ThrowException(W_String("%s is not a callable (%s)"%(r1.ToString(), name.ToString())))
     jit.promote(r1)
     try:
         res = r1.Call(args.tolist(), this)
     except JsTypeError:
-        raise ThrowException(W_String("%s is not a function (%s)"%(r1.ToString(), name)))
+        raise ThrowException(W_String("%s is not a function (%s)"%(r1.ToString(), name.ToString())))
     return res
 
 class CALL(Opcode):
@@ -497,10 +497,9 @@ class CALL(Opcode):
     def eval(self, ctx):
         r1 = ctx.pop()
         args = ctx.pop()
-        name = r1.ToString()
         this = ctx.to_context_object()
         #XXX hack, this should be comming from context
-        ctx.append(common_call(ctx, r1, args, this, name))
+        ctx.append(common_call(ctx, r1, args, this, r1))
 
 class CALL_METHOD(Opcode):
     _stack_change = -2
@@ -510,7 +509,7 @@ class CALL_METHOD(Opcode):
         args = ctx.pop()
         name = method.ToString()
         r1 = what.Get(name)
-        ctx.append(common_call(ctx, r1, args, what, name))
+        ctx.append(common_call(ctx, r1, args, what, method))
 
 class DUP(Opcode):
     def eval(self, ctx):
