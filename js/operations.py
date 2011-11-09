@@ -549,9 +549,6 @@ class Delete(Expression):
             what.left.emit(bytecode)
             bytecode.emit('LOAD_BOOLCONSTANT', True)
 
-    #def emit(self, bytecode):
-    #
-
 #class Index(BinaryOp):
 #    def eval(self, ctx):
 #        w_obj = self.left.eval(ctx).GetValue().ToObject(ctx)

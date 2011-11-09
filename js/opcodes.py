@@ -95,9 +95,6 @@ class LOAD_STRINGCONSTANT(Opcode):
     def eval(self, ctx):
         ctx.append(self.w_stringvalue)
 
-    #def get_literal(self, ctx):
-    #    return W_String(self.strval).ToString(ctx)
-
     def __repr__(self):
         return 'LOAD_STRINGCONSTANT "%s"' % (self.w_stringvalue.strval,)
 
@@ -172,18 +169,6 @@ class LOAD_FUNCTION(Opcode):
 
     def __repr__(self):
         return 'LOAD_FUNCTION' # XXX
-
-# class STORE_VAR(Opcode):
-#     def __init__(self, depth, name):
-#         self.name = name
-#         self.depth = depth
-
-#     def eval(self, ctx, stack):
-#         value = stack[-1]
-#         ctx.scope[self.depth].Put(ctx, self.name, value)
-
-#     def __repr__(self):
-#         return 'STORE_VAR "%s"' % self.name
 
 class LOAD_OBJECT(Opcode):
     _immutable_fields_ = ["counter"]
