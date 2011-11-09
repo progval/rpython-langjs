@@ -180,8 +180,10 @@ class JsFunction(object):
     def estimated_stack_size(self):
         return self.code.estimated_stack_size()
 
-    def run(self, ctx, check_stack=True):
-        state = _save_stack(ctx, self.estimated_stack_size())
+    def run(self, ctx, check_stack=True, save_stack=True):
+        state = ([], 0)
+        if save_stack:
+            state = _save_stack(ctx, self.estimated_stack_size())
 
         try:
             r = self.run_bytecode(ctx, check_stack)
@@ -189,7 +191,8 @@ class JsFunction(object):
         except ReturnException, e:
             return e.value
         finally:
-            _restore_stack(ctx, state)
+            if save_stack:
+                _restore_stack(ctx, state)
 
     def _get_opcode(self, pc):
         assert pc >= 0

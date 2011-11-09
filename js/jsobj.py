@@ -344,7 +344,7 @@ class W_CallableObject(W_Object):
             newctx.declare_variable(paramname)
             newctx.assign(paramname, value)
 
-        val = self.callfunc.run(ctx=newctx)
+        val = self.callfunc.run(ctx=newctx, save_stack = False)
         return val
 
     def type(self):
