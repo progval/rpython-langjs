@@ -31,15 +31,21 @@ class JsCode(object):
         self.updatelooplabel = []
         from js.astbuilder import Scope
         self.scope = Scope()
+        self._estimated_stack_size = -1
 
+    @jit.elidable
     def estimated_stack_size(self):
-        max_size = 0
-        moving_size = 0
-        for opcode in self.opcodes:
-            moving_size += opcode.stack_change()
-            max_size = max(moving_size, max_size)
-        assert max_size >= 0
-        return max_size
+        # TODO: compute only once
+        if self._estimated_stack_size == -1:
+            max_size = 0
+            moving_size = 0
+            for opcode in self.opcodes:
+                moving_size += opcode.stack_change()
+                max_size = max(moving_size, max_size)
+            assert max_size >= 0
+            self._estimated_stack_size = max_size
+
+        return self._estimated_stack_size
 
     def emit_label(self, num = -1):
         if num == -1:
