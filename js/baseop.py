@@ -18,8 +18,8 @@ def plus(ctx, nleft, nright):
         return W_String(sleft + sright)
     # hot path
     if isinstance(nleft, W_IntNumber) and isinstance(nright, W_IntNumber):
-        ileft = nleft.intval
-        iright = nright.intval
+        ileft = nleft.ToInteger()
+        iright = nright.ToInteger()
         try:
             return W_IntNumber(ovfcheck(ileft + iright))
         except OverflowError:
@@ -31,13 +31,13 @@ def plus(ctx, nleft, nright):
 
 def increment(ctx, nleft, constval=1):
     if isinstance(nleft, W_IntNumber):
-        return W_IntNumber(nleft.intval + constval)
+        return W_IntNumber(nleft.ToInteger() + constval)
     else:
         return plus(ctx, nleft, W_IntNumber(constval))
 
 def decrement(ctx, nleft, constval=1):
     if isinstance(nleft, W_IntNumber):
-        return W_IntNumber(nleft.intval - constval)
+        return W_IntNumber(nleft.ToInteger() - constval)
     else:
         return sub(ctx, nleft, W_IntNumber(constval))
 
@@ -89,11 +89,11 @@ def division(ctx, nleft, nright):
 
 def compare(ctx, x, y):
     if isinstance(x, W_IntNumber) and isinstance(y, W_IntNumber):
-        return x.intval > y.intval
+        return x.ToInteger() > y.ToInteger()
     if isinstance(x, W_FloatNumber) and isinstance(y, W_FloatNumber):
-        if isnan(x.floatval) or isnan(y.floatval):
+        if isnan(x.ToNumber()) or isnan(y.ToNumber()):
             return -1
-        return x.floatval > y.floatval
+        return x.ToNumber() > y.ToNumber()
     s1 = x.ToPrimitive('Number')
     s2 = y.ToPrimitive('Number')
     if not (isinstance(s1, W_String) and isinstance(s2, W_String)):
@@ -109,11 +109,11 @@ def compare(ctx, x, y):
 
 def compare_e(ctx, x, y):
     if isinstance(x, W_IntNumber) and isinstance(y, W_IntNumber):
-        return x.intval >= y.intval
+        return x.ToInteger() >= y.ToInteger()
     if isinstance(x, W_FloatNumber) and isinstance(y, W_FloatNumber):
-        if isnan(x.floatval) or isnan(y.floatval):
+        if isnan(x.ToNumber()) or isnan(y.ToNumber()):
             return -1
-        return x.floatval >= y.floatval
+        return x.ToNumber() >= y.ToNumber()
     s1 = x.ToPrimitive('Number')
     s2 = y.ToPrimitive('Number')
     if not (isinstance(s1, W_String) and isinstance(s2, W_String)):
@@ -133,11 +133,11 @@ def AbstractEC(ctx, x, y):
     trying to be fully to the spec
     """
     if isinstance(x, W_IntNumber) and isinstance(y, W_IntNumber):
-        return x.intval == y.intval
+        return x.ToInteger() == y.ToInteger()
     if isinstance(x, W_FloatNumber) and isinstance(y, W_FloatNumber):
-        if isnan(x.floatval) or isnan(y.floatval):
+        if isnan(x.ToNumber()) or isnan(y.ToNumber()):
             return False
-        return x.floatval == y.floatval
+        return x.ToNumber() == y.ToNumber()
     type1 = x.type()
     type2 = y.type()
     if type1 == type2:
@@ -217,7 +217,8 @@ def StrictEC(ctx, x, y):
 
 
 def commonnew(ctx, obj, args):
-    if not isinstance(obj, W_PrimitiveObject):
+    from js.jsobj import W_BasicObject
+    if not (isinstance(obj, W_PrimitiveObject) or isinstance(obj, W_BasicObject)):
         raise ThrowException(W_String('it is not a constructor'))
     try:
         res = obj.Construct(args=args)
@@ -227,5 +228,5 @@ def commonnew(ctx, obj, args):
 
 def uminus(obj, ctx):
     if isinstance(obj, W_IntNumber):
-        return W_IntNumber(-obj.intval)
+        return W_IntNumber(-obj.ToInteger())
     return W_FloatNumber(-obj.ToNumber())

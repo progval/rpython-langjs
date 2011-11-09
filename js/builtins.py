@@ -6,7 +6,7 @@ random = rrandom.Random(int(time.time()))
 from js.jsobj import W_Object,\
      w_Undefined, W_NewBuiltin, W_IntNumber, w_Null, create_object, W_Boolean,\
      W_FloatNumber, W_String, W_Builtin, W_Array, w_Null, newbool,\
-     isnull_or_undefined, W_PrimitiveObject, W_ListObject, W_BaseNumber,\
+     isnull_or_undefined, W_PrimitiveObject, W_ListObject, W_Number,\
      DONT_DELETE, DONT_ENUM, READ_ONLY, INTERNAL
 from js.execution import ThrowException, JsTypeError
 
@@ -59,7 +59,7 @@ class W_Eval(W_NewBuiltin):
         if len(args) >= 1:
             arg0 = args[0]
             if  isinstance(arg0, W_String):
-                src = arg0.strval
+                src = arg0.ToString()
             else:
                 return arg0
         else:
@@ -508,8 +508,8 @@ def pypy_repr(args, this):
         t = 'W_FloatNumber'
     elif isinstance(o, W_IntNumber):
         t = 'W_IntNumber'
-    elif isinstance(o, W_BaseNumber):
-        t = 'W_Base_Number'
+    elif isinstance(o, W_Number):
+        t = 'W_Number'
     return W_String(t)
 
 def put_values(ctx, obj, dictvalues):
@@ -580,9 +580,9 @@ def isfinitejs(args, this):
 def absjs(args, this):
     val = args[0]
     if isinstance(val, W_IntNumber):
-        if val.intval > 0:
+        if val.ToInteger() > 0:
             return val # fast path
-        return W_IntNumber(-val.intval)
+        return W_IntNumber(-val.ToInteger())
     return W_FloatNumber(abs(args[0].ToNumber()))
 
 def floorjs(args, this):
@@ -636,7 +636,7 @@ def unescapejs(args, this):
     if not isinstance(w_string, W_String):
         raise JsTypeError(W_String("Expected string"))
     assert isinstance(w_string, W_String)
-    strval = w_string.strval
+    strval = w_string.ToString()
     lgt = len(strval)
     i = 0
     while i < lgt:
@@ -736,7 +736,7 @@ class W_ArrayObject(W_NativeObject):
         W_NativeObject.__init__(self, Class, Prototype, None )
 
     def Call(self, args=[], this=None):
-        if len(args) == 1 and isinstance(args[0], W_BaseNumber):
+        if len(args) == 1 and isinstance(args[0], W_Number):
             array = create_array()
             array.Put('length', args[0])
         else:

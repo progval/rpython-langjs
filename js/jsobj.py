@@ -20,7 +20,45 @@ INTERNAL = IT = 8 # Internal
 class SeePage(NotImplementedError):
     pass
 
-class W_Root(object):
+class W___Root(object):
+    pass
+
+class W__Root(W___Root):
+    _settled_ = True
+    _attrs_ = []
+    _type_ = ''
+
+    def __str__(self):
+        return self.ToString()
+
+    def type(self):
+        return self._type_
+
+    def ToBoolean(self):
+        return False
+
+    def ToPrimitive(self, hint=""):
+        return self
+
+    def ToString(self):
+        return ''
+
+    def ToObject(self):
+        raise JsTypeError
+
+    def ToNumber(self):
+        return 0.0
+
+    def ToInteger(self):
+        return int(self.ToNumber())
+
+    def ToInt32(self):
+        return r_int32(self.ToInteger())
+
+    def ToUInt32(self):
+        return r_uint32(self.ToInteger())
+
+class W_Root(W___Root):
     _settled_ = True
     _attrs_ = []
     def __init__(self):
@@ -84,43 +122,28 @@ class W_Root(object):
     def Delete(self, name):
         return False
 
-class W_Undefined(W_Root):
-    def __str__(self):
-        return "w_undefined"
+class W__Primitive(W__Root):
+    pass
 
+class W_Undefined(W__Primitive):
+    _type_ = 'undefined'
     def ToInteger(self):
         return 0
 
     def ToNumber(self):
         return NAN
 
-    def ToBoolean(self):
-        return False
-
     def ToString(self):
-        return "undefined"
+        return self._type_
 
-    def type(self):
-        return 'undefined'
-
-    def tolist(self):
-        return []
-
-class W_Null(W_Root):
-    def __str__(self):
-        return "null"
+class W_Null(W__Primitive):
+    _type_ = 'null'
 
     def ToBoolean(self):
         return False
 
     def ToString(self):
-        return "null"
-
-    def type(self):
-        return 'null'
-
-    def tolist(self):
-        return []
+        return self._type_
 
 w_Undefined = W_Undefined()
 w_Null = W_Null()
@@ -279,12 +302,12 @@ class W_PrimitiveObject(W_Root):
         t1 = self.Get(tryone)
         if isinstance(t1, W_PrimitiveObject):
             val = t1.Call(this=self)
-            if isinstance(val, W_Primitive):
+            if isinstance(val, W__Primitive):
                 return val
         t2 = self.Get(trytwo)
         if isinstance(t2, W_PrimitiveObject):
             val = t2.Call(this=self)
-            if isinstance(val, W_Primitive):
+            if isinstance(val, W__Primitive):
                 return val
         raise JsTypeError
 
@@ -349,11 +372,6 @@ class W_CallableObject(W_Object):
 
     def type(self):
         return 'function'
-
-class W_Primitive(W_Root):
-    """unifying parent for primitives"""
-    def ToPrimitive(self, hint=""):
-        return self
 
 class W_NewBuiltin(W_PrimitiveObject):
     length = -1
@@ -464,120 +482,111 @@ class W_Array(W_ListObject):
                 raise RangeError()
             self.set_length(arrayindex+1)
 
-class W_Boolean(W_Primitive):
-    _immutable_fields_ = ['boolval']
+class W_Boolean(W__Primitive):
+    _immutable_fields_ = ['_boolval_']
+    _type_ = 'boolean'
+
     def __init__(self, boolval):
-        self.boolval = bool(boolval)
+        W__Primitive.__init__(self)
+        self._boolval_ = bool(boolval)
+
+    def __repr__(self):
+        return 'W_Bool(%s)' % (str(self._boolval_), )
 
     def ToObject(self):
+        # TODO
         return create_object('Boolean', Value=self)
 
     def ToString(self):
-        if self.boolval == True:
+        if self._boolval_ == True:
             return "true"
         return "false"
 
     def ToNumber(self):
-        if self.boolval:
+        if self._boolval_ == True:
             return 1.0
         return 0.0
 
     def ToBoolean(self):
-        return self.boolval
+        return self._boolval_
 
-    def type(self):
-        return 'boolean'
+class W_String(W__Primitive):
+    _immutable_fields_ = ['_strval_']
+    _type_ = 'string'
 
-    def __repr__(self):
-        return "<W_Bool "+str(self.boolval)+" >"
-
-class W_String(W_Primitive):
-    _immutable_fields_ = ['strval']
     def __init__(self, strval):
-        W_Primitive.__init__(self)
-        self.strval = strval
+        W__Primitive.__init__(self)
+        self._strval_ = strval
 
     def __repr__(self):
-        return 'W_String(%s)' % (self.strval,)
+        return 'W_String(%s)' % (repr(self._strval_),)
 
     def ToObject(self):
+        # TODO
         o = create_object('String', Value=self)
-        o.Put('length', W_IntNumber(len(self.strval)), flags = READ_ONLY | DONT_DELETE | DONT_ENUM)
+        o.Put('length', W_IntNumber(len(self._strval_)), flags = READ_ONLY | DONT_DELETE | DONT_ENUM)
         return o
 
     def ToString(self):
-        return self.strval
+        return self._strval_
 
     def ToBoolean(self):
-        if len(self.strval) == 0:
+        if len(self._strval_) == 0:
             return False
         else:
             return True
 
-    def type(self):
-        return 'string'
-
-    def GetPropertyName(self):
-        return self.ToString()
-
     def ToNumber(self):
-        if not self.strval:
+        if not self._strval_:
             return 0.0
         try:
-            return float(self.strval)
+            return float(self._strval_)
         except ValueError:
             try:
-                return float(int(self.strval, 16))
+                return float(int(self._strval_, 16))
             except ValueError:
                 try:
-                    return float(int(self.strval, 8))
+                    return float(int(self._strval_, 8))
                 except ValueError:
                     return NAN
 
-
-class W_BaseNumber(W_Primitive):
+class W_Number(W__Primitive):
     """ Base class for numbers, both known to be floats
     and those known to be integers
     """
+    _type_ = 'number'
+
     def ToObject(self):
+        # TODO
         return create_object('Number', Value=self)
 
-    def Get(self, P):
-        return w_Undefined
+    def ToBoolean(self):
+        num = self.ToNumber()
+        if isnan(num):
+            return False
+        return bool(num)
 
-    def type(self):
-        return 'number'
-
-class W_IntNumber(W_BaseNumber):
-    _immutable_fields_ = ['intval']
+class W_IntNumber(W_Number):
+    _immutable_fields_ = ['_intval_']
     """ Number known to be an integer
     """
     def __init__(self, intval):
-        W_BaseNumber.__init__(self)
-        self.intval = intmask(intval)
+        W_Number.__init__(self)
+        self._intval_ = intmask(intval)
 
-    def ToString(self):
-        # XXX incomplete, this doesn't follow the 9.8.1 recommendation
-        return str(self.intval)
+    def __repr__(self):
+        return 'W_IntNumber(%s)' % (self._intval_,)
 
-    def ToBoolean(self):
-        return bool(self.intval)
+    def ToInteger(self):
+        return self._intval_
 
     def ToNumber(self):
         # XXX
-        return float(self.intval)
+        return float(self._intval_)
 
-    def ToInt32(self):
-        return r_int32(self.intval)
-
-    def ToUInt32(self):
-        return r_uint32(self.intval)
-
-    def GetPropertyName(self):
-        return self.ToString()
-
-    def __repr__(self):
-        return 'W_IntNumber(%s)' % (self.intval,)
+    def ToString(self):
+        # XXX incomplete, this doesn't follow the 9.8.1 recommendation
+        return str(self.ToInteger())
 
 def r_int32(n):
     return intmask(rffi.cast(rffi.INT, n))
@@ -585,26 +594,29 @@ def r_int32(n):
 def r_uint32(n):
     return intmask(rffi.cast(rffi.UINT, n))
 
-class W_FloatNumber(W_BaseNumber):
-    _immutable_fields_ = ['floatval']
+class W_FloatNumber(W_Number):
+    _immutable_fields_ = ['_floatval_']
     """ Number known to be a float
     """
     def __init__(self, floatval):
-        W_BaseNumber.__init__(self)
-        self.floatval = float(floatval)
+        W_Number.__init__(self)
+        self._floatval_ = float(floatval)
+
+    def __repr__(self):
+        return 'W_FloatNumber(%s)' % (self._floatval_,)
 
     def ToString(self):
         # XXX incomplete, this doesn't follow the 9.8.1 recommendation
-        if isnan(self.floatval):
+        if isnan(self._floatval_):
             return 'NaN'
-        if isinf(self.floatval):
-            if self.floatval > 0:
+        if isinf(self._floatval_):
+            if self._floatval_ > 0:
                 return 'Infinity'
             else:
                 return '-Infinity'
         res = ''
         try:
-            res = formatd(self.floatval, 'g', 10)
+            res = formatd(self._floatval_, 'g', 10)
         except OverflowError:
             raise
 
@@ -614,35 +626,17 @@ class W_FloatNumber(W_BaseNumber):
             res = res[:cut] + res[-1]
         return res
 
-    def ToBoolean(self):
-        if isnan(self.floatval):
-            return False
-        return bool(self.floatval)
-
     def ToNumber(self):
-        return self.floatval
+        return self._floatval_
 
     def ToInteger(self):
-        if isnan(self.floatval):
+        if isnan(self._floatval_):
             return 0
 
-        if self.floatval == 0 or isinf(self.floatval):
-            return self.floatval
+        if self._floatval_ == 0 or isinf(self._floatval_):
+            return self._floatval_
 
-        return intmask(int(self.floatval))
-
-    def ToInt32(self):
-        if isnan(self.floatval) or isinf(self.floatval):
-            return 0
-        return r_int32(int(self.floatval))
-
-    def ToUInt32(self):
-        if isnan(self.floatval) or isinf(self.floatval):
-            return r_uint(0)
-        return r_uint32(int(self.floatval))
-
-    def __repr__(self):
-        return 'W_FloatNumber(%s)' % (self.floatval,)
+        return intmask(int(self._floatval_))
 
 class W_List(W_Root):
     def __init__(self, list_w):

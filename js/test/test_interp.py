@@ -1,7 +1,7 @@
 import py
 from js import interpreter
 from js.operations import IntNumber, FloatNumber, Position, Plus
-from js.jsobj import W_Object, W_Root, w_Null
+from js.jsobj import W_Object, W_Root, w_Null, W___Root
 from js.execution import ThrowException
 from js.jscode import JsCode, POP
 from js.baseop import AbstractEC
@@ -44,7 +44,7 @@ def assertv(code, value):
     except ThrowException, excpt:
         code_val = excpt.exception
     print code_val, value
-    if isinstance(value, W_Root):
+    if isinstance(value, W___Root):
         assert AbstractEC(jsint.global_context, code_val, value) == True
     elif isinstance(value, bool):
         assert code_val.ToBoolean() == value

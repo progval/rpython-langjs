@@ -68,7 +68,7 @@ class LOAD_INTCONSTANT(Opcode):
         ctx.append(self.w_intvalue)
 
     def __repr__(self):
-        return 'LOAD_INTCONSTANT %s' % (self.w_intvalue.intval,)
+        return 'LOAD_INTCONSTANT %s' % (self.w_intvalue.ToInteger(),)
 
 class LOAD_BOOLCONSTANT(Opcode):
     def __init__(self, value):
@@ -85,7 +85,7 @@ class LOAD_FLOATCONSTANT(Opcode):
         ctx.append(self.w_floatvalue)
 
     def __repr__(self):
-        return 'LOAD_FLOATCONSTANT %s' % (self.w_floatvalue.floatval,)
+        return 'LOAD_FLOATCONSTANT %s' % (self.w_floatvalue.ToNumber(),)
 
 class LOAD_STRINGCONSTANT(Opcode):
     _immutable_fields_ = ['w_stringvalue']
@@ -96,7 +96,7 @@ class LOAD_STRINGCONSTANT(Opcode):
         ctx.append(self.w_stringvalue)
 
     def __repr__(self):
-        return 'LOAD_STRINGCONSTANT "%s"' % (self.w_stringvalue.strval,)
+        return 'LOAD_STRINGCONSTANT "%s"' % (self.w_stringvalue.ToString(),)
 
 class LOAD_UNDEFINED(Opcode):
     def eval(self, ctx):
