@@ -1,9 +1,8 @@
 import time
 
-from js.jsobj import W_Object,\
-     w_Undefined, W_NewBuiltin, W_IntNumber, w_Null, create_object, W_Boolean,\
-     W_FloatNumber, W_String, W_Builtin, w_Null, newbool,\
-     isnull_or_undefined, W_PrimitiveObject, W_ListObject, W_Number,\
+from js.jsobj import w_Undefined, W_IntNumber, w_Null, create_object, W_Boolean,\
+     W_FloatNumber, W_String, newbool,\
+     isnull_or_undefined, W_Number,\
      DONT_DELETE, DONT_ENUM, READ_ONLY, INTERNAL, _w
 from js.execution import ThrowException, JsTypeError
 
@@ -71,346 +70,328 @@ class W__Eval(W_BasicFunction):
         func = bytecode.make_js_function()
         return func.run(self._context_)
 
-class W_ParseInt(W_NewBuiltin):
-    length = 1
-    def Call(self, args=[], this=None):
-        if len(args) < 1:
-            return W_FloatNumber(NAN)
-        s = args[0].ToString().strip(" ")
-        if len(args) > 1:
-            radix = args[1].ToInt32()
-        else:
-            radix = 10
-        if len(s) >= 2 and (s.startswith('0x') or s.startswith('0X')) :
-            radix = 16
-            s = s[2:]
-        if s == '' or radix < 2 or radix > 36:
-            return W_FloatNumber(NAN)
-        try:
-            n = int(s, radix)
-        except ValueError:
-            return W_FloatNumber(NAN)
-        return W_IntNumber(n)
+#class W_ParseInt(W_NewBuiltin):
+    #length = 1
+    #def Call(self, args=[], this=None):
+        #if len(args) < 1:
+            #return W_FloatNumber(NAN)
+        #s = args[0].ToString().strip(" ")
+        #if len(args) > 1:
+            #radix = args[1].ToInt32()
+        #else:
+            #radix = 10
+        #if len(s) >= 2 and (s.startswith('0x') or s.startswith('0X')) :
+            #radix = 16
+            #s = s[2:]
+        #if s == '' or radix < 2 or radix > 36:
+            #return W_FloatNumber(NAN)
+        #try:
+            #n = int(s, radix)
+        #except ValueError:
+            #return W_FloatNumber(NAN)
+        #return W_IntNumber(n)
 
-class W_ParseFloat(W_NewBuiltin):
-    length = 1
-    def Call(self, args=[], this=None):
-        if len(args) < 1:
-            return W_FloatNumber(NAN)
-        s = args[0].ToString().strip(" ")
-        try:
-            n = float(s)
-        except ValueError:
-            n = NAN
-        return W_FloatNumber(n)
+#class W_ParseFloat(W_NewBuiltin):
+    #length = 1
+    #def Call(self, args=[], this=None):
+        #if len(args) < 1:
+            #return W_FloatNumber(NAN)
+        #s = args[0].ToString().strip(" ")
+        #try:
+            #n = float(s)
+        #except ValueError:
+            #n = NAN
+        #return W_FloatNumber(n)
 
-class W_FromCharCode(W_NewBuiltin):
-    length = 1
-    def Call(self, args=[], this=None):
-        temp = []
-        for arg in args:
-            i = arg.ToInt32() % 65536 # XXX should be uint16
-            temp.append(chr(i))
-        return W_String(''.join(temp))
+#class W_FromCharCode(W_NewBuiltin):
+    #length = 1
+    #def Call(self, args=[], this=None):
+        #temp = []
+        #for arg in args:
+            #i = arg.ToInt32() % 65536 # XXX should be uint16
+            #temp.append(chr(i))
+        #return W_String(''.join(temp))
 
-class W_CharCodeAt(W_NewBuiltin):
-    def Call(self, args=[], this=None):
-        string = this.ToString()
-        if len(args)>=1:
-            pos = args[0].ToInt32()
-            if pos < 0 or pos > len(string) - 1:
-                return W_FloatNumber(NAN)
-        else:
-            return W_FloatNumber(NAN)
-        char = string[pos]
-        return W_IntNumber(ord(char))
+#class W_CharCodeAt(W_NewBuiltin):
+    #def Call(self, args=[], this=None):
+        #string = this.ToString()
+        #if len(args)>=1:
+            #pos = args[0].ToInt32()
+            #if pos < 0 or pos > len(string) - 1:
+                #return W_FloatNumber(NAN)
+        #else:
+            #return W_FloatNumber(NAN)
+        #char = string[pos]
+        #return W_IntNumber(ord(char))
 
-class W_Concat(W_NewBuiltin):
-    def Call(self, args=[], this=None):
-        string = this.ToString()
-        others = [obj.ToString() for obj in args]
-        string += ''.join(others)
-        return W_String(string)
+#class W_Concat(W_NewBuiltin):
+    #def Call(self, args=[], this=None):
+        #string = this.ToString()
+        #others = [obj.ToString() for obj in args]
+        #string += ''.join(others)
+        #return W_String(string)
 
-class W_IndexOf(W_NewBuiltin):
-    length = 1
-    def Call(self, args=[], this=None):
-        string = this.ToString()
-        if len(args) < 1:
-            return W_IntNumber(-1)
-        substr = args[0].ToString()
-        size = len(string)
-        subsize = len(substr)
-        if len(args) < 2:
-            pos = 0
-        else:
-            pos = args[1].ToInteger()
-        pos = int(min(max(pos, 0), size))
-        assert pos >= 0
-        return W_IntNumber(string.find(substr, pos))
+#class W_IndexOf(W_NewBuiltin):
+    #length = 1
+    #def Call(self, args=[], this=None):
+        #string = this.ToString()
+        #if len(args) < 1:
+            #return W_IntNumber(-1)
+        #substr = args[0].ToString()
+        #size = len(string)
+        #subsize = len(substr)
+        #if len(args) < 2:
+            #pos = 0
+        #else:
+            #pos = args[1].ToInteger()
+        #pos = int(min(max(pos, 0), size))
+        #assert pos >= 0
+        #return W_IntNumber(string.find(substr, pos))
 
-class W_LastIndexOf(W_NewBuiltin):
-    length = 1
-    def Call(self, args=[], this=None):
-        string = this.ToString()
-        if len(args) < 1:
-            return W_IntNumber(-1)
-        substr = args[0].ToString()
-        if len(args) < 2:
-            pos = INFINITY
-        else:
-            val = args[1].ToNumber()
-            if isnan(val):
-                pos = INFINITY
-            else:
-                pos = args[1].ToInteger()
-        size = len(string)
-        pos = int(min(max(pos, 0), size))
-        subsize = len(substr)
-        endpos = pos+subsize
-        assert endpos >= 0
-        return W_IntNumber(string.rfind(substr, 0, endpos))
+#class W_LastIndexOf(W_NewBuiltin):
+    #length = 1
+    #def Call(self, args=[], this=None):
+        #string = this.ToString()
+        #if len(args) < 1:
+            #return W_IntNumber(-1)
+        #substr = args[0].ToString()
+        #if len(args) < 2:
+            #pos = INFINITY
+        #else:
+            #val = args[1].ToNumber()
+            #if isnan(val):
+                #pos = INFINITY
+            #else:
+                #pos = args[1].ToInteger()
+        #size = len(string)
+        #pos = int(min(max(pos, 0), size))
+        #subsize = len(substr)
+        #endpos = pos+subsize
+        #assert endpos >= 0
+        #return W_IntNumber(string.rfind(substr, 0, endpos))
 
-class W_Substring(W_NewBuiltin):
-    length = 2
-    def Call(self, args=[], this=None):
-        string = this.ToString()
-        size = len(string)
-        if len(args) < 1:
-            start = 0
-        else:
-            start = args[0].ToInteger()
-        if len(args) < 2:
-            end = size
-        else:
-            end = args[1].ToInteger()
-        tmp1 = min(max(start, 0), size)
-        tmp2 = min(max(end, 0), size)
-        start = min(tmp1, tmp2)
-        end = max(tmp1, tmp2)
-        return W_String(string[start:end])
+#class W_Substring(W_NewBuiltin):
+    #length = 2
+    #def Call(self, args=[], this=None):
+        #string = this.ToString()
+        #size = len(string)
+        #if len(args) < 1:
+            #start = 0
+        #else:
+            #start = args[0].ToInteger()
+        #if len(args) < 2:
+            #end = size
+        #else:
+            #end = args[1].ToInteger()
+        #tmp1 = min(max(start, 0), size)
+        #tmp2 = min(max(end, 0), size)
+        #start = min(tmp1, tmp2)
+        #end = max(tmp1, tmp2)
+        #return W_String(string[start:end])
 
-class W_Split(W_NewBuiltin):
-    length = 2
-    def Call(self, args=[], this=None):
-        string = this.ToString()
+#class W_Split(W_NewBuiltin):
+    #length = 2
+    #def Call(self, args=[], this=None):
+        #string = this.ToString()
 
-        if len(args) < 1 or args[0] is w_Undefined:
-            return create_array([W_String(string)])
-        else:
-            separator = args[0].ToString()
+        #if len(args) < 1 or args[0] is w_Undefined:
+            #return create_array([W_String(string)])
+        #else:
+            #separator = args[0].ToString()
 
-        if len(args) >= 2:
-            limit = args[1].ToUInt32()
-            raise ThrowException(W_String("limit not implemented"))
-            # array = string.split(separator, limit)
-        else:
-            array = string.split(separator)
+        #if len(args) >= 2:
+            #limit = args[1].ToUInt32()
+            #raise ThrowException(W_String("limit not implemented"))
+            ## array = string.split(separator, limit)
+        #else:
+            #array = string.split(separator)
 
-        w_array = create_array()
-        i = 0
-        while i < len(array):
-            w_str = W_String(array[i])
-            w_array.Put(str(i), w_str)
-            i += 1
+        #w_array = create_array()
+        #i = 0
+        #while i < len(array):
+            #w_str = W_String(array[i])
+            #w_array.Put(str(i), w_str)
+            #i += 1
 
-        return w_array
+        #return w_array
 
-class W_ToLowerCase(W_NewBuiltin):
-    length = 0
-    def Call(self, args=[], this=None):
-        string = this.ToString()
-        return W_String(string.lower())
+#class W_ToLowerCase(W_NewBuiltin):
+    #length = 0
+    #def Call(self, args=[], this=None):
+        #string = this.ToString()
+        #return W_String(string.lower())
 
-class W_ToUpperCase(W_NewBuiltin):
-    length = 0
-    def Call(self, args=[], this=None):
-        string = this.ToString()
-        return W_String(string.upper())
+#class W_ToUpperCase(W_NewBuiltin):
+    #length = 0
+    #def Call(self, args=[], this=None):
+        #string = this.ToString()
+        #return W_String(string.upper())
 
-class W_ToString(W_NewBuiltin):
-    def Call(self, args=[], this=None):
-        assert isinstance(this, W_PrimitiveObject)
-        return W_String("[object %s]"%this.Class)
+#class W_ToString(W_NewBuiltin):
+    #def Call(self, args=[], this=None):
+        #assert isinstance(this, W_PrimitiveObject)
+        #return W_String("[object %s]"%this.Class)
 
-class W_ValueOf(W_NewBuiltin):
-    length = 0
-    def Call(self, args=[], this=None):
-        return this
+#class W_ValueOf(W_NewBuiltin):
+    #length = 0
+    #def Call(self, args=[], this=None):
+        #return this
 
-class W_HasOwnProperty(W_NewBuiltin):
-    def Call(self, args=[], this=None):
-        if len(args) >= 1:
-            propname = args[0].ToString()
-            if propname in self._get_property_keys():
-                return newbool(True)
-        return newbool(False)
+#class W_HasOwnProperty(W_NewBuiltin):
+    #def Call(self, args=[], this=None):
+        #if len(args) >= 1:
+            #propname = args[0].ToString()
+            #if propname in self._get_property_keys():
+                #return newbool(True)
+        #return newbool(False)
 
-class W_IsPrototypeOf(W_NewBuiltin):
-    def Call(self, args=[], this=None):
-        w_obj = args[0]
-        if len(args) >= 1 and isinstance(w_obj, W_PrimitiveObject):
-            O = this
-            assert isinstance(w_obj, W_PrimitiveObject)
-            V = w_obj.Prototype
-            while V is not None:
-                if O == V:
-                    return newbool(True)
-                assert isinstance(V, W_PrimitiveObject)
-                V = V.Prototype
-        return newbool(False)
+#class W_IsPrototypeOf(W_NewBuiltin):
+    #def Call(self, args=[], this=None):
+        #w_obj = args[0]
+        #if len(args) >= 1 and isinstance(w_obj, W_PrimitiveObject):
+            #O = this
+            #assert isinstance(w_obj, W_PrimitiveObject)
+            #V = w_obj.Prototype
+            #while V is not None:
+                #if O == V:
+                    #return newbool(True)
+                #assert isinstance(V, W_PrimitiveObject)
+                #V = V.Prototype
+        #return newbool(False)
 
-class W_PropertyIsEnumerable(W_NewBuiltin):
-    def Call(self, args=[], this=None):
-        if len(args) >= 1:
-            propname = args[0].ToString()
-            if self._has_property(propname) and not self._get_property_flags(propname) & DONT_ENUM:
-                return newbool(True)
-        return newbool(False)
+#class W_PropertyIsEnumerable(W_NewBuiltin):
+    #def Call(self, args=[], this=None):
+        #if len(args) >= 1:
+            #propname = args[0].ToString()
+            #if self._has_property(propname) and not self._get_property_flags(propname) & DONT_ENUM:
+                #return newbool(True)
+        #return newbool(False)
 
-class W_Function(W_NewBuiltin):
-    def __init__(self, ctx, Prototype=None, Class='function', Value=w_Undefined):
-        W_NewBuiltin.__init__(self, Prototype, Class, Value)
-        self.ctx = ctx
+#class W_Function(W_NewBuiltin):
+    #def __init__(self, ctx, Prototype=None, Class='function', Value=w_Undefined):
+        #W_NewBuiltin.__init__(self, Prototype, Class, Value)
+        #self.ctx = ctx
 
-    def Call(self, args=[], this=None):
-        tam = len(args)
-        if tam >= 1:
-            fbody  = args[tam-1].ToString()
-            argslist = []
-            for i in range(tam-1):
-                argslist.append(args[i].ToString())
-            fargs = ','.join(argslist)
-            functioncode = "function (%s) {%s}"%(fargs, fbody)
-        else:
-            functioncode = "function () {}"
-        #remove program and sourcelements node
-        funcnode = parse(functioncode).children[0].children[0]
-        builder = make_ast_builder()
-        ast = builder.dispatch(funcnode)
-        bytecode = JsCode()
-        ast.emit(bytecode)
-        func = bytecode.make_js_function()
-        return func.run(self.ctx)
+    #def Call(self, args=[], this=None):
+        #tam = len(args)
+        #if tam >= 1:
+            #fbody  = args[tam-1].ToString()
+            #argslist = []
+            #for i in range(tam-1):
+                #argslist.append(args[i].ToString())
+            #fargs = ','.join(argslist)
+            #functioncode = "function (%s) {%s}"%(fargs, fbody)
+        #else:
+            #functioncode = "function () {}"
+        ##remove program and sourcelements node
+        #funcnode = parse(functioncode).children[0].children[0]
+        #builder = make_ast_builder()
+        #ast = builder.dispatch(funcnode)
+        #bytecode = JsCode()
+        #ast.emit(bytecode)
+        #func = bytecode.make_js_function()
+        #return func.run(self.ctx)
 
-    def Construct(self, args=[]):
-        return self.Call(args, this=None)
+    #def Construct(self, args=[]):
+        #return self.Call(args, this=None)
 
-functionstring= 'function (arguments go here!) {\n'+ \
-                '    [lots of stuff :)]\n'+ \
-                '}'
-class W_FToString(W_NewBuiltin):
-    def Call(self, args=[], this=None):
-        from js.jsobj import W__Function
-        if isinstance(this, W_PrimitiveObject):
-            if this.Class == 'Function':
-                return W_String(functionstring)
-        if isinstance(this, W__Function):
-            return W_String(functionstring)
+#functionstring= 'function (arguments go here!) {\n'+ \
+                #'    [lots of stuff :)]\n'+ \
+                #'}'
+#class W_FToString(W_NewBuiltin):
+    #def Call(self, args=[], this=None):
+        #from js.jsobj import W__Function
+        #if isinstance(this, W_PrimitiveObject):
+            #if this.Class == 'Function':
+                #return W_String(functionstring)
+        #if isinstance(this, W__Function):
+            #return W_String(functionstring)
 
-        raise JsTypeError('this is not a function object')
+        #raise JsTypeError('this is not a function object')
 
-class W_Apply(W_NewBuiltin):
-    def __init__(self, ctx):
-        W_NewBuiltin.__init__(self)
-        self.ctx = ctx
+#class W_Apply(W_NewBuiltin):
+    #def __init__(self, ctx):
+        #W_NewBuiltin.__init__(self)
+        #self.ctx = ctx
 
-    def Call(self, args=[], this=None):
-        try:
-            if isnull_or_undefined(args[0]):
-                thisArg = self.ctx.get_global()
-            else:
-                thisArg = args[0].ToObject()
-        except IndexError:
-            thisArg = self.ctx.get_global()
+    #def Call(self, args=[], this=None):
+        #try:
+            #if isnull_or_undefined(args[0]):
+                #thisArg = self.ctx.get_global()
+            #else:
+                #thisArg = args[0].ToObject()
+        #except IndexError:
+            #thisArg = self.ctx.get_global()
 
-        try:
-            arrayArgs = args[1]
-            callargs = arrayArgs.tolist()
-        except IndexError:
-            callargs = []
-        return this.Call(callargs, this=thisArg)
+        #try:
+            #arrayArgs = args[1]
+            #callargs = arrayArgs.tolist()
+        #except IndexError:
+            #callargs = []
+        #return this.Call(callargs, this=thisArg)
 
-class W_Call(W_NewBuiltin):
-    def __init__(self, ctx):
-        W_NewBuiltin.__init__(self)
-        self.ctx = ctx
+#class W_Call(W_NewBuiltin):
+    #def __init__(self, ctx):
+        #W_NewBuiltin.__init__(self)
+        #self.ctx = ctx
 
-    def Call(self, args=[], this=None):
-        if len(args) >= 1:
-            if isnull_or_undefined(args[0]):
-                thisArg = self.ctx.get_global()
-            else:
-                thisArg = args[0]
-            callargs = args[1:]
-        else:
-            thisArg = self.ctx.get_global()
-            callargs = []
-        return this.Call(callargs, this = thisArg)
+    #def Call(self, args=[], this=None):
+        #if len(args) >= 1:
+            #if isnull_or_undefined(args[0]):
+                #thisArg = self.ctx.get_global()
+            #else:
+                #thisArg = args[0]
+            #callargs = args[1:]
+        #else:
+            #thisArg = self.ctx.get_global()
+            #callargs = []
+        #return this.Call(callargs, this = thisArg)
 
-class W_ValueToString(W_NewBuiltin):
-    "this is the toString function for objects with Value"
-    mytype = ''
-    def Call(self, args=[], this=None):
-        assert isinstance(this, W_PrimitiveObject)
-        if this.Value.type() != self.mytype:
-            raise JsTypeError('Wrong type')
-        return W_String(this.Value.ToString())
+#class W_ValueToString(W_NewBuiltin):
+    #"this is the toString function for objects with Value"
+    #mytype = ''
+    #def Call(self, args=[], this=None):
+        #assert isinstance(this, W_PrimitiveObject)
+        #if this.Value.type() != self.mytype:
+            #raise JsTypeError('Wrong type')
+        #return W_String(this.Value.ToString())
 
-class W_NumberValueToString(W_ValueToString):
-    mytype = 'number'
+#class W_NumberValueToString(W_ValueToString):
+    #mytype = 'number'
 
-class W_BooleanValueToString(W_ValueToString):
-    mytype = 'boolean'
+#class W_BooleanValueToString(W_ValueToString):
+    #mytype = 'boolean'
 
-class W_StringValueToString(W_ValueToString):
-    mytype = 'string'
+#class W_StringValueToString(W_ValueToString):
+    #mytype = 'string'
 
-class W_NativeObject(W_Object):
-    def __init__(self, Class, Prototype, Value=w_Undefined):
-        W_Object.__init__(self, Prototype, Class, Value)
+#class W_NativeObject(W_Object):
+    #def __init__(self, Class, Prototype, Value=w_Undefined):
+        #W_Object.__init__(self, Prototype, Class, Value)
 
-class W_DateObject(W_NativeObject):
-    def Call(self, args=[], this=None):
-        return create_object('Object')
+#class W_DateObject(W_NativeObject):
+    #def Call(self, args=[], this=None):
+        #return create_object('Object')
 
-    def Construct(self, args=[]):
-        v = int(time.time()*1000)
-        return create_object('Date', Value = W_IntNumber(v))
+    #def Construct(self, args=[]):
+        #v = int(time.time()*1000)
+        #return create_object('Date', Value = W_IntNumber(v))
 
 def pypy_repr(this, *args):
     o = args[0]
     return W_String(repr(o))
 
-def put_values(obj, dictvalues):
-    for key,value in dictvalues.iteritems():
-        obj.Put(key, value)
+#@specialize.memo()
+#def get_value_of(type):
+    #class W_ValueValueOf(W_NewBuiltin):
+        #"this is the valueOf function for objects with Value"
+        #def Call(self, args=[], this=None):
+            #assert isinstance(this, W_PrimitiveObject)
+            #if type != this.Class:
+                #raise JsTypeError('%s.prototype.valueOf called with incompatible type' % self.type())
+            #return this.Value
+    #return W_ValueValueOf
 
-@specialize.memo()
-def get_value_of(type):
-    class W_ValueValueOf(W_NewBuiltin):
-        "this is the valueOf function for objects with Value"
-        def Call(self, args=[], this=None):
-            assert isinstance(this, W_PrimitiveObject)
-            if type != this.Class:
-                raise JsTypeError('%s.prototype.valueOf called with incompatible type' % self.type())
-            return this.Value
-    return W_ValueValueOf
-
-def common_join(this, sep=','):
-    length = this.Get('length').ToUInt32()
-    l = []
-    i = 0
-    while i < length:
-        item = this.Get(str(i))
-        if isnull_or_undefined(item):
-            item_string = ''
-        else:
-            item_string = item.ToString()
-        l.append(item_string)
-        i += 1
-
-    return sep.join(l)
 
 class Sorter(TimSort):
     def __init__(self, list, listlength=None, compare_fn=None):
@@ -479,21 +460,21 @@ def unescapejs(args, this):
         res.append(ch)
     return W_String(''.join(res))
 
-class W_ObjectObject(W_NativeObject):
-    def __init__(self, Class, Prototype, Value=w_Undefined):
-        W_NativeObject.__init__(self, Class, Prototype, Value)
+#class W_ObjectObject(W_NativeObject):
+    #def __init__(self, Class, Prototype, Value=w_Undefined):
+        #W_NativeObject.__init__(self, Class, Prototype, Value)
 
-    def Call(self, args=[], this=None):
-        if len(args) >= 1 and not isnull_or_undefined(args[0]):
-            return args[0].ToObject()
-        else:
-            return self.Construct()
+    #def Call(self, args=[], this=None):
+        #if len(args) >= 1 and not isnull_or_undefined(args[0]):
+            #return args[0].ToObject()
+        #else:
+            #return self.Construct()
 
-    def Construct(self, args=[]):
-        if (len(args) >= 1 and not args[0] is w_Undefined and not args[0] is w_Null):
-            # XXX later we could separate builtins and normal objects
-            return args[0].ToObject()
-        return create_object('Object')
+    #def Construct(self, args=[]):
+        #if (len(args) >= 1 and not args[0] is w_Undefined and not args[0] is w_Null):
+            ## XXX later we could separate builtins and normal objects
+            #return args[0].ToObject()
+        #return create_object('Object')
 
 #class W_BooleanObject(W_NativeObject):
     #def Call(self, args=[], this=None):
@@ -526,20 +507,20 @@ class W_ObjectObject(W_NativeObject):
             #return create_object('Number', Value = Value)
         #return create_object('Number', Value = W_FloatNumber(0.0))
 
-class W_StringObject(W_NativeObject):
-    length = 1
-    def Call(self, args=[], this=None):
-        if len(args) >= 1:
-            return W_String(args[0].ToString())
-        else:
-            return W_String('')
+#class W_StringObject(W_NativeObject):
+    #length = 1
+    #def Call(self, args=[], this=None):
+        #if len(args) >= 1:
+            #return W_String(args[0].ToString())
+        #else:
+            #return W_String('')
 
-    def Construct(self, args=[]):
-        if len(args) >= 1:
-            Value = W_String(args[0].ToString())
-        else:
-            Value = W_String('')
-        return Value.ToObject()
+    #def Construct(self, args=[]):
+        #if len(args) >= 1:
+            #Value = W_String(args[0].ToString())
+        #else:
+            #Value = W_String('')
+        #return Value.ToObject()
 
 def create_array(elements=[]):
     # TODO do not get array prototype from global context?

@@ -1,6 +1,5 @@
 from js.jsobj import W_IntNumber, W_FloatNumber, W_String,\
-     W_PrimitiveObject, ActivationObject,\
-     create_object, W_Object, w_Undefined, newbool,\
+     create_object, w_Undefined, newbool,\
      w_True, w_False, W_List, w_Null, W_Iterator, W_Root, W__Function
 import js.jsobj as jsobj
 from js.execution import JsTypeError, ReturnException, ThrowException
@@ -122,10 +121,6 @@ class LOAD_ARRAY(Opcode):
         self.counter = counter
 
     def eval(self, ctx):
-        #proto = ctx.get_global().Get('Array').Get('prototype')
-        # TODO get array prototype?
-        # builtins make_array??
-        #assert isinstance(proto, W_PrimitiveObject)
         from js.jsobj import W__Array
         array = W__Array()
         for i in range(self.counter):
@@ -210,7 +205,7 @@ class SUB(BaseBinaryOperation):
 class IN(BaseBinaryOperation):
     def operation(self, ctx, left, right):
         from js.jsobj import W_BasicObject
-        if not (isinstance(right, W_Object) or isinstance(right, W_BasicObject)):
+        if not isinstance(right, W_BasicObject):
             raise ThrowException(W_String("TypeError: "+ repr(right)))
         name = left.ToString()
         return newbool(right.HasProperty(name))
@@ -492,7 +487,7 @@ class POP(Opcode):
 def common_call(ctx, r1, args, this, name):
     # TODO
     from js.jsobj import W_BasicFunction, W_BasicObject
-    if not (isinstance(r1, W_PrimitiveObject) or isinstance(r1, W_BasicFunction) or isinstance(r1, W_BasicObject)):
+    if not (isinstance(r1, W_BasicFunction) or isinstance(r1, W_BasicObject)):
         raise ThrowException(W_String("%s is not a callable (%s)"%(r1.ToString(), name.ToString())))
     jit.promote(r1)
     try:
@@ -584,7 +579,7 @@ class LOAD_ITERATOR(Opcode):
         obj = ctx.pop().ToObject()
         props = []
         from js.jsobj import W_BasicObject
-        assert isinstance(obj, W_PrimitiveObject) or isinstance(obj, W_BasicObject)
+        assert isinstance(obj, W_BasicObject)
 
         for prop in obj._get_property_keys():
             if not obj._get_property_flags(prop) & jsobj.DONT_ENUM:

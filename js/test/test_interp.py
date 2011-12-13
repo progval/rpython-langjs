@@ -1,7 +1,7 @@
 import py
 from js import interpreter
 from js.operations import IntNumber, FloatNumber, Position, Plus
-from js.jsobj import W_Object, W_Root, w_Null, W___Root
+from js.jsobj import W_Root, w_Null, W___Root
 from js.execution import ThrowException
 from js.jscode import JsCode
 from js.baseop import AbstractEC

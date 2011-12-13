@@ -2,8 +2,7 @@
 """ Base operations implementations
 """
 
-from js.jsobj import W_String, W_IntNumber, W_FloatNumber,\
-     W_PrimitiveObject
+from js.jsobj import W_String, W_IntNumber, W_FloatNumber
 from js.execution import ThrowException, JsTypeError
 
 from pypy.rlib.rarithmetic import r_uint, intmask, ovfcheck
@@ -218,7 +217,7 @@ def StrictEC(ctx, x, y):
 
 def commonnew(ctx, obj, args):
     from js.jsobj import W_BasicObject
-    if not (isinstance(obj, W_PrimitiveObject) or isinstance(obj, W_BasicObject)):
+    if not isinstance(obj, W_BasicObject):
         raise ThrowException(W_String('it is not a constructor'))
     try:
         res = obj.Construct(args=args)
