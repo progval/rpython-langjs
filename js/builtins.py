@@ -1,13 +1,10 @@
-import math
 import time
-from pypy.rlib import rrandom
-random = rrandom.Random(int(time.time()))
 
 from js.jsobj import W_Object,\
      w_Undefined, W_NewBuiltin, W_IntNumber, w_Null, create_object, W_Boolean,\
-     W_FloatNumber, W_String, W_Builtin, W_Array, w_Null, newbool,\
+     W_FloatNumber, W_String, W_Builtin, w_Null, newbool,\
      isnull_or_undefined, W_PrimitiveObject, W_ListObject, W_Number,\
-     DONT_DELETE, DONT_ENUM, READ_ONLY, INTERNAL
+     DONT_DELETE, DONT_ENUM, READ_ONLY, INTERNAL, _w
 from js.execution import ThrowException, JsTypeError
 
 from js.jsparser import parse, ParseError
@@ -42,29 +39,28 @@ def load_file(filename):
     return t
 
 def make_loadjs(interp):
-    def f(args, this):
+    def f(this, *args):
         filename = str(args[0].ToString())
         t = load_file(filename)
         interp.run(t)
         return w_Undefined
     return f
 
-class W_Eval(W_NewBuiltin):
-    def __init__(self, ctx):
-        W_NewBuiltin.__init__(self)
-        self.ctx = ctx
+# 15.1.2.1
+from js.jsobj import W_BasicFunction
+class W__Eval(W_BasicFunction):
+    def ToString(self):
+        return "function eval() { [native code] }"
 
-    length = 1
     def Call(self, args=[], this=None):
-        if len(args) >= 1:
-            arg0 = args[0]
-            if  isinstance(arg0, W_String):
-                src = arg0.ToString()
-            else:
-                return arg0
-        else:
+        if len(args) == 0:
             return w_Undefined
 
+        arg0 = args[0]
+        if  not isinstance(arg0, W_String):
+            return arg0
+
+        src = arg0.ToString()
         try:
             node = eval_source(src, 'evalcode')
         except ParseError, e:
@@ -73,7 +69,7 @@ class W_Eval(W_NewBuiltin):
         bytecode = JsCode()
         node.emit(bytecode)
         func = bytecode.make_js_function()
-        return func.run(self.ctx)
+        return func.run(self._context_)
 
 class W_ParseInt(W_NewBuiltin):
     length = 1
@@ -116,18 +112,6 @@ class W_FromCharCode(W_NewBuiltin):
             i = arg.ToInt32() % 65536 # XXX should be uint16
             temp.append(chr(i))
         return W_String(''.join(temp))
-
-class W_CharAt(W_NewBuiltin):
-    length = 1
-    def Call(self, args=[], this=None):
-        string = this.ToString()
-        if len(args)>=1:
-            pos = args[0].ToInt32()
-            if (not pos >=0) or (pos > len(string) - 1):
-                return W_String('')
-        else:
-            return W_String('')
-        return W_String(string[pos])
 
 class W_CharCodeAt(W_NewBuiltin):
     def Call(self, args=[], this=None):
@@ -317,11 +301,14 @@ functionstring= 'function (arguments go here!) {\n'+ \
                 '}'
 class W_FToString(W_NewBuiltin):
     def Call(self, args=[], this=None):
-        assert isinstance(this, W_PrimitiveObject)
-        if this.Class == 'Function':
+        from js.jsobj import W__Function
+        if isinstance(this, W_PrimitiveObject):
+            if this.Class == 'Function':
+                return W_String(functionstring)
+        if isinstance(this, W__Function):
             return W_String(functionstring)
-        else:
-            raise JsTypeError('this is not a function object')
+
+        raise JsTypeError('this is not a function object')
 
 class W_Apply(W_NewBuiltin):
     def __init__(self, ctx):
@@ -370,7 +357,6 @@ class W_ValueToString(W_NewBuiltin):
             raise JsTypeError('Wrong type')
         return W_String(this.Value.ToString())
 
-
 class W_NumberValueToString(W_ValueToString):
     mytype = 'number'
 
@@ -379,115 +365,6 @@ class W_BooleanValueToString(W_ValueToString):
 
 class W_StringValueToString(W_ValueToString):
     mytype = 'string'
-
-class W_ArrayToString(W_NewBuiltin):
-    length = 0
-    def Call(self, args=[], this=None):
-        return W_String(common_join(this, sep=','))
-
-class W_ArrayJoin(W_NewBuiltin):
-    length = 1
-    def Call(self, args=[], this=None):
-        if len(args) >= 1 and not args[0] is w_Undefined:
-            sep = args[0].ToString()
-        else:
-            sep = ','
-
-        return W_String(common_join(this, sep))
-
-class W_ArrayPush(W_NewBuiltin):
-    def Call(self, args=[], this=None):
-        n = this.Get('length').ToUInt32()
-        for arg in args:
-            this.Put(str(n), arg)
-            n += 1
-        j = W_IntNumber(n)
-        this.Put('length', j);
-        return j
-
-class W_ArrayPop(W_NewBuiltin):
-    def Call(self, args=[], this=None):
-        len = this.Get('length').ToUInt32()
-        if(len == 0):
-            return w_Undefined
-        else:
-            indx = len-1
-            indxstr = str(indx)
-            element = this.Get(indxstr)
-            this.Delete(indxstr)
-            this.Put('length', W_IntNumber(indx))
-            return element
-
-class W_ArrayReverse(W_NewBuiltin):
-    length = 0
-    def Call(self, args=[], this=None):
-        r2 = this.Get('length').ToUInt32()
-        k = r_uint(0)
-        r3 = r_uint(math.floor( float(r2)/2.0 ))
-        if r3 == k:
-            return this
-
-        while k < r3:
-            r6 = r2 - k - 1
-            r7 = str(k)
-            r8 = str(r6)
-
-            r9 = this.Get(r7)
-            r10 = this.Get(r8)
-
-            this.Put(r7, r10)
-            this.Put(r8, r9)
-            k += 1
-
-        return this
-
-class W_ArraySort(W_NewBuiltin):
-    length = 1
-    #XXX: further optimize this function
-    def Call(self, args=[], this=None):
-        length = this.Get('length').ToUInt32()
-
-        # According to ECMA-262 15.4.4.11, non-existing properties always come after
-        # existing values. Undefined is always greater than any other value.
-        # So we create a list of non-undefined values, sort them, and append undefined again.
-        values = []
-        undefs = r_uint(0)
-
-        for i in range(length):
-            P = str(i)
-            if not this.HasProperty(P):
-                # non existing property
-                continue
-            obj = this.Get(str(i))
-            if obj is w_Undefined:
-                undefs += 1
-                continue
-            values.append(obj)
-
-        # sort all values
-        if len(args) > 0 and args[0] is not w_Undefined:
-            sorter = Sorter(values, compare_fn=args[0])
-        else:
-            sorter = Sorter(values)
-        sorter.sort()
-
-        # put sorted values back
-        values = sorter.list
-        for i in range(len(values)):
-            this.Put(str(i), values[i])
-
-        # append undefined values
-        newlength = len(values)
-        while undefs > 0:
-            undefs -= 1
-            this.Put(str(newlength), w_Undefined)
-            newlength += 1
-
-        # delete non-existing elements on the end
-        while length > newlength:
-            this.Delete(str(newlength))
-            newlength += 1
-        return this
 
 class W_NativeObject(W_Object):
     def __init__(self, Class, Prototype, Value=w_Undefined):
@@ -501,18 +378,11 @@ class W_DateObject(W_NativeObject):
         v = int(time.time()*1000)
         return create_object('Date', Value = W_IntNumber(v))
 
-def pypy_repr(args, this):
+def pypy_repr(this, *args):
     o = args[0]
-    t = 'Unknown'
-    if isinstance(o, W_FloatNumber):
-        t = 'W_FloatNumber'
-    elif isinstance(o, W_IntNumber):
-        t = 'W_IntNumber'
-    elif isinstance(o, W_Number):
-        t = 'W_Number'
-    return W_String(t)
+    return W_String(repr(o))
 
-def put_values(ctx, obj, dictvalues):
+def put_values(obj, dictvalues):
     for key,value in dictvalues.iteritems():
         obj.Put(key, value)
 
@@ -556,14 +426,14 @@ class Sorter(TimSort):
 def writer(x):
     print x
 
-def printjs(args, this):
+def printjs(this, *args):
     writer(",".join([i.ToString() for i in args]))
     return w_Undefined
 
 def noop(*args):
     return w_Undefined
 
-def isnanjs(args, this):
+def isnanjs(this, *args):
     if len(args) < 1:
         return newbool(True)
     return newbool(isnan(args[0].ToNumber()))
@@ -577,53 +447,8 @@ def isfinitejs(args, this):
     else:
         return newbool(True)
 
-def absjs(args, this):
-    val = args[0]
-    if isinstance(val, W_IntNumber):
-        if val.ToInteger() > 0:
-            return val # fast path
-        return W_IntNumber(-val.ToInteger())
-    return W_FloatNumber(abs(args[0].ToNumber()))
-
-def floorjs(args, this):
-    if len(args) < 1:
-        return W_FloatNumber(NAN)
-
-    val = args[0].ToNumber()
-
-    pos = math.floor(val)
-    if isnan(val):
-        pos = INFINITY
-
-    return W_FloatNumber(pos)
-
-def roundjs(args, this):
-    return floorjs(args, this)
-
-def powjs(args, this):
-    return W_FloatNumber(math.pow(args[0].ToNumber(), args[1].ToNumber()))
-
-def sqrtjs(args, this):
-    return W_FloatNumber(math.sqrt(args[0].ToNumber()))
-
-def logjs(args, this):
-    return W_FloatNumber(math.log(args[0].ToNumber()))
-
 def versionjs(args, this):
     return w_Undefined
-
-def randomjs(args, this):
-    return W_FloatNumber(random.random())
-
-def minjs(args, this):
-    a = args[0].ToNumber()
-    b = args[1].ToNumber()
-    return W_FloatNumber(min(a, b))
-
-def maxjs(args, this):
-    a = args[0].ToNumber()
-    b = args[1].ToNumber()
-    return W_FloatNumber(max(a, b))
 
 def _ishex(ch):
     return ((ch >= 'a' and ch <= 'f') or (ch >= '0' and ch <= '9') or
@@ -665,42 +490,41 @@ class W_ObjectObject(W_NativeObject):
             return self.Construct()
 
     def Construct(self, args=[]):
-        if (len(args) >= 1 and not args[0] is w_Undefined and not
-            args[0] is w_Null):
+        if (len(args) >= 1 and not args[0] is w_Undefined and not args[0] is w_Null):
             # XXX later we could separate builtins and normal objects
             return args[0].ToObject()
         return create_object('Object')
 
-class W_BooleanObject(W_NativeObject):
-    def Call(self, args=[], this=None):
-        if len(args) >= 1 and not isnull_or_undefined(args[0]):
-            return newbool(args[0].ToBoolean())
-        else:
-            return newbool(False)
+#class W_BooleanObject(W_NativeObject):
+    #def Call(self, args=[], this=None):
+        #if len(args) >= 1 and not isnull_or_undefined(args[0]):
+            #return newbool(args[0].ToBoolean())
+        #else:
+            #return newbool(False)
 
-    def Construct(self, args=[]):
-        if len(args) >= 1 and not isnull_or_undefined(args[0]):
-            Value = newbool(args[0].ToBoolean())
-            return create_object('Boolean', Value = Value)
-        return create_object('Boolean', Value = newbool(False))
+    #def Construct(self, args=[]):
+        #if len(args) >= 1 and not isnull_or_undefined(args[0]):
+            #Value = newbool(args[0].ToBoolean())
+            #return create_object('Boolean', Value = Value)
+        #return create_object('Boolean', Value = newbool(False))
 
-class W_NumberObject(W_NativeObject):
-    def Call(self, args=[], this=None):
-        if len(args) >= 1 and not isnull_or_undefined(args[0]):
-            return W_FloatNumber(args[0].ToNumber())
-        elif len(args) >= 1 and args[0] is w_Undefined:
-            return W_FloatNumber(NAN)
-        else:
-            return W_FloatNumber(0.0)
+#class W_NumberObject(W_NativeObject):
+    #def Call(self, args=[], this=None):
+        #if len(args) >= 1 and not isnull_or_undefined(args[0]):
+            #return W_FloatNumber(args[0].ToNumber())
+        #elif len(args) >= 1 and args[0] is w_Undefined:
+            #return W_FloatNumber(NAN)
+        #else:
+            #return W_FloatNumber(0.0)
 
-    def ToNumber(self):
-        return 0.0
+    #def ToNumber(self):
+        #return 0.0
 
-    def Construct(self, args=[]):
-        if len(args) >= 1 and not isnull_or_undefined(args[0]):
-            Value = W_FloatNumber(args[0].ToNumber())
-            return create_object('Number', Value = Value)
-        return create_object('Number', Value = W_FloatNumber(0.0))
+    #def Construct(self, args=[]):
+        #if len(args) >= 1 and not isnull_or_undefined(args[0]):
+            #Value = W_FloatNumber(args[0].ToNumber())
+            #return create_object('Number', Value = Value)
+        #return create_object('Number', Value = W_FloatNumber(0.0))
 
 class W_StringObject(W_NativeObject):
     length = 1
@@ -720,31 +544,31 @@ class W_StringObject(W_NativeObject):
 def create_array(elements=[]):
     # TODO do not get array prototype from global context?
     #proto = ctx.get_global().Get('Array').Get('prototype')
-    from js.builtins import get_builtin_prototype
-    proto = get_builtin_prototype('Array')
-    assert isinstance(proto, W_PrimitiveObject)
-    array = W_Array(Prototype=proto, Class = proto.Class)
-    i = 0
+    #from js.builtins import get_builtin_prototype
+    #proto = get_builtin_prototype('Array')
+    #assert isinstance(proto, W_PrimitiveObject)
+    array = W__Array()
+    #i = 0
     while i < len(elements):
         array.Put(str(i), elements[i])
         i += 1
 
     return array
 
-class W_ArrayObject(W_NativeObject):
-    def __init__(self, Class, Prototype):
-        W_NativeObject.__init__(self, Class, Prototype, None )
+#class W_ArrayObject(W_NativeObject):
+    #def __init__(self, Class, Prototype):
+        #W_NativeObject.__init__(self, Class, Prototype, None )
 
-    def Call(self, args=[], this=None):
-        if len(args) == 1 and isinstance(args[0], W_Number):
-            array = create_array()
-            array.Put('length', args[0])
-        else:
-            array = create_array(args)
-        return array
+    #def Call(self, args=[], this=None):
+        #if len(args) == 1 and isinstance(args[0], W_Number):
+            #array = create_array()
+            #array.Put('length', args[0])
+        #else:
+            #array = create_array(args)
+        #return array
 
-    def Construct(self, args=[]):
-        return self.Call(args)
+    #def Construct(self, args=[]):
+        #return self.Call(args)
 
 _builtin_prototypes = {}
 def get_builtin_prototype(name):
@@ -756,219 +580,330 @@ def get_builtin_prototype(name):
 def _register_builtin_prototype(name, obj):
     _builtin_prototypes[name] = obj
 
+def new_native_function(ctx, function, name = None):
+    from js.jscode import Js_NativeFunction
+    from js.jsobj import W__Function
+    return W__Function(ctx, Js_NativeFunction(function, name))
+
+# 15.7.4.2
+def number_to_string(this, *args):
+    # TODO radix, see 15.7.4.2
+    return this.ToString()
+
 def setup_builtins(interp):
+    def put_native_function(obj, name, func):
+        obj.Put(name, new_native_function(ctx, func, name))
+
     allon = DONT_ENUM | DONT_DELETE | READ_ONLY
     from js.jsexecution_context import make_global_context
+
     ctx = make_global_context()
     w_Global = ctx.to_context_object()
 
-    w_ObjPrototype = W_Object(Prototype=None, Class='Object')
+    from js.jsobj import W_BasicObject, W__Object
+    w_ObjectPrototype = W_BasicObject()
+    W__Object._prototype_ = w_ObjectPrototype
 
-    w_Function = W_Function(ctx, Class='Function', Prototype=w_ObjPrototype)
-    w_FncPrototype = W_Function(ctx, Class='Function', Prototype=w_ObjPrototype)#W_Object(Prototype=None, Class='Function')
+    from js.jscode import Js_NativeFunction
+    from js.jsobj import W__Function
 
-    w_Function.Put('length', W_IntNumber(1), flags = allon)
+    # 15.3.4
+    import js.builtins_function as function_builtins
+    w_FunctionPrototype = new_native_function(ctx, function_builtins.empty, 'Empty')
+    w_FunctionPrototype._prototype_ = w_ObjectPrototype
+
+    # 15.3.3.1
+    W__Function._prototype_ = w_FunctionPrototype
+
+    from js.jsobj import W_FunctionConstructor
+    W_FunctionConstructor._prototype_ = w_FunctionPrototype
+
+    w_Function = W_FunctionConstructor(ctx)
+    w_Function.Put('constructor', w_Function, DONT_ENUM)
+
     w_Global.Put('Function', w_Function)
 
-    w_Object = W_ObjectObject('Object', w_FncPrototype)
-    w_Object.Put('prototype', w_ObjPrototype, flags = allon)
-    w_Object.Put('length', W_IntNumber(1), flags = allon)
-    w_Global.Prototype = w_ObjPrototype
+    from js.jsobj import W_ObjectConstructor
+    # 15.2.3
+    W_ObjectConstructor._prototype_ = w_FunctionPrototype
+    w_Object = W_ObjectConstructor()
 
-    w_Object.Put('prototype', w_ObjPrototype, flags = allon)
+    # 15.2.3.1
+    w_Object.Put('prototype', w_ObjectPrototype, flags = allon)
+    w_Object.Put('length', _w(1), flags = allon)
     w_Global.Put('Object', w_Object)
 
-    w_Function.Put('prototype', w_FncPrototype, flags = allon)
-    w_Function.Put('constructor', w_Function, flags=allon)
+    w_ObjectPrototype.Put('__proto__', w_Null)
+    # 15.2.4.1
+    w_ObjectPrototype.Put('constructor', w_Object)
 
-    toString = W_ToString()
+    # 15.2.4.2
+    import js.builtins_object as object_builtins
+    put_native_function(w_Object, 'toString', object_builtins.to_string)
+    put_native_function(w_Object, 'toLocaleString', object_builtins.to_string)
+    put_native_function(w_Object, 'valueOf', object_builtins.value_of)
 
-    put_values(ctx, w_ObjPrototype, {
-        'constructor': w_Object,
-        '__proto__': w_Null,
-        'toString': toString,
-        'toLocaleString': toString,
-        'valueOf': W_ValueOf(),
-        'hasOwnProperty': W_HasOwnProperty(),
-        'isPrototypeOf': W_IsPrototypeOf(),
-        'propertyIsEnumerable': W_PropertyIsEnumerable(),
-    })
-    _register_builtin_prototype('Object', w_ObjPrototype)
+    #put_values(w_ObjPrototype, {
+        #'constructor': w_Object,
+        #'__proto__': w_Null,
+        #'toString': toString,
+        #'toLocaleString': toString,
+        #'valueOf': W_ValueOf(),
+        #'hasOwnProperty': W_HasOwnProperty(),
+        #'isPrototypeOf': W_IsPrototypeOf(),
+        #'propertyIsEnumerable': W_PropertyIsEnumerable(),
+    #})
 
-    #properties of the function prototype
-    put_values(ctx, w_FncPrototype, {
-        'constructor': w_Function,
-        '__proto__': w_FncPrototype,
-        'toString': W_FToString(),
-        'apply': W_Apply(ctx),
-        'call': W_Call(ctx),
-        'arguments': w_Null,
-        'valueOf': W_ValueOf(),
-    })
-    _register_builtin_prototype('Function', w_FncPrototype)
+    #15.3.3.2
+    w_Function.Put('length', _w(1), flags = allon)
 
-    w_Boolean = W_BooleanObject('Boolean', w_FncPrototype)
-    w_Boolean.Put('constructor', w_FncPrototype, flags = allon)
-    w_Boolean.Put('length', W_IntNumber(1), flags = allon)
+    # 15.3.4.1
+    w_FunctionPrototype.Put('constructor', w_Function)
 
-    w_BoolPrototype = create_object('Object', Value=newbool(False))
-    w_BoolPrototype.Class = 'Boolean'
+    # 15.3.4.2
+    import js.builtins_function as function_builtins
+    put_native_function(w_FunctionPrototype, 'toString', function_builtins.to_string)
 
-    put_values(ctx, w_BoolPrototype, {
-        'constructor': w_FncPrototype,
-        '__proto__': w_ObjPrototype,
-        'toString': W_BooleanValueToString(),
-        'valueOf': get_value_of('Boolean')(),
-    })
-    _register_builtin_prototype('Boolean', w_BoolPrototype)
 
-    w_Boolean.Put('prototype', w_BoolPrototype, flags = allon)
+    ##properties of the function prototype
+    #put_values(w_FncPrototype, {
+        #'constructor': w_Function,
+        #'__proto__': w_FncPrototype,
+        #'toString': W_FToString(),
+        #'apply': W_Apply(ctx),
+        #'call': W_Call(ctx),
+        #'arguments': w_Null,
+        #'valueOf': W_ValueOf(),
+    #})
+
+    # 15.6.2
+    from js.jsobj import W_BooleanConstructor
+    w_Boolean = W_BooleanConstructor(ctx)
     w_Global.Put('Boolean', w_Boolean)
 
-    #Number
-    w_Number = W_NumberObject('Number', w_FncPrototype)
+    # 15.6.4
+    from js.jsobj import W_BooleanObject
+    w_BooleanPrototype = W_BooleanObject(False)
+    w_BooleanPrototype._prototype_ = W__Object._prototype_
 
-    w_empty_fun = w_Function.Call(args=[W_String('')])
+    # 15.6.4.1
+    w_BooleanPrototype.Put('constructor', w_Boolean)
 
-    w_NumPrototype = create_object('Object', Value=W_FloatNumber(0.0))
-    w_NumPrototype.Class = 'Number'
-    put_values(ctx, w_NumPrototype, {
-        'constructor': w_Number,
-        '__proto__': w_empty_fun,
-        'toString': W_NumberValueToString(),
-        'valueOf': get_value_of('Number')(),
-    })
-    _register_builtin_prototype('Number', w_NumPrototype)
+    import js.builtins_boolean as boolean_builtins
+    # 15.6.4.2
+    put_native_function(w_BooleanPrototype, 'toString', boolean_builtins.to_string)
 
-    put_values(ctx, w_Number, {
-        'constructor': w_FncPrototype,
-        'prototype': w_NumPrototype,
-        '__proto__': w_FncPrototype,
-        'length'   : W_IntNumber(1),
-    })
-    f = w_Number._get_property_flags('prototype') | READ_ONLY
-    w_Number._set_property_flags('prototype', f)
-    w_Number.Put('MAX_VALUE', W_FloatNumber(1.7976931348623157e308), flags = READ_ONLY | DONT_DELETE)
-    w_Number.Put('MIN_VALUE', W_FloatNumber(0), flags = READ_ONLY | DONT_DELETE)
-    w_Number.Put('NaN', W_FloatNumber(NAN), flags = READ_ONLY | DONT_DELETE)
-    # ^^^ this is exactly in test case suite
-    w_Number.Put('POSITIVE_INFINITY', W_FloatNumber(INFINITY), flags = READ_ONLY | DONT_DELETE)
-    w_Number.Put('NEGATIVE_INFINITY', W_FloatNumber(-INFINITY), flags = READ_ONLY | DONT_DELETE)
+    # 15.6.3.1
+    W_BooleanObject._prototype_ = w_BooleanPrototype
 
+    #put_values(w_BoolPrototype, {
+        #'constructor': w_FncPrototype,
+        #'__proto__': w_ObjPrototype,
+        #'toString': W_BooleanValueToString(),
+        #'valueOf': get_value_of('Boolean')(),
+    #})
 
+    # 15.7.2
+    from js.jsobj import W_NumberConstructor
+    w_Number = W_NumberConstructor(ctx)
     w_Global.Put('Number', w_Number)
 
+    # 15.7.4
+    from js.jsobj import W_NumericObject
+    w_NumberPrototype = W_NumericObject(0)
+    w_NumberPrototype._prototype_ = W__Object._prototype_
+
+    # 15.7.4.1
+    w_NumberPrototype.Put('constructor', w_NumberPrototype)
+
+    # 15.7.4.2
+    w_NumberPrototype.Put('toString', new_native_function(ctx, number_to_string, 'toString'))
+
+    # 15.7.3.1
+    w_Number.Put('prototype', w_NumberPrototype)
+    W_NumericObject._prototype_ = w_NumberPrototype
+
+    # 15.7.3.2
+    w_Number.Put('MAX_VALUE', _w(1.7976931348623157e308), flags = READ_ONLY | DONT_DELETE)
+
+    # 15.7.3.3
+    w_Number.Put('MIN_VALUE', _w(5e-320), flags = READ_ONLY | DONT_DELETE)
+
+    # 15.7.3.4
+    w_NAN = _w(NAN)
+    w_Number.Put('NaN', w_NAN, flags = READ_ONLY | DONT_DELETE)
+
+    # 15.7.3.5
+    w_POSITIVE_INFINITY = _w(INFINITY)
+    w_Number.Put('POSITIVE_INFINITY', w_POSITIVE_INFINITY, flags = READ_ONLY | DONT_DELETE)
+
+    # 15.7.3.6
+    w_NEGATIVE_INFINITY = _w(-INFINITY)
+    w_Number.Put('NEGATIVE_INFINITY', w_NEGATIVE_INFINITY, flags = READ_ONLY | DONT_DELETE)
 
     #String
-    w_String = W_StringObject('String', w_FncPrototype)
-
-    w_StrPrototype = create_object('Object', Value=W_String(''))
-    w_StrPrototype.Class = 'String'
-    w_StrPrototype.Put('length', W_IntNumber(0))
-
-    put_values(ctx, w_StrPrototype, {
-        'constructor': w_String,
-        '__proto__': w_StrPrototype,
-        'toString': W_StringValueToString(),
-        'valueOf': get_value_of('String')(),
-        'charAt': W_CharAt(),
-        'charCodeAt': W_CharCodeAt(),
-        'concat': W_Concat(),
-        'indexOf': W_IndexOf(),
-        'lastIndexOf': W_LastIndexOf(),
-        'substring': W_Substring(),
-        'split': W_Split(),
-        'toLowerCase': W_ToLowerCase(),
-        'toUpperCase': W_ToUpperCase()
-    })
-    _register_builtin_prototype('String', w_StrPrototype)
-
-    w_String.Put('prototype', w_StrPrototype, flags=allon)
-    w_String.Put('fromCharCode', W_FromCharCode())
+    # 15.5.1
+    from js.jsobj import W_StringConstructor
+    w_String = W_StringConstructor(ctx)
     w_Global.Put('String', w_String)
 
-    w_Array = W_ArrayObject('Array', w_FncPrototype)
+    # 15.5.4
+    from js.jsobj import W_StringObject
+    w_StringPrototype = W_StringObject('')
+    w_StringPrototype._prototype_ = W__Object._prototype_
 
-    w_ArrPrototype = W_Array(Prototype=w_ObjPrototype)
+    # 15.5.3.1
+    W_StringObject._prototype_ = w_StringPrototype
 
-    put_values(ctx, w_ArrPrototype, {
-        'constructor': w_FncPrototype,
-        '__proto__': w_ArrPrototype,
-        'toString': W_ArrayToString(),
-        'join': W_ArrayJoin(),
-        'reverse': W_ArrayReverse(),
-        'sort': W_ArraySort(),
-        'push': W_ArrayPush(),
-        'pop': W_ArrayPop(),
-    })
-    _register_builtin_prototype('Array', w_ArrPrototype)
+    # 15.5.4.1
+    w_StringPrototype.Put('constructor', w_String)
 
-    w_Array.Put('prototype', w_ArrPrototype, flags = allon)
-    w_Array.Put('__proto__', w_FncPrototype, flags = allon)
-    w_Array.Put('length', W_IntNumber(1), flags = allon)
+    import js.builtins_string as string_builtins
+    # 15.5.4.4
+    put_native_function(w_StringPrototype, 'charAt', string_builtins.char_at)
+
+
+    #put_values(w_StrPrototype, {
+        #'constructor': w_String,
+        #'__proto__': w_StrPrototype,
+        #'toString': W_StringValueToString(),
+        #'valueOf': get_value_of('String')(),
+        #'charAt': W_CharAt(),
+        #'charCodeAt': W_CharCodeAt(),
+        #'concat': W_Concat(),
+        #'indexOf': W_IndexOf(),
+        #'lastIndexOf': W_LastIndexOf(),
+        #'substring': W_Substring(),
+        #'split': W_Split(),
+        #'toLowerCase': W_ToLowerCase(),
+        #'toUpperCase': W_ToUpperCase()
+    #})
+    #_register_builtin_prototype('String', w_StrPrototype)
+
+    #w_String.Put('prototype', w_StrPrototype, flags=allon)
+    #w_String.Put('fromCharCode', W_FromCharCode())
+    #w_Global.Put('String', w_String)
+
+    from js.jsobj import W_ArrayConstructor, W__Array
+    w_Array = W_ArrayConstructor()
+
+    # 15.4.4
+    w_ArrayPrototype = W__Array()
+    w_ArrayPrototype._prototype_ = W__Object._prototype_
+
+    # 15.4.4.1
+    w_ArrayPrototype.Put('constructor', w_Array)
+
+    import js.builtins_array as array_builtins
+    # 15.4.4.2
+    put_native_function(w_ArrayPrototype, 'toString', array_builtins.to_string)
+    # 15.4.4.5
+    put_native_function(w_ArrayPrototype, 'join', array_builtins.join)
+    # 15.4.4.6
+    put_native_function(w_ArrayPrototype, 'pop', array_builtins.pop)
+    # 15.4.4.7
+    put_native_function(w_ArrayPrototype, 'push', array_builtins.push)
+
+    # 15.4.3.1
+    W__Array._prototype_ = w_ArrayPrototype
+
+    #put_values(w_ArrPrototype, {
+        #'constructor': w_FncPrototype,
+        #'__proto__': w_ArrPrototype,
+        #'toString': W_ArrayToString(),
+        #'join': W_ArrayJoin(),
+        #'reverse': W_ArrayReverse(),
+        #'sort': W_ArraySort(),
+        #'push': W_ArrayPush(),
+        #'pop': W_ArrayPop(),
+    #})
+
+    #w_Array._prototype_ = w_FunctionPrototype
+    #w_Array.Put('__proto__', w_FunctionPrototype, flags = allon)
+
+    #w_Array.Put('length', _w(1), flags = allon)
     w_Global.Put('Array', w_Array)
 
 
     #Math
-    w_math = W_Object(Class='Math')
-    w_Global.Put('Math', w_math)
-    w_math.Put('__proto__',  w_ObjPrototype)
-    w_math.Put('prototype', w_ObjPrototype, flags = allon)
-    w_math.Put('abs', W_Builtin(absjs, Class='function'))
-    w_math.Put('floor', W_Builtin(floorjs, Class='function'))
-    w_math.Put('round', W_Builtin(roundjs, Class='function'))
-    w_math.Put('pow', W_Builtin(powjs, Class='function'))
-    w_math.Put('sqrt', W_Builtin(sqrtjs, Class='function'))
-    w_math.Put('log', W_Builtin(logjs, Class='function'))
-    w_math.Put('E', W_FloatNumber(math.e), flags=allon)
-    w_math.Put('LN2', W_FloatNumber(math.log(2)), flags=allon)
-    w_math.Put('LN10', W_FloatNumber(math.log(10)), flags=allon)
-    log2e = math.log(math.e) / math.log(2) # rpython supports log with one argument only
-    w_math.Put('LOG2E', W_FloatNumber(log2e), flags=allon)
-    w_math.Put('LOG10E', W_FloatNumber(math.log10(math.e)), flags=allon)
-    w_math.Put('PI', W_FloatNumber(math.pi), flags=allon)
-    w_math.Put('SQRT1_2', W_FloatNumber(math.sqrt(0.5)), flags=allon)
-    w_math.Put('SQRT2', W_FloatNumber(math.sqrt(2)), flags=allon)
-    w_math.Put('random', W_Builtin(randomjs, Class='function'))
-    w_math.Put('min', W_Builtin(minjs, Class='function'))
-    w_math.Put('max', W_Builtin(maxjs, Class='function'))
-    w_Global.Put('version', W_Builtin(versionjs), flags=allon)
+    from js.jsobj import W_Math
+    # 15.8
+    w_Math = W_Math()
+    w_Global.Put('Math', w_Math)
 
-    #Date
-    w_Date = W_DateObject('Date', w_FncPrototype)
+    #w_math.Put('__proto__',  w_ObjPrototype)
 
-    w_DatePrototype = create_object('Object', Value=W_String(''))
-    w_DatePrototype.Class = 'Date'
+    import js.builtins_math as math_builtins
+    put_native_function(w_Math, 'abs', math_builtins.abs)
+    put_native_function(w_Math, 'floor', math_builtins.floor)
+    put_native_function(w_Math, 'random', math_builtins.random)
+    put_native_function(w_Math, 'min', math_builtins.min)
+    put_native_function(w_Math, 'max', math_builtins.max)
 
-    put_values(ctx, w_DatePrototype, {
-        '__proto__': w_DatePrototype,
-        'valueOf': get_value_of('Date')(),
-        'getTime': get_value_of('Date')()
-    })
-    _register_builtin_prototype('Date', w_DatePrototype)
+    #w_math.Put('round', W_Builtin(roundjs, Class='function'))
+    #w_math.Put('pow', W_Builtin(powjs, Class='function'))
+    #w_math.Put('sqrt', W_Builtin(sqrtjs, Class='function'))
+    #w_math.Put('log', W_Builtin(logjs, Class='function'))
+    #w_math.Put('E', W_FloatNumber(math.e), flags=allon)
+    #w_math.Put('LN2', W_FloatNumber(math.log(2)), flags=allon)
+    #w_math.Put('LN10', W_FloatNumber(math.log(10)), flags=allon)
+    #log2e = math.log(math.e) / math.log(2) # rpython supports log with one argument only
+    #w_math.Put('LOG2E', W_FloatNumber(log2e), flags=allon)
+    #w_math.Put('LOG10E', W_FloatNumber(math.log10(math.e)), flags=allon)
+    #w_math.Put('PI', W_FloatNumber(math.pi), flags=allon)
+    #w_math.Put('SQRT1_2', W_FloatNumber(math.sqrt(0.5)), flags=allon)
+    #w_math.Put('SQRT2', W_FloatNumber(math.sqrt(2)), flags=allon)
+    #w_math.Put('random', W_Builtin(randomjs, Class='function'))
+    #w_math.Put('min', W_Builtin(minjs, Class='function'))
+    #w_math.Put('max', W_Builtin(maxjs, Class='function'))
+    #w_Global.Put('version', W_Builtin(versionjs), flags=allon)
 
-    w_Date.Put('prototype', w_DatePrototype, flags=allon)
+    ##Date
+    #w_Date = W_DateObject('Date', w_FncPrototype)
 
-    w_Global.Put('Date', w_Date)
+    #w_DatePrototype = create_object('Object', Value=W_String(''))
+    #w_DatePrototype.Class = 'Date'
 
-    w_Global.Put('NaN', W_FloatNumber(NAN), flags = DONT_ENUM | DONT_DELETE)
-    w_Global.Put('Infinity', W_FloatNumber(INFINITY), flags = DONT_ENUM | DONT_DELETE)
+    #put_values(w_DatePrototype, {
+        #'__proto__': w_DatePrototype,
+        #'valueOf': get_value_of('Date')(),
+        #'getTime': get_value_of('Date')()
+    #})
+    #_register_builtin_prototype('Date', w_DatePrototype)
+
+    #w_Date.Put('prototype', w_DatePrototype, flags=allon)
+    #w_Global.Put('Date', w_Date)
+
+    # 15.1.1.1
+    w_Global.Put('NaN', w_NAN, flags = DONT_ENUM | DONT_DELETE)
+
+    # 15.1.1.2
+    w_Global.Put('Infinity', w_POSITIVE_INFINITY, flags = DONT_ENUM | DONT_DELETE)
+
+    # 15.1.1.3
     w_Global.Put('undefined', w_Undefined, flags = DONT_ENUM | DONT_DELETE)
-    w_Global.Put('eval', W_Eval(ctx))
-    w_Global.Put('parseInt', W_ParseInt())
-    w_Global.Put('parseFloat', W_ParseFloat())
-    w_Global.Put('isNaN', W_Builtin(isnanjs))
-    w_Global.Put('isFinite', W_Builtin(isfinitejs))
-    w_Global.Put('print', W_Builtin(printjs))
-    w_Global.Put('alert', W_Builtin(noop))
-    w_Global.Put('unescape', W_Builtin(unescapejs))
+
+    # 15.1.2.1
+    w_Global.Put('eval', W__Eval(ctx))
+
+    #w_Global.Put('parseInt', W_ParseInt())
+    #w_Global.Put('parseFloat', W_ParseFloat())
+    #w_Global.Put('isFinite', W_Builtin(isfinitejs))
+
+    w_Global.Put('isNaN',new_native_function(ctx, isnanjs))
+    w_Global.Put('print', new_native_function(ctx, printjs))
+
+    #w_Global.Put('alert', W_Builtin(noop))
+    #w_Global.Put('unescape', W_Builtin(unescapejs))
 
     w_Global.Put('this', w_Global)
 
-    # debugging
+    ## debugging
     if not we_are_translated():
-        w_Global.Put('pypy_repr', W_Builtin(pypy_repr))
+        put_native_function(w_Global, 'pypy_repr', pypy_repr)
 
-    w_Global.Put('load', W_Builtin(make_loadjs(interp)))
+    put_native_function(w_Global, 'load', make_loadjs(interp))
+    #w_Global.Put('load', W_Builtin(make_loadjs(interp)))
 
-    return (ctx, w_Global, w_Object)
+    #return (ctx, w_Global, w_Object)
+    return (ctx, w_Global, None)

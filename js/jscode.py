@@ -3,8 +3,8 @@ from pypy.rlib.objectmodel import we_are_translated
 from pypy.rlib.jit import JitDriver, purefunction
 
 from js.execution import JsTypeError, ReturnException, ThrowException
-from js.opcodes import opcodes, POP, LABEL, BaseJump, WITH_START, WITH_END
-from js.jsobj import W_Root, W_String
+from js.opcodes import opcodes, LABEL, BaseJump, WITH_START, WITH_END
+from js.jsobj import W_Root, W_String, _w
 
 from pypy.rlib import jit, debug
 
@@ -111,23 +111,35 @@ class JsCode(object):
         return self.emit('LOAD_INTCONSTANT', i)
 
     def unpop(self):
+        from js.opcodes import POP
         if self.opcodes and isinstance(self.opcodes[-1], POP):
             self.opcodes.pop()
             return True
         else:
             return False
 
+    def returns(self):
+        from js.opcodes import RETURN
+        if self.opcodes and isinstance(self.opcodes[-1], RETURN):
+            return True
+        return False
+
     def unpop_or_undefined(self):
         if not self.unpop():
             self.emit('LOAD_UNDEFINED')
+        #elif not self.returns():
+            #self.emit('LOAD_UNDEFINED')
 
-    def make_js_function(self, name='__dont_care__', params=None):
+    def make_js_function(self, name='__dont_care__', params=[]):
         self.unpop_or_undefined()
 
         if self.has_labels:
             self.remove_labels()
 
         return JsFunction(name, params, self)
+
+    def ToJsFunction(self, name='__dont_care__', params=[]):
+        return self.make_js_function(name, params)
 
     def remove_labels(self):
         """ Basic optimization to remove all labels and change
@@ -166,43 +178,112 @@ def _restore_stack(ctx, state):
     ctx.stack_pointer = old_stack_pointer
     ctx.stack = old_stack
 
-class JsFunction(object):
+class Js__Function(object):
+    name = 'anonymous'
+    code = ''
+    params = []
+
+    def run(self, ctx, args=[], this=None):
+        raise NotImplementedError
+
+    def estimated_stack_size(self):
+        return 2
+
+    def local_variables(self):
+        return None
+
+    def ToString(self):
+        if self.name is not None:
+            return 'function %s() { [native code] }' % (self.name, )
+        else:
+            return 'function () { [native code] }'
+
+class Js_NativeFunction(Js__Function):
+    def __init__(self, function, name = None):
+        if name is not None:
+            self.name = name
+        self._function_ = _native_function(function)
+
+    def run(self, ctx, args=[], this=None):
+        return self._function_(this, args)
+
+    def ToString(self):
+        if self.name is not None:
+            return 'function %s() { [native code] }' % (self.name, )
+        else:
+            return 'function () { [native code] }'
+
+def _native_function(fn):
+    from js.jsobj import _w
+    def f(this, args):
+        res = fn(this, *args)
+        return _w(res)
+    return f
+
+class JsFunction(Js__Function):
     _immutable_fields_ = ["opcodes[*]", 'name', 'params', 'code', 'scope']
 
     def __init__(self, name, params, code):
+        Js__Function.__init__(self)
         from pypy.rlib.debug import make_sure_not_resized
         self.name = name
         self.params = params
-        self.code = code
+        self._code_ = code
         self.opcodes = make_sure_not_resized(code.opcodes[:])
         self.scope = code.scope
 
     def estimated_stack_size(self):
-        return self.code.estimated_stack_size()
+        return self._code_.estimated_stack_size()
 
     def local_variables(self):
         if self.scope:
             return self.scope.local_variables
 
-    def run(self, ctx, check_stack=True, save_stack=True):
+    def ToString(self):
+        return 'function () {}'
+
+    def _get_opcode(self, pc):
+        assert pc >= 0
+        return self.opcodes[pc]
+
+    @jit.unroll_safe
+    def run(self, ctx, args=[], this=None):
+        from js.jsexecution_context import make_activation_context, make_function_context
+
+        from js.jsobj import W_Arguments, w_Undefined
+        w_Arguments = W_Arguments(self, args)
+        act = make_activation_context(ctx, this, w_Arguments)
+        newctx = make_function_context(act, self)
+
+        paramn = len(self.params)
+        for i in range(paramn):
+            paramname = self.params[i]
+            try:
+                value = args[i]
+            except IndexError:
+                value = w_Undefined
+            newctx.declare_variable(paramname)
+            newctx.assign(paramname, value)
+
+        return self._run_with_context(ctx=newctx, save_stack = False)
+
+    def _run_with_context(self, ctx, check_stack=True, save_stack=True):
         state = ([], 0)
         if save_stack:
             state = _save_stack(ctx, self.estimated_stack_size())
 
         try:
-            r = self.run_bytecode(ctx, check_stack)
-            return r
+            self._run_bytecode(ctx)
+            if check_stack:
+                ctx.check_stack()
+            return ctx.top()
         except ReturnException, e:
             return e.value
         finally:
             if save_stack:
                 _restore_stack(ctx, state)
 
-    def _get_opcode(self, pc):
-        assert pc >= 0
-        return self.opcodes[pc]
-
-    def run_block(self, ctx, pc=0):
+    def _run_bytecode(self, ctx, pc=0):
         while True:
             jitdriver.jit_merge_point(pc=pc, self=self, ctx=ctx)
             if pc >= len(self.opcodes):
@@ -234,15 +315,8 @@ class JsFunction(object):
                 pc += 1
 
             if isinstance(opcode, WITH_START):
-                pc = self.run_block(opcode.newctx, pc)
+                pc = self._run_bytecode(opcode.newctx, pc)
             elif isinstance(opcode, WITH_END):
                 break
 
         return pc
-
-    def run_bytecode(self, ctx, check_stack=True):
-        self.run_block(ctx)
-        if check_stack:
-            ctx.check_stack()
-
-        return ctx.top()

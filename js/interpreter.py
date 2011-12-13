@@ -27,6 +27,6 @@ class Interpreter(object):
             self._code = bytecode
         func = bytecode.make_js_function()
         if interactive:
-            return func.run(self.global_context)
+            return func._run_with_context(self.global_context)
         else:
-            func.run(self.global_context)
+            func._run_with_context(self.global_context)

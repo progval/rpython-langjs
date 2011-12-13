@@ -12,6 +12,8 @@ from js.jsobj import W_Builtin, W_String, ThrowException, \
                      w_Undefined, W_Boolean
 from pypy.rlib.streamio import open_file_as_stream
 
+sys.setrecursionlimit(100)
+
 import code
 sys.ps1 = 'js> '
 sys.ps2 = '... '
@@ -33,18 +35,18 @@ except ImportError:
 
 DEBUG = False
 
-def debugjs(ctx, args, this):
+def debugjs(this, *args):
     global DEBUG
     DEBUG = not DEBUG
     return W_Boolean(DEBUG)
 
-def tracejs(ctx, args, this):
+def tracejs(this, *args):
     arguments = args
     import pdb
     pdb.set_trace()
     return w_Undefined
 
-def quitjs(ctx, args, this):
+def quitjs(this, *args):
     sys.exit(0)
 
 class JSInterpreter(code.InteractiveConsole):
@@ -52,9 +54,10 @@ class JSInterpreter(code.InteractiveConsole):
         code.InteractiveConsole.__init__(self, locals, filename)
         self.interpreter = Interpreter()
         ctx = self.interpreter.global_context
-        self.interpreter.w_Global.Put('quit', W_Builtin(quitjs))
-        self.interpreter.w_Global.Put('trace', W_Builtin(tracejs))
-        self.interpreter.w_Global.Put('debug', W_Builtin(debugjs))
+        from builtins import new_native_function
+        self.interpreter.w_Global.Put('quit', new_native_function(ctx, quitjs))
+        self.interpreter.w_Global.Put('trace', new_native_function(ctx, tracejs))
+        self.interpreter.w_Global.Put('debug', new_native_function(ctx, debugjs))
 
     def runcodefromfile(self, filename):
         f = open_file_as_stream(filename)
@@ -75,9 +78,9 @@ class JSInterpreter(code.InteractiveConsole):
                 try:
                     if DEBUG:
                         print repr(res)
-                    print res.ToString(self.interpreter.w_Global)
+                    print res.ToString()
                 except ThrowException, exc:
-                    print exc.exception.ToString(self.interpreter.w_Global)
+                    print exc.exception.ToString()
         except SystemExit:
             raise
         except ThrowException, exc:

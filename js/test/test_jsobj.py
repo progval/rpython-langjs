@@ -11,7 +11,7 @@ def test_floatnumber():
     assert n.ToInt32() == -0x80000000
     assert n.ToUInt32() == 0x80000000
 
-class TestType():
+class TestType(object):
     def test_undefined(self):
         assert w_Undefined.type() == 'undefined'
 
@@ -33,7 +33,7 @@ class TestType():
     def test_object(self):
         assert W_Object().type() == 'object'
 
-class TestToBoolean():
+class TestToBoolean(object):
     def test_undefined(self):
         assert w_Undefined.ToBoolean() == False
 
@@ -58,7 +58,7 @@ class TestToBoolean():
     def test_object(self):
         assert W_Object().ToBoolean() == True
 
-class TestToNumber():
+class TestToNumber(object):
     def test_undefined(self):
         assert w_Undefined.ToNumber() is NAN
 
@@ -85,7 +85,7 @@ class TestToNumber():
         py.test.skip()
         W_Object().ToNumber()
 
-class TestToString():
+class TestToString(object):
     def test_undefined(self):
         assert w_Undefined.ToString() == 'undefined'
 
@@ -112,15 +112,31 @@ class TestToString():
         py.test.skip()
         W_Object().ToString()
 
-class TestW_BasicObject():
+class TestW_BasicObject(object):
     def test_Prototype(self):
-        assert W_BasicObject().Prototype() is None
+        assert W_BasicObject().Prototype() is w_Undefined
 
     def test_Class(self):
         assert W_BasicObject().Class() == 'Object'
 
-class Test_WBooleanObject():
+class TestW_BooleanObject(object):
     def test_toPrimitive(self):
         py.test.skip()
         b = W_BooleanObject(w_True)
         assert b.ToPrimitive() == w_True
+
+class TestW__Function(object):
+    def test_Call(self):
+        from js.jsobj import W__Function, W_List, _w
+        from js.jscode import Js_NativeFunction
+        from js.jsexecution_context import make_global_context
+
+        ctx = make_global_context()
+
+        def f(this, a, b):
+            return 1
+
+        nf = Js_NativeFunction(f)
+        f = W__Function(ctx, nf)
+
+        assert f.Call([_w(None), _w(None)]).ToInteger() == 1

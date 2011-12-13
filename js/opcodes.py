@@ -1,7 +1,7 @@
 from js.jsobj import W_IntNumber, W_FloatNumber, W_String,\
-     W_Array, W_PrimitiveObject, ActivationObject,\
+     W_PrimitiveObject, ActivationObject,\
      create_object, W_Object, w_Undefined, newbool,\
-     w_True, w_False, W_List, w_Null, W_Iterator, W_Root, W_CallableObject
+     w_True, w_False, W_List, w_Null, W_Iterator, W_Root, W__Function
 import js.jsobj as jsobj
 from js.execution import JsTypeError, ReturnException, ThrowException
 from js.baseop import plus, sub, compare, AbstractEC, StrictEC,\
@@ -122,11 +122,12 @@ class LOAD_ARRAY(Opcode):
         self.counter = counter
 
     def eval(self, ctx):
-        proto = ctx.get_global().Get('Array').Get('prototype')
+        #proto = ctx.get_global().Get('Array').Get('prototype')
         # TODO get array prototype?
         # builtins make_array??
-        assert isinstance(proto, W_PrimitiveObject)
-        array = W_Array(Prototype=proto, Class = proto.Class)
+        #assert isinstance(proto, W_PrimitiveObject)
+        from js.jsobj import W__Array
+        array = W__Array()
         for i in range(self.counter):
             array.Put(str(self.counter - i - 1), ctx.pop())
         ctx.append(array)
@@ -158,13 +159,14 @@ class LOAD_FUNCTION(Opcode):
 
     def eval(self, ctx):
         #proto = ctx.get_global().Get('Function').Get('prototype')
-        from js.builtins import get_builtin_prototype
-        proto = get_builtin_prototype('Function')
-        w_func = W_CallableObject(ctx, proto, self.funcobj)
-        w_func.Put('length', W_IntNumber(len(self.funcobj.params)))
-        w_obj = create_object('Object')
-        w_obj.Put('constructor', w_func, flags = jsobj.DONT_ENUM)
-        w_func.Put('prototype', w_obj)
+        #from js.builtins import get_builtin_prototype
+        #proto = get_builtin_prototype('Function')
+        w_func = W__Function(ctx, self.funcobj)
+        #w_func = W_CallableObject(ctx, proto, self.funcobj)
+        #w_func.Put('length', W_IntNumber(len(self.funcobj.params)))
+        #w_obj = create_object('Object')
+        #w_obj.Put('constructor', w_func, flags = jsobj.DONT_ENUM)
+        #w_func.Put('prototype', w_obj)
         ctx.append(w_func)
 
     def __repr__(self):
@@ -207,8 +209,9 @@ class SUB(BaseBinaryOperation):
 
 class IN(BaseBinaryOperation):
     def operation(self, ctx, left, right):
-        if not isinstance(right, W_Object):
-            raise ThrowException(W_String("TypeError"))
+        from js.jsobj import W_BasicObject
+        if not (isinstance(right, W_Object) or isinstance(right, W_BasicObject)):
+            raise ThrowException(W_String("TypeError: "+ repr(right)))
         name = left.ToString()
         return newbool(right.HasProperty(name))
 
@@ -442,13 +445,17 @@ class DECLARE_FUNCTION(Opcode):
     def eval(self, ctx):
         # function declaration actyally don't run anything
         #proto = ctx.get_global().Get('Function').Get('prototype')
-        from js.builtins import get_builtin_prototype
-        proto = get_builtin_prototype('Function')
-        w_func = W_CallableObject(ctx, proto, self.funcobj)
-        w_func.Put('length', W_IntNumber(len(self.funcobj.params)))
-        w_obj = create_object('Object')
-        w_obj.Put('constructor', w_func, flags = jsobj.DONT_ENUM)
-        w_func.Put('prototype', w_obj)
+        #from js.builtins import get_builtin_prototype
+        #proto = get_builtin_prototype('Function')
+
+        w_func = W__Function(ctx, self.funcobj)
+        #w_func.Put('length', W_IntNumber(len(self.funcobj.params)))
+
+        # TODO
+        #w_obj = create_object('Object')
+        #w_obj.Put('constructor', w_func, flags = jsobj.DONT_ENUM)
+        #w_func.Put('prototype', w_obj)
+
         if self.funcobj.name is not None:
             ctx.put(self.funcobj.name, w_func)
 
@@ -483,7 +490,9 @@ class POP(Opcode):
         ctx.pop()
 
 def common_call(ctx, r1, args, this, name):
-    if not isinstance(r1, W_PrimitiveObject):
+    # TODO
+    from js.jsobj import W_BasicFunction, W_BasicObject
+    if not (isinstance(r1, W_PrimitiveObject) or isinstance(r1, W_BasicFunction) or isinstance(r1, W_BasicObject)):
         raise ThrowException(W_String("%s is not a callable (%s)"%(r1.ToString(), name.ToString())))
     jit.promote(r1)
     try:
@@ -574,7 +583,8 @@ class LOAD_ITERATOR(Opcode):
     def eval(self, ctx):
         obj = ctx.pop().ToObject()
         props = []
-        assert isinstance(obj, W_PrimitiveObject)
+        from js.jsobj import W_BasicObject
+        assert isinstance(obj, W_PrimitiveObject) or isinstance(obj, W_BasicObject)
 
         for prop in obj._get_property_keys():
             if not obj._get_property_flags(prop) & jsobj.DONT_ENUM:

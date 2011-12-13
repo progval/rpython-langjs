@@ -3,7 +3,7 @@ from js import interpreter
 from js.operations import IntNumber, FloatNumber, Position, Plus
 from js.jsobj import W_Object, W_Root, w_Null, W___Root
 from js.execution import ThrowException
-from js.jscode import JsCode, POP
+from js.jscode import JsCode
 from js.baseop import AbstractEC
 from js.jsexecution_context import ExecutionContext
 
@@ -14,7 +14,7 @@ def test_simple():
     bytecode.emit('ADD')
     bytecode.emit('POP')
     func = bytecode.make_js_function()
-    res = func.run(ExecutionContext(), check_stack=False)
+    res = func._run_with_context(ExecutionContext(), check_stack=False)
     assert res.ToNumber() == 6.0
 
 def assertp(code, prints):
@@ -40,7 +40,7 @@ def assertv(code, value):
         bytecode = JsCode()
         interpreter.load_source(code, '').emit(bytecode)
         func = bytecode.make_js_function()
-        code_val = func.run(ctx)
+        code_val = func._run_with_context(ctx)
     except ThrowException, excpt:
         code_val = excpt.exception
     print code_val, value
@@ -644,12 +644,12 @@ def test_new_without_args_really():
     assertv("var x = new Boolean; x.toString();", 'false')
 
 def test_pypy_repr():
-    yield assertv, "pypy_repr(3);", 'W_IntNumber'
+    yield assertv, "pypy_repr(3);", 'W_IntNumber(3)'
     # See optimization on astbuilder.py for a reason to the test below
-    yield assertv, "pypy_repr(3.0);", 'W_IntNumber'
-    yield assertv, "pypy_repr(3.5);", 'W_FloatNumber'
+    yield assertv, "pypy_repr(3.0);", 'W_IntNumber(3)'
+    yield assertv, "pypy_repr(3.5);", 'W_FloatNumber(3.5)'
     import sys
-    yield assertv, "x="+str(sys.maxint >> 1)+"; pypy_repr(x*x);", 'W_FloatNumber'
+    yield assertv, "x="+str(sys.maxint >> 1)+"; pypy_repr(x*x);", 'W_FloatNumber(2.12676479326e+37)'
 
 def test_number():
     assertp("print(Number(void 0))", "NaN")

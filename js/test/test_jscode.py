@@ -30,3 +30,39 @@ class TestJsCodeSizeEstimation(object):
             ('LOAD_ARRAY', 3),\
             ('LOAD_LOCAL', 1), ('LOAD_LOCAL', 1), ('LOAD_LOCAL', 1), ('LOAD_LOCAL', 1),\
             5
+
+class TestJs_NativeFunction(object):
+    def test_run(self):
+        from js.jscode import Js_NativeFunction
+        from js.jsexecution_context import make_global_context
+        from js.jsobj import _w
+
+        def f(this, a, b):
+            return a.ToInteger() + b.ToInteger()
+
+        nf = Js_NativeFunction(f, 'foo')
+        assert nf.name == 'foo'
+
+        ctx = make_global_context()
+        assert nf.run(ctx, [_w(1), _w(2)]).ToInteger() == 3
+
+#class TestJs_Function(object):
+    #def test_run(self):
+        #from js.builtins import load_source
+        #from js.jscode import JsCode
+        #from js.jsexecution_context import make_global_context
+        #from js.jsobj import _w
+
+        #code = """
+        #function f(a, b) {
+            #return a + b;
+        #}
+        #"""
+
+        #bytecode = JsCode()
+        #load_source(code, '').emit(bytecode)
+
+        #f = bytecode.ToJsFunction()
+        #ctx = make_global_context()
+
+        #assert f.run(ctx, [_w(1), _w(2)]).ToInteger() == 3

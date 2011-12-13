@@ -6,7 +6,7 @@ Implements the javascript operations nodes for the interpretation tree
 
 from js.jsobj import W_IntNumber, W_FloatNumber, W_Object,\
      w_Undefined, W_NewBuiltin, W_String, create_object, W_List,\
-     W_PrimitiveObject, ActivationObject, W_Array, W_Boolean,\
+     W_PrimitiveObject, ActivationObject, W_Boolean,\
      w_Null, isnull_or_undefined
 from pypy.rlib.parsing.ebnfparse import Symbol, Nonterminal
 from js.execution import JsTypeError, ThrowException

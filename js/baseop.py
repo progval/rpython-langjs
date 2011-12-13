@@ -222,6 +222,7 @@ def commonnew(ctx, obj, args):
         raise ThrowException(W_String('it is not a constructor'))
     try:
         res = obj.Construct(args=args)
+        return res
     except JsTypeError:
         raise ThrowException(W_String('it is not a constructor'))
     return res
