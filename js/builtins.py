@@ -103,139 +103,6 @@ class W__Eval(W_BasicFunction):
             #n = NAN
         #return W_FloatNumber(n)
 
-#class W_FromCharCode(W_NewBuiltin):
-    #length = 1
-    #def Call(self, args=[], this=None):
-        #temp = []
-        #for arg in args:
-            #i = arg.ToInt32() % 65536 # XXX should be uint16
-            #temp.append(chr(i))
-        #return W_String(''.join(temp))
-
-#class W_CharCodeAt(W_NewBuiltin):
-    #def Call(self, args=[], this=None):
-        #string = this.ToString()
-        #if len(args)>=1:
-            #pos = args[0].ToInt32()
-            #if pos < 0 or pos > len(string) - 1:
-                #return W_FloatNumber(NAN)
-        #else:
-            #return W_FloatNumber(NAN)
-        #char = string[pos]
-        #return W_IntNumber(ord(char))
-
-#class W_Concat(W_NewBuiltin):
-    #def Call(self, args=[], this=None):
-        #string = this.ToString()
-        #others = [obj.ToString() for obj in args]
-        #string += ''.join(others)
-        #return W_String(string)
-
-#class W_IndexOf(W_NewBuiltin):
-    #length = 1
-    #def Call(self, args=[], this=None):
-        #string = this.ToString()
-        #if len(args) < 1:
-            #return W_IntNumber(-1)
-        #substr = args[0].ToString()
-        #size = len(string)
-        #subsize = len(substr)
-        #if len(args) < 2:
-            #pos = 0
-        #else:
-            #pos = args[1].ToInteger()
-        #pos = int(min(max(pos, 0), size))
-        #assert pos >= 0
-        #return W_IntNumber(string.find(substr, pos))
-
-#class W_LastIndexOf(W_NewBuiltin):
-    #length = 1
-    #def Call(self, args=[], this=None):
-        #string = this.ToString()
-        #if len(args) < 1:
-            #return W_IntNumber(-1)
-        #substr = args[0].ToString()
-        #if len(args) < 2:
-            #pos = INFINITY
-        #else:
-            #val = args[1].ToNumber()
-            #if isnan(val):
-                #pos = INFINITY
-            #else:
-                #pos = args[1].ToInteger()
-        #size = len(string)
-        #pos = int(min(max(pos, 0), size))
-        #subsize = len(substr)
-        #endpos = pos+subsize
-        #assert endpos >= 0
-        #return W_IntNumber(string.rfind(substr, 0, endpos))
-
-#class W_Substring(W_NewBuiltin):
-    #length = 2
-    #def Call(self, args=[], this=None):
-        #string = this.ToString()
-        #size = len(string)
-        #if len(args) < 1:
-            #start = 0
-        #else:
-            #start = args[0].ToInteger()
-        #if len(args) < 2:
-            #end = size
-        #else:
-            #end = args[1].ToInteger()
-        #tmp1 = min(max(start, 0), size)
-        #tmp2 = min(max(end, 0), size)
-        #start = min(tmp1, tmp2)
-        #end = max(tmp1, tmp2)
-        #return W_String(string[start:end])
-
-#class W_Split(W_NewBuiltin):
-    #length = 2
-    #def Call(self, args=[], this=None):
-        #string = this.ToString()
-
-        #if len(args) < 1 or args[0] is w_Undefined:
-            #return create_array([W_String(string)])
-        #else:
-            #separator = args[0].ToString()
-
-        #if len(args) >= 2:
-            #limit = args[1].ToUInt32()
-            #raise ThrowException(W_String("limit not implemented"))
-            ## array = string.split(separator, limit)
-        #else:
-            #array = string.split(separator)
-
-        #w_array = create_array()
-        #i = 0
-        #while i < len(array):
-            #w_str = W_String(array[i])
-            #w_array.Put(str(i), w_str)
-            #i += 1
-
-        #return w_array
-
-#class W_ToLowerCase(W_NewBuiltin):
-    #length = 0
-    #def Call(self, args=[], this=None):
-        #string = this.ToString()
-        #return W_String(string.lower())
-
-#class W_ToUpperCase(W_NewBuiltin):
-    #length = 0
-    #def Call(self, args=[], this=None):
-        #string = this.ToString()
-        #return W_String(string.upper())
-
-#class W_ToString(W_NewBuiltin):
-    #def Call(self, args=[], this=None):
-        #assert isinstance(this, W_PrimitiveObject)
-        #return W_String("[object %s]"%this.Class)
-
-#class W_ValueOf(W_NewBuiltin):
-    #length = 0
-    #def Call(self, args=[], this=None):
-        #return this
 
 #class W_HasOwnProperty(W_NewBuiltin):
     #def Call(self, args=[], this=None):
@@ -522,20 +389,6 @@ def unescapejs(args, this):
             #Value = W_String('')
         #return Value.ToObject()
 
-def create_array(elements=[]):
-    # TODO do not get array prototype from global context?
-    #proto = ctx.get_global().Get('Array').Get('prototype')
-    #from js.builtins import get_builtin_prototype
-    #proto = get_builtin_prototype('Array')
-    #assert isinstance(proto, W_PrimitiveObject)
-    array = W__Array()
-    #i = 0
-    while i < len(elements):
-        array.Put(str(i), elements[i])
-        i += 1
-
-    return array
-
 #class W_ArrayObject(W_NativeObject):
     #def __init__(self, Class, Prototype):
         #W_NativeObject.__init__(self, Class, Prototype, None )
@@ -728,6 +581,10 @@ def setup_builtins(interp):
     w_String = W_StringConstructor(ctx)
     w_Global.Put('String', w_String)
 
+    import js.builtins_string as string_builtins
+    # 15.5.3.2
+    put_native_function(w_String, 'fromCharCode', string_builtins.from_char_code)
+
     # 15.5.4
     from js.jsobj import W_StringObject
     w_StringPrototype = W_StringObject('')
@@ -739,31 +596,32 @@ def setup_builtins(interp):
     # 15.5.4.1
     w_StringPrototype.Put('constructor', w_String)
 
-    import js.builtins_string as string_builtins
     # 15.5.4.4
     put_native_function(w_StringPrototype, 'charAt', string_builtins.char_at)
 
+    # 15.5.4.5
+    put_native_function(w_StringPrototype, 'charCodeAt', string_builtins.char_code_at)
 
-    #put_values(w_StrPrototype, {
-        #'constructor': w_String,
-        #'__proto__': w_StrPrototype,
-        #'toString': W_StringValueToString(),
-        #'valueOf': get_value_of('String')(),
-        #'charAt': W_CharAt(),
-        #'charCodeAt': W_CharCodeAt(),
-        #'concat': W_Concat(),
-        #'indexOf': W_IndexOf(),
-        #'lastIndexOf': W_LastIndexOf(),
-        #'substring': W_Substring(),
-        #'split': W_Split(),
-        #'toLowerCase': W_ToLowerCase(),
-        #'toUpperCase': W_ToUpperCase()
-    #})
-    #_register_builtin_prototype('String', w_StrPrototype)
+    # 15.5.4.6
+    put_native_function(w_StringPrototype, 'concat', string_builtins.concat)
 
-    #w_String.Put('prototype', w_StrPrototype, flags=allon)
-    #w_String.Put('fromCharCode', W_FromCharCode())
-    #w_Global.Put('String', w_String)
+    # 15.5.4.7
+    put_native_function(w_StringPrototype, 'indexOf', string_builtins.index_of)
+
+    # 15.5.4.8
+    put_native_function(w_StringPrototype, 'lastIndexOf', string_builtins.last_index_of)
+
+    # 15.5.4.14
+    put_native_function(w_StringPrototype, 'split', string_builtins.split)
+
+    # 15.5.4.15
+    put_native_function(w_StringPrototype, 'substring', string_builtins.substring)
+
+    # 15.5.4.16
+    put_native_function(w_StringPrototype, 'toLowerCase', string_builtins.to_lower_case)
+
+    # 15.5.4.18
+    put_native_function(w_StringPrototype, 'toUpperCase', string_builtins.to_upper_case)
 
     from js.jsobj import W_ArrayConstructor, W__Array
     w_Array = W_ArrayConstructor()
