@@ -1,6 +1,6 @@
 import time
 
-from js.jsobj import w_Undefined, W_IntNumber, w_Null, create_object, W_Boolean,\
+from js.jsobj import w_Undefined, W_IntNumber, w_Null, W_Boolean,\
      W_FloatNumber, W_String, newbool,\
      isnull_or_undefined, W_Number,\
      DONT_DELETE, DONT_ENUM, READ_ONLY, INTERNAL, _w

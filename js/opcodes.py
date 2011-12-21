@@ -1,5 +1,5 @@
 from js.jsobj import W_IntNumber, W_FloatNumber, W_String,\
-     create_object, w_Undefined, newbool,\
+     w_Undefined, newbool, W__Object, \
      w_True, w_False, W_List, w_Null, W_Iterator, W_Root, W__Function
 import js.jsobj as jsobj
 from js.execution import JsTypeError, ReturnException, ThrowException
@@ -174,7 +174,7 @@ class LOAD_OBJECT(Opcode):
 
     @jit.unroll_safe
     def eval(self, ctx):
-        w_obj = create_object('Object')
+        w_obj = W__Object()
         for _ in range(self.counter):
             name = ctx.pop().ToString()
             w_elem = ctx.pop()

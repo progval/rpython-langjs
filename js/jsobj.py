@@ -998,19 +998,6 @@ class W_Iterator(W_Root):
     def empty(self):
         return len(self.elements_w) == 0
 
-def create_object(prototypename, Value=w_Undefined):
-    #proto = ctx.get_global().Get(prototypename).Get('prototype')
-    from js.builtins import get_builtin_prototype
-    proto = get_builtin_prototype(prototypename)
-    obj = W__Object()
-    # TODO get Object prototype from interp.w_Object
-    #if isinstance(proto, W_PrimitiveObject):
-    #    obj = W_Object(Prototype=proto, Class = proto.Class, Value = Value)
-    #elif isinstance(proto, W_BasicObject):
-    #    obj = W_Object(Prototype=proto, Class = proto.Class(), Value = Value)
-    #obj.Put('__proto__', proto, DONT_ENUM | DONT_DELETE | READ_ONLY)
-    return obj
-
 def isnull_or_undefined(obj):
     if obj is w_Null or obj is w_Undefined:
         return True
