@@ -60,6 +60,9 @@ from pypy.rlib import rrandom
 _random = rrandom.Random(int(time.time()))
 
 # 15.8.2.14
+def random(this, *args):
+    return _random.random()
+
 # 15.8.1.1
 E = math.e
 
@@ -83,6 +86,3 @@ SQRT1_2 = math.sqrt(0.5)
 
 # 15.8.1.8
 SQRT2 = math.sqrt(2)
-def random(this, *args):
-    return _random.random()
-
