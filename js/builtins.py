@@ -767,10 +767,16 @@ def setup_builtins(interp):
 
     from js.jsobj import W_ArrayConstructor, W__Array
     w_Array = W_ArrayConstructor()
+    w_Global.Put('Array', w_Array)
 
     # 15.4.4
     w_ArrayPrototype = W__Array()
+
     w_ArrayPrototype._prototype_ = W__Object._prototype_
+    w_ArrayPrototype.Put('__proto__', w_ArrayPrototype._prototype_)
+
+    # 15.4.3.1
+    W__Array._prototype_ = w_ArrayPrototype
 
     # 15.4.4.1
     w_ArrayPrototype.Put('constructor', w_Array)
@@ -784,26 +790,9 @@ def setup_builtins(interp):
     put_native_function(w_ArrayPrototype, 'pop', array_builtins.pop)
     # 15.4.4.7
     put_native_function(w_ArrayPrototype, 'push', array_builtins.push)
+    # 15.4.4.8
+    put_native_function(w_ArrayPrototype, 'reverse', array_builtins.reverse)
 
-    # 15.4.3.1
-    W__Array._prototype_ = w_ArrayPrototype
-
-    #put_values(w_ArrPrototype, {
-        #'constructor': w_FncPrototype,
-        #'__proto__': w_ArrPrototype,
-        #'toString': W_ArrayToString(),
-        #'join': W_ArrayJoin(),
-        #'reverse': W_ArrayReverse(),
-        #'sort': W_ArraySort(),
-        #'push': W_ArrayPush(),
-        #'pop': W_ArrayPop(),
-    #})
-
-    #w_Array._prototype_ = w_FunctionPrototype
-    #w_Array.Put('__proto__', w_FunctionPrototype, flags = allon)
-
-    #w_Array.Put('length', _w(1), flags = allon)
-    w_Global.Put('Array', w_Array)
 
 
     #Math

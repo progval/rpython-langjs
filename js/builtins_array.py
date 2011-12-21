@@ -76,28 +76,35 @@ def pop(this, *args):
         o.Put('length', _w(indx))
         return element
 
-#class W_ArrayReverse(W_NewBuiltin):
-    #length = 0
-    #def Call(self, args=[], this=None):
-        #r2 = this.Get('length').ToUInt32()
-        #k = r_uint(0)
-        #r3 = r_uint(math.floor( float(r2)/2.0 ))
-        #if r3 == k:
-            #return this
+# 15.4.4.8
+def reverse(this, *args):
+    o = this.ToObject()
+    length = o.Get('lenght').ToUInt32()
 
-        #while k < r3:
-            #r6 = r2 - k - 1
-            #r7 = str(k)
-            #r8 = str(r6)
+    import math
+    middle = math.floor(lenght/2)
 
-            #r9 = this.Get(r7)
-            #r10 = this.Get(r8)
+    lower = 0
+    while lower != middle:
+        upper = lenght - lower - 1
+        lowerP = str(lower)
+        upperP = str(upper)
+        lowerValue = o.Get(lowerP)
+        upperValue = o.Get(upperP)
+        lowerExists = o.HasProperty(lowerP)
+        upperExists = o.HasProperty(upperP)
 
-            #this.Put(r7, r10)
-            #this.Put(r8, r9)
-            #k += 1
+        if lowerExists is True and upperExists is True:
+            o.Put(lowerP, upperValue)
+            o.Put(upperP, lowerValue)
+        elif lowerExists is False and upperExists is True:
+            o.Put(lowerP, upperValue)
+            o.Delete(upperP)
+        elif lowerExists is True and upperExists is False:
+            o.Delete(lowerP)
+            o.Put(upperP, lowerValue)
 
-        #return this
+        lower = lower + 1
 
 #class W_ArraySort(W_NewBuiltin):
     #length = 1
