@@ -817,27 +817,39 @@ def setup_builtins(interp):
     import js.builtins_math as math_builtins
     put_native_function(w_Math, 'abs', math_builtins.abs)
     put_native_function(w_Math, 'floor', math_builtins.floor)
+    put_native_function(w_Math, 'round', math_builtins.round)
     put_native_function(w_Math, 'random', math_builtins.random)
     put_native_function(w_Math, 'min', math_builtins.min)
     put_native_function(w_Math, 'max', math_builtins.max)
+    put_native_function(w_Math, 'pow', math_builtins.pow)
+    put_native_function(w_Math, 'sqrt', math_builtins.sqrt)
+    put_native_function(w_Math, 'log', math_builtins.log)
 
-    #w_math.Put('round', W_Builtin(roundjs, Class='function'))
-    #w_math.Put('pow', W_Builtin(powjs, Class='function'))
-    #w_math.Put('sqrt', W_Builtin(sqrtjs, Class='function'))
-    #w_math.Put('log', W_Builtin(logjs, Class='function'))
-    #w_math.Put('E', W_FloatNumber(math.e), flags=allon)
-    #w_math.Put('LN2', W_FloatNumber(math.log(2)), flags=allon)
-    #w_math.Put('LN10', W_FloatNumber(math.log(10)), flags=allon)
-    #log2e = math.log(math.e) / math.log(2) # rpython supports log with one argument only
-    #w_math.Put('LOG2E', W_FloatNumber(log2e), flags=allon)
-    #w_math.Put('LOG10E', W_FloatNumber(math.log10(math.e)), flags=allon)
-    #w_math.Put('PI', W_FloatNumber(math.pi), flags=allon)
-    #w_math.Put('SQRT1_2', W_FloatNumber(math.sqrt(0.5)), flags=allon)
-    #w_math.Put('SQRT2', W_FloatNumber(math.sqrt(2)), flags=allon)
-    #w_math.Put('random', W_Builtin(randomjs, Class='function'))
-    #w_math.Put('min', W_Builtin(minjs, Class='function'))
-    #w_math.Put('max', W_Builtin(maxjs, Class='function'))
-    #w_Global.Put('version', W_Builtin(versionjs), flags=allon)
+    # 15.8.1
+
+    # 15.8.1.1
+    w_Math.Put('E', _w(math_builtins.E), flags = allon)
+
+    # 15.8.1.2
+    w_Math.Put('LN10', _w(math_builtins.LN10), flags = allon)
+
+    # 15.8.1.3
+    w_Math.Put('LN2', _w(math_builtins.LN2), flags = allon)
+
+    # 15.8.1.4
+    w_Math.Put('LOG2E', _w(math_builtins.LOG2E), flags = allon)
+
+    # 15.8.1.5
+    w_Math.Put('LOG10E', _w(math_builtins.LOG10E), flags = allon)
+
+    # 15.8.1.6
+    w_Math.Put('PI', _w(math_builtins.PI), flags = allon)
+
+    # 15.8.1.7
+    w_Math.Put('SQRT1_2', _w(math_builtins.SQRT1_2), flags = allon)
+
+    # 15.8.1.8
+    w_Math.Put('SQRT2', _w(math_builtins.SQRT2), flags = allon)
 
     ##Date
     #w_Date = W_DateObject('Date', w_FncPrototype)
