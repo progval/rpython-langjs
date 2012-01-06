@@ -434,49 +434,79 @@ def setup_builtins(interp):
     ctx = make_global_context()
     w_Global = ctx.to_context_object()
 
-    from js.jsobj import W_BasicObject, W__Object
-    w_ObjectPrototype = W_BasicObject()
-    W__Object._prototype_ = w_ObjectPrototype
+    # Forward declaration
+    # 15.2.3
+    from js.jsobj import W_ObjectConstructor
+    w_Object = W_ObjectConstructor()
+    w_Global.Put('Object', w_Object)
 
-    from js.jscode import Js_NativeFunction
-    from js.jsobj import W__Function
+    # 15.2.4
+    from js.jsobj import W_BasicObject
+    w_ObjectPrototype = W_BasicObject()
+
+    # 15.3.2
+    from js.jsobj import W_FunctionConstructor
+    w_Function = W_FunctionConstructor(ctx)
+    w_Global.Put('Function', w_Function)
 
     # 15.3.4
     import js.builtins_function as function_builtins
     w_FunctionPrototype = new_native_function(ctx, function_builtins.empty, 'Empty')
+
+    # 15.2.4 Properties of the Object Prototype Object
+    w_ObjectPrototype._prototype_ = w_Null
+
+    # 15.3.4 Properties of the Function Prototype Object
     w_FunctionPrototype._prototype_ = w_ObjectPrototype
 
-    # 15.3.3.1
+    # initial prototype
+    from js.jsobj import W__Object, W__Function
+    W__Object._prototype_ = w_ObjectPrototype
     W__Function._prototype_ = w_FunctionPrototype
 
-    from js.jsobj import W_FunctionConstructor
-    W_FunctionConstructor._prototype_ = w_FunctionPrototype
+    # 15.2 Object Objects
+    # 15.2.3 Properties of the Object Constructor
+    w_Object._prototype_ = w_FunctionPrototype
 
-    w_Function = W_FunctionConstructor(ctx)
-    w_Function.Put('constructor', w_Function, DONT_ENUM)
-
-    w_Global.Put('Function', w_Function)
-
-    from js.jsobj import W_ObjectConstructor
-    # 15.2.3
-    W_ObjectConstructor._prototype_ = w_FunctionPrototype
-    w_Object = W_ObjectConstructor()
-
-    # 15.2.3.1
-    w_Object.Put('prototype', w_ObjectPrototype, flags = allon)
     w_Object.Put('length', _w(1), flags = allon)
-    w_Global.Put('Object', w_Object)
 
-    w_ObjectPrototype.Put('__proto__', w_Null)
-    # 15.2.4.1
+    # 15.2.3.1 Object.prototype
+    w_Object.Put('prototype', w_ObjectPrototype, flags = allon)
+
+    # 14.2.4.1 Object.prototype.constructor
     w_ObjectPrototype.Put('constructor', w_Object)
 
-    # 15.2.4.2
     import js.builtins_object as object_builtins
-    put_native_function(w_Object, 'toString', object_builtins.to_string)
-    put_native_function(w_Object, 'toLocaleString', object_builtins.to_string)
-    put_native_function(w_Object, 'valueOf', object_builtins.value_of)
+    # 15.2.4.2 Object.prototype.toString()
+    put_native_function(w_ObjectPrototype, 'toString', object_builtins.to_string)
+    put_native_function(w_ObjectPrototype, 'toLocaleString', object_builtins.to_string)
 
+    # 15.2.4.3 Object.prototype.valueOf()
+    put_native_function(w_ObjectPrototype, 'valueOf', object_builtins.value_of)
+
+    # 15.3 Function Objects
+    # 15.3.3 Properties of the Function Constructor
+
+    # 15.3.3.1 Function.prototype
+    w_Function.Put('prototype', w_FunctionPrototype, flags = allon)
+
+    # 15.3.3.2 Function.length
+    w_Function.Put('length', _w(1), flags = allon)
+
+    # 14.3.4.1 Function.prototype.constructor
+    w_FunctionPrototype.Put('constructor', w_Function)
+
+    # 15.3.4.2 Function.prototype.toString()
+    import js.builtins_function as function_builtins
+    put_native_function(w_FunctionPrototype, 'toString', function_builtins.to_string)
+
+    # 15.3.4.3 Function.prototype.apply
+    put_native_function(w_FunctionPrototype, 'apply', function_builtins.apply)
+
+    # 15.3.4.4 Function.prototype.call
+    put_native_function(w_FunctionPrototype, 'call', function_builtins.call)
+
+    # XXXXXXXX
     #put_values(w_ObjPrototype, {
         #'constructor': w_Object,
         #'__proto__': w_Null,
@@ -486,28 +516,6 @@ def setup_builtins(interp):
         #'hasOwnProperty': W_HasOwnProperty(),
         #'isPrototypeOf': W_IsPrototypeOf(),
         #'propertyIsEnumerable': W_PropertyIsEnumerable(),
-    #})
-
-    #15.3.3.2
-    w_Function.Put('length', _w(1), flags = allon)
-
-    # 15.3.4.1
-    w_FunctionPrototype.Put('constructor', w_Function)
-
-    # 15.3.4.2
-    import js.builtins_function as function_builtins
-    put_native_function(w_FunctionPrototype, 'toString', function_builtins.to_string)
-
-
-    ##properties of the function prototype
-    #put_values(w_FncPrototype, {
-        #'constructor': w_Function,
-        #'__proto__': w_FncPrototype,
-        #'toString': W_FToString(),
-        #'apply': W_Apply(ctx),
-        #'call': W_Call(ctx),
-        #'arguments': w_Null,
-        #'valueOf': W_ValueOf(),
     #})
 
     # 15.6.2
