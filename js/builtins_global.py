@@ -84,3 +84,11 @@ def unescape(this, *args):
         i += 1
         res.append(ch)
     return ''.join(res)
+
+def pypy_repr(this, *args):
+    o = args[0]
+    return repr(o)
+
+def inspect(this, *args):
+    import pdb; pdb.set_trace();
+

@@ -170,10 +170,6 @@ class W__Eval(W_BasicFunction):
         #v = int(time.time()*1000)
         #return create_object('Date', Value = W_IntNumber(v))
 
-def pypy_repr(this, *args):
-    o = args[0]
-    return W_String(repr(o))
-
 #@specialize.memo()
 #def get_value_of(type):
     #class W_ValueValueOf(W_NewBuiltin):
@@ -629,7 +625,8 @@ def setup_builtins(interp):
 
     ## debugging
     if not we_are_translated():
-        put_native_function(w_Global, 'pypy_repr', pypy_repr)
+        put_native_function(w_Global, 'pypy_repr', global_builtins.pypy_repr)
+        put_native_function(w_Global, 'inspect', global_builtins.inspect)
 
     put_native_function(w_Global, 'load', make_loadjs(interp))
 
