@@ -9,7 +9,7 @@ class ExecutionContext(StackMixin):
     def __init__(self, parent=None):
         self._init_execution_context(parent)
 
-    def resolve_identifier(self, ctx, identifier):
+    def resolve_identifier(self, identifier):
         if self.ctx_obj is not None and self.ctx_obj.HasProperty(identifier):
             return self.ctx_obj.Get(identifier);
 

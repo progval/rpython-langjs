@@ -120,10 +120,9 @@ class TestExecutionContext(object):
         parent._identifier_set_local('foo', 0)
         context._identifier_set_local('bar', 1)
 
-        ctx = None
-        assert context.resolve_identifier(ctx, 'foo') == 0
-        assert context.resolve_identifier(ctx, 'bar') == 1
-        py.test.raises(ThrowException, context.resolve_identifier, ctx, 'baz')
+        assert context.resolve_identifier('foo') == 0
+        assert context.resolve_identifier('bar') == 1
+        py.test.raises(ThrowException, context.resolve_identifier, 'baz')
 
     def test_assign(self):
         parent = new_context()
@@ -149,22 +148,21 @@ class TestExecutionContext(object):
         assert context.get_property_value('foo') == 42
 
     def test_declare_variable(self):
-        ctx = None
         parent = new_context()
         context = new_context(parent)
 
         parent._identifier_set_local('foo', 0)
 
-        assert context.resolve_identifier(ctx, 'foo') == 0
+        assert context.resolve_identifier('foo') == 0
 
         context.declare_variable('foo')
-        assert context.resolve_identifier(ctx, 'foo') == w_Undefined
+        assert context.resolve_identifier('foo') == w_Undefined
 
         context.assign('foo', 42)
 
         assert parent.get_property_value('foo') == 0
         assert context._identifier_get_local('foo') == 42
-        assert context.resolve_identifier(ctx, 'foo') == 42
+        assert context.resolve_identifier('foo') == 42
 
     def test_get_local_value(self):
         context = new_context()
