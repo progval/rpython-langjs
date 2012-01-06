@@ -409,7 +409,7 @@ class W_BasicFunction(W_BasicObject):
     def Construct(self, args=[]):
         obj = W__Object()
         proto = self.Get('prototype')
-        if isinstance(proto, W_BasicObject) or isinstance(proto, W_PrimitiveObject):
+        if isinstance(proto, W_BasicObject):
             obj._prototype_ = proto
         else:
             # would love to test this
@@ -421,7 +421,7 @@ class W_BasicFunction(W_BasicObject):
             self.Call(args, this=obj)
         except ReturnException, e:
             result = e.value
-            if isinstance(result, W_BasicObject) or isinstance(result, W_PrimitiveObject):
+            if isinstance(result, W_BasicObject):
                 return result
         return obj
 

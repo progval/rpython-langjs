@@ -162,14 +162,6 @@ class W__Eval(W_BasicFunction):
     #def __init__(self, Class, Prototype, Value=w_Undefined):
         #W_Object.__init__(self, Prototype, Class, Value)
 
-#class W_DateObject(W_NativeObject):
-    #def Call(self, args=[], this=None):
-        #return create_object('Object')
-
-    #def Construct(self, args=[]):
-        #v = int(time.time()*1000)
-        #return create_object('Date', Value = W_IntNumber(v))
-
 #@specialize.memo()
 #def get_value_of(type):
     #class W_ValueValueOf(W_NewBuiltin):
@@ -192,9 +184,6 @@ class Sorter(TimSort):
             result = self.compare_fn.Call([a, b]).ToInt32()
             return result == -1
         return a.ToString() < b.ToString()
-
-def versionjs(args, this):
-    return w_Undefined
 
 #class W_ObjectObject(W_NativeObject):
     #def __init__(self, Class, Prototype, Value=w_Undefined):
@@ -272,16 +261,6 @@ def versionjs(args, this):
 
     #def Construct(self, args=[]):
         #return self.Call(args)
-
-_builtin_prototypes = {}
-def get_builtin_prototype(name):
-    p = _builtin_prototypes.get(name, None)
-    if p is None:
-        return _builtin_prototypes.get('Object', None)
-    return p
-
-def _register_builtin_prototype(name, obj):
-    _builtin_prototypes[name] = obj
 
 def new_native_function(ctx, function, name = None):
     from js.jscode import Js_NativeFunction
@@ -523,8 +502,6 @@ def setup_builtins(interp):
     put_native_function(w_ArrayPrototype, 'push', array_builtins.push)
     # 15.4.4.8
     put_native_function(w_ArrayPrototype, 'reverse', array_builtins.reverse)
-
-
 
     #Math
     from js.jsobj import W_Math

@@ -8,8 +8,7 @@ import sys
 import getopt
 from js.interpreter import load_source, Interpreter, load_file
 from js.jsparser import parse, ParseError
-from js.jsobj import W_Builtin, W_String, ThrowException, \
-                     w_Undefined, W_Boolean
+from js.jsobj import W_String, ThrowException, w_Undefined, W_Boolean
 from pypy.rlib.streamio import open_file_as_stream
 
 sys.setrecursionlimit(100)
