@@ -184,7 +184,6 @@ class W_BasicObject(W__Root):
         W__Root.__init__(self)
         self._property_map = root_map()
         self._property_values = []
-        self._set_property('prototype', self._prototype_, DONT_ENUM | DONT_DELETE)
 
     def __repr__(self):
         #keys = self._property_map.keys()

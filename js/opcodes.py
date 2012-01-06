@@ -438,21 +438,21 @@ class DECLARE_FUNCTION(Opcode):
         self.funcobj = funcobj
 
     def eval(self, ctx):
-        # function declaration actyally don't run anything
-        #proto = ctx.get_global().Get('Function').Get('prototype')
-        #from js.builtins import get_builtin_prototype
-        #proto = get_builtin_prototype('Function')
+        from js.jsobj import DONT_ENUM, READ_ONLY
+        # 13.2 Creating Function Objects
+        # TODO move this to W__Function.__init__ ?
 
-        w_func = W__Function(ctx, self.funcobj)
-        #w_func.Put('length', W_IntNumber(len(self.funcobj.params)))
+        func = W__Function(ctx, self.funcobj)
 
-        # TODO
-        #w_obj = create_object('Object')
-        #w_obj.Put('constructor', w_func, flags = jsobj.DONT_ENUM)
-        #w_func.Put('prototype', w_obj)
+        func.Put('length', W_IntNumber(len(self.funcobj.params)), flags = DONT_ENUM | READ_ONLY)
+
+        proto = W__Object()
+        proto.Put('constructor', func, flags = DONT_ENUM)
+
+        func.Put('prototype', proto, flags = DONT_ENUM)
 
         if self.funcobj.name is not None:
-            ctx.put(self.funcobj.name, w_func)
+            ctx.put(self.funcobj.name, func)
 
     def __repr__(self):
         funcobj = self.funcobj
