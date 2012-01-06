@@ -140,44 +140,6 @@ class W__Eval(W_BasicFunction):
 
         #raise JsTypeError('this is not a function object')
 
-#class W_Apply(W_NewBuiltin):
-    #def __init__(self, ctx):
-        #W_NewBuiltin.__init__(self)
-        #self.ctx = ctx
-
-    #def Call(self, args=[], this=None):
-        #try:
-            #if isnull_or_undefined(args[0]):
-                #thisArg = self.ctx.get_global()
-            #else:
-                #thisArg = args[0].ToObject()
-        #except IndexError:
-            #thisArg = self.ctx.get_global()
-
-        #try:
-            #arrayArgs = args[1]
-            #callargs = arrayArgs.tolist()
-        #except IndexError:
-            #callargs = []
-        #return this.Call(callargs, this=thisArg)
-
-#class W_Call(W_NewBuiltin):
-    #def __init__(self, ctx):
-        #W_NewBuiltin.__init__(self)
-        #self.ctx = ctx
-
-    #def Call(self, args=[], this=None):
-        #if len(args) >= 1:
-            #if isnull_or_undefined(args[0]):
-                #thisArg = self.ctx.get_global()
-            #else:
-                #thisArg = args[0]
-            #callargs = args[1:]
-        #else:
-            #thisArg = self.ctx.get_global()
-            #callargs = []
-        #return this.Call(callargs, this = thisArg)
-
 #class W_ValueToString(W_NewBuiltin):
     #"this is the toString function for objects with Value"
     #mytype = ''
