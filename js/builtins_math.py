@@ -27,7 +27,7 @@ def abs(this, *args):
 
 # 15.8.2.15
 def round(this, *args):
-    return floor(this, args)
+    return floor(this, *args)
 
 # 15.8.2.13
 def pow(this, *args):
