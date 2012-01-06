@@ -11,7 +11,7 @@ from js.jscode import JsCode
 from pypy.rlib.objectmodel import specialize
 from pypy.rlib.listsort import TimSort
 from pypy.rlib.rarithmetic import r_uint
-from pypy.rlib.rfloat import NAN, INFINITY, isnan, isinf
+from pypy.rlib.rfloat import NAN, INFINITY
 from pypy.rlib.objectmodel import we_are_translated
 from pypy.rlib.streamio import open_file_as_stream
 
@@ -67,40 +67,6 @@ class W__Eval(W_BasicFunction):
         node.emit(bytecode)
         func = bytecode.make_js_function()
         return func.run(self._context_)
-
-#class W_ParseInt(W_NewBuiltin):
-    #length = 1
-    #def Call(self, args=[], this=None):
-        #if len(args) < 1:
-            #return W_FloatNumber(NAN)
-        #s = args[0].ToString().strip(" ")
-        #if len(args) > 1:
-            #radix = args[1].ToInt32()
-        #else:
-            #radix = 10
-        #if len(s) >= 2 and (s.startswith('0x') or s.startswith('0X')) :
-            #radix = 16
-            #s = s[2:]
-        #if s == '' or radix < 2 or radix > 36:
-            #return W_FloatNumber(NAN)
-        #try:
-            #n = int(s, radix)
-        #except ValueError:
-            #return W_FloatNumber(NAN)
-        #return W_IntNumber(n)
-
-#class W_ParseFloat(W_NewBuiltin):
-    #length = 1
-    #def Call(self, args=[], this=None):
-        #if len(args) < 1:
-            #return W_FloatNumber(NAN)
-        #s = args[0].ToString().strip(" ")
-        #try:
-            #n = float(s)
-        #except ValueError:
-            #n = NAN
-        #return W_FloatNumber(n)
-
 
 #class W_HasOwnProperty(W_NewBuiltin):
     #def Call(self, args=[], this=None):
@@ -269,61 +235,8 @@ class Sorter(TimSort):
             return result == -1
         return a.ToString() < b.ToString()
 
-def writer(x):
-    print x
-
-def printjs(this, *args):
-    writer(",".join([i.ToString() for i in args]))
-    return w_Undefined
-
-def noop(*args):
-    return w_Undefined
-
-def isnanjs(this, *args):
-    if len(args) < 1:
-        return newbool(True)
-    return newbool(isnan(args[0].ToNumber()))
-
-def isfinitejs(args, this):
-    if len(args) < 1:
-        return newbool(True)
-    n = args[0].ToNumber()
-    if  isinf(n) or isnan(n):
-        return newbool(False)
-    else:
-        return newbool(True)
-
 def versionjs(args, this):
     return w_Undefined
-
-def _ishex(ch):
-    return ((ch >= 'a' and ch <= 'f') or (ch >= '0' and ch <= '9') or
-            (ch >= 'A' and ch <= 'F'))
-
-def unescapejs(args, this):
-    # XXX consider using StringBuilder here
-    res = []
-    w_string = args[0]
-    if not isinstance(w_string, W_String):
-        raise JsTypeError(W_String("Expected string"))
-    assert isinstance(w_string, W_String)
-    strval = w_string.ToString()
-    lgt = len(strval)
-    i = 0
-    while i < lgt:
-        ch = strval[i]
-        if ch == '%':
-            if (i + 2 < lgt and _ishex(strval[i+1]) and _ishex(strval[i+2])):
-                ch = chr(int(strval[i + 1] + strval[i + 2], 16))
-                i += 2
-            elif (i + 5 < lgt and strval[i + 1] == 'u' and
-                  _ishex(strval[i + 2]) and _ishex(strval[i + 3]) and
-                  _ishex(strval[i + 4]) and _ishex(strval[i + 5])):
-                ch = chr(int(strval[i+2:i+6], 16))
-                i += 5
-        i += 1
-        res.append(ch)
-    return W_String(''.join(res))
 
 #class W_ObjectObject(W_NativeObject):
     #def __init__(self, Class, Prototype, Value=w_Undefined):
@@ -734,15 +647,25 @@ def setup_builtins(interp):
     # 15.1.2.1
     w_Global.Put('eval', W__Eval(ctx))
 
-    #w_Global.Put('parseInt', W_ParseInt())
-    #w_Global.Put('parseFloat', W_ParseFloat())
-    #w_Global.Put('isFinite', W_Builtin(isfinitejs))
+    import js.builtins_global as global_builtins
 
-    w_Global.Put('isNaN',new_native_function(ctx, isnanjs))
-    w_Global.Put('print', new_native_function(ctx, printjs))
+    # 15.1.2.2
+    put_native_function(w_Global, 'parseInt', global_builtins.parse_int)
 
-    #w_Global.Put('alert', W_Builtin(noop))
-    #w_Global.Put('unescape', W_Builtin(unescapejs))
+    # 15.1.2.3
+    put_native_function(w_Global, 'parseFloat', global_builtins.parse_float)
+
+    # 15.1.2.4
+    put_native_function(w_Global, 'isNaN', global_builtins.is_nan)
+
+    # 15.1.2.5
+    put_native_function(w_Global, 'isFinite', global_builtins.is_finite)
+
+    put_native_function(w_Global, 'alert', global_builtins.alert)
+
+    put_native_function(w_Global, 'print', global_builtins.printjs)
+
+    put_native_function(w_Global, 'unescape', global_builtins.unescape)
 
     w_Global.Put('this', w_Global)
 
@@ -751,7 +674,6 @@ def setup_builtins(interp):
         put_native_function(w_Global, 'pypy_repr', pypy_repr)
 
     put_native_function(w_Global, 'load', make_loadjs(interp))
-    #w_Global.Put('load', W_Builtin(make_loadjs(interp)))
 
     #return (ctx, w_Global, w_Object)
     return (ctx, w_Global, None)
