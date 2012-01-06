@@ -330,11 +330,6 @@ def new_native_function(ctx, function, name = None):
     from js.jsobj import W__Function
     return W__Function(ctx, Js_NativeFunction(function, name))
 
-# 15.7.4.2
-def number_to_string(this, *args):
-    # TODO radix, see 15.7.4.2
-    return this.ToString()
-
 def setup_builtins(interp):
     def put_native_function(obj, name, func):
         obj.Put(name, new_native_function(ctx, func, name))
@@ -469,8 +464,9 @@ def setup_builtins(interp):
     # 15.7.4.1
     w_NumberPrototype.Put('constructor', w_NumberPrototype)
 
+    import js.builtins_number as number_builtins
     # 15.7.4.2
-    w_NumberPrototype.Put('toString', new_native_function(ctx, number_to_string, 'toString'))
+    put_native_function(w_NumberPrototype, 'toString', number_builtins.to_string)
 
     # 15.7.3.1
     w_Number.Put('prototype', w_NumberPrototype)
