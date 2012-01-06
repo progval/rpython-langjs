@@ -11,7 +11,8 @@ class Map(object):
         self.flags = 0
 
     def __repr__(self):
-        return "%s : %s:%d -> %s" % (object.__repr__(self), self.name, self.flags, repr(self.back) )
+        return "%(back)s, [%(index)d]:%(name)s(%(flags)d)" % \
+            {'back': repr(self.back), 'index': self.index, 'name': self.name, 'flags': self.flags}
 
     def lookup(self, name):
         jit.promote(self)
@@ -71,7 +72,8 @@ class Map(object):
         return self
 
 class MapRoot(Map):
-    pass
+    def __repr__(self):
+        return "[%(index)d]:%(name)s(%(flags)d)" % {'index': self.index, 'name': self.name, 'flags': self.flags}
 
 class MapNode(Map):
     def __init__(self, back, name, flags = 0):
