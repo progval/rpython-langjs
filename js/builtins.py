@@ -1,5 +1,3 @@
-import time
-
 from js.jsobj import w_Undefined, W_IntNumber, w_Null, W_Boolean,\
      W_FloatNumber, W_String, newbool,\
      isnull_or_undefined, W_Number,\
@@ -707,20 +705,22 @@ def setup_builtins(interp):
     w_Math.Put('SQRT2', _w(math_builtins.SQRT2), flags = allon)
 
     ##Date
-    #w_Date = W_DateObject('Date', w_FncPrototype)
 
-    #w_DatePrototype = create_object('Object', Value=W_String(''))
-    #w_DatePrototype.Class = 'Date'
+    # 15.9.5
+    from js.jsobj import W_DateObject, W_DateConstructor
 
-    #put_values(w_DatePrototype, {
-        #'__proto__': w_DatePrototype,
-        #'valueOf': get_value_of('Date')(),
-        #'getTime': get_value_of('Date')()
-    #})
-    #_register_builtin_prototype('Date', w_DatePrototype)
+    w_DatePrototype = W_DateObject(w_NAN)
+    w_DatePrototype._prototype_ = W__Object._prototype_
 
-    #w_Date.Put('prototype', w_DatePrototype, flags=allon)
-    #w_Global.Put('Date', w_Date)
+    W_DateObject._prototype_ = w_DatePrototype
+
+    import js.builtins_date as date_builtins
+    # 15.9.5.9
+    put_native_function(w_DatePrototype, 'getTime', date_builtins.get_time)
+
+    # 15.9.3
+    w_Date = W_DateConstructor(ctx)
+    w_Global.Put('Date', w_Date)
 
     # 15.1.1.1
     w_Global.Put('NaN', w_NAN, flags = DONT_ENUM | DONT_DELETE)

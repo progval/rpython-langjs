@@ -362,6 +362,9 @@ class W_StringObject(W__PrimitiveObject):
         length = len(self._primitive_value_.ToString())
         self._set_property('length', _w(length), DONT_ENUM | DONT_DELETE | READ_ONLY )
 
+class W_DateObject(W__PrimitiveObject):
+    _class_ = 'Date'
+
 class W__Object(W_BasicObject):
     def ToString(self):
         try:
@@ -495,6 +498,17 @@ class W_BooleanConstructor(W_BasicFunction):
 
     def Construct(self, args=[]):
         return self.Call(args).ToObject()
+
+# 15.9.2
+class W_DateConstructor(W_BasicFunction):
+    def Call(self, args=[], this=None):
+        import time
+        return W_DateObject(int(time.time()*1000))
+
+    # 15.7.2.1
+    def Construct(self, args=[]):
+        return self.Call(args).ToObject()
+
 
 class W__Function(W_BasicFunction):
     _immutable_fields_ = ['_function_']
