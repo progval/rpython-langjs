@@ -357,6 +357,10 @@ class W_NumericObject(W__PrimitiveObject):
 
 class W_StringObject(W__PrimitiveObject):
     _class_ = 'String'
+    def __init__(self, primitive_value):
+        W__PrimitiveObject.__init__(self, primitive_value)
+        length = len(self._primitive_value_.ToString())
+        self._set_property('length', _w(length), DONT_ENUM | DONT_DELETE | READ_ONLY )
 
 class W__Object(W_BasicObject):
     def ToString(self):
