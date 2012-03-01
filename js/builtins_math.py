@@ -4,7 +4,7 @@ from js.jsobj import W_IntNumber
 from pypy.rlib.rfloat import NAN, INFINITY, isnan, isinf
 
 # 15.8.2.9
-def floor(this, *args):
+def floor(this, args):
     if len(args) < 1:
         return NAN
 
@@ -17,40 +17,41 @@ def floor(this, *args):
     return pos
 
 # 15.8.2.1
-def abs(this, *args):
+py_abs = abs
+def abs(this, args):
     val = args[0]
-    if isinstance(val, W_IntNumber):
-        if val.ToInteger() > 0:
-            return val # fast path
-        return -val.ToInteger()
-    return abs(args[0].ToNumber())
+    #if isinstance(val, W_IntNumber):
+        #if val.ToInteger() > 0:
+            #return val # fast path
+        #return -val.ToInteger()
+    return py_abs(val.ToNumber())
 
 # 15.8.2.15
-def round(this, *args):
-    return floor(this, *args)
+def round(this, args):
+    return floor(this, args)
 
 # 15.8.2.13
-def pow(this, *args):
+def pow(this, args):
     return math.pow(args[0].ToNumber(), args[1].ToNumber())
 
 # 15.8.2.17
-def sqrt(this, *args):
+def sqrt(this, args):
     return math.sqrt(args[0].ToNumber())
 
 # 15.8.2.10
-def log(this, *args):
+def log(this, args):
     return math.log(args[0].ToNumber())
 
 # 15.8.2.11
 py_min = min
-def min(this, *args):
+def min(this, args):
     a = args[0].ToNumber()
     b = args[1].ToNumber()
     return py_min(a, b)
 
 # 15.8.2.12
 py_max = max
-def max(this, *args):
+def max(this, args):
     a = args[0].ToNumber()
     b = args[1].ToNumber()
     return py_max(a, b)
@@ -60,7 +61,7 @@ from pypy.rlib import rrandom
 _random = rrandom.Random(int(time.time()))
 
 # 15.8.2.14
-def random(this, *args):
+def random(this, args):
     return _random.random()
 
 # 15.8.1.1

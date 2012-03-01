@@ -1,13 +1,15 @@
 from pypy.rlib.rfloat import NAN, INFINITY, isnan, isinf
+from js.jsobj import W_String
+from js.execution import JsTypeError
 
 # 15.1.2.4
-def is_nan(this, *args):
+def is_nan(this, args):
     if len(args) < 1:
         return True
     return isnan(args[0].ToNumber())
 
 # 15.1.2.5
-def is_finite(this, *args):
+def is_finite(this, args):
     if len(args) < 1:
         return True
     n = args[0].ToNumber()
@@ -17,7 +19,7 @@ def is_finite(this, *args):
         return True
 
 # 15.1.2.2
-def parse_int(this, *args):
+def parse_int(this, args):
     if len(args) < 1:
         return NAN
     s = args[0].ToString().strip(" ")
@@ -37,7 +39,7 @@ def parse_int(this, *args):
     return n
 
 # 15.1.2.3
-def parse_float(this, *args):
+def parse_float(this, args):
     if len(args) < 1:
         return NAN
     s = args[0].ToString().strip(" ")
@@ -47,20 +49,20 @@ def parse_float(this, *args):
         n = NAN
     return n
 
-def alert(this, *args):
+def alert(this, args):
     pass
 
 def writer(x):
     print x
 
-def printjs(this, *args):
+def printjs(this, args):
     writer(",".join([i.ToString() for i in args]))
 
 def _ishex(ch):
     return ((ch >= 'a' and ch <= 'f') or (ch >= '0' and ch <= '9') or
             (ch >= 'A' and ch <= 'F'))
 
-def unescape(this, *args):
+def unescape(this, args):
     # XXX consider using StringBuilder here
     res = []
     w_string = args[0]
@@ -85,10 +87,13 @@ def unescape(this, *args):
         res.append(ch)
     return ''.join(res)
 
-def pypy_repr(this, *args):
+def pypy_repr(this, args):
     o = args[0]
     return repr(o)
 
-def inspect(this, *args):
-    import pdb; pdb.set_trace();
+def inspect(this, args):
+    pass
+    #import pdb; pdb.set_trace();
+def version(this, args):
+    return '1.0'
 

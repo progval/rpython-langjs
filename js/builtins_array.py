@@ -1,15 +1,13 @@
-from js.jsobj import isnull_or_undefined, _w
+from js.jsobj import isnull_or_undefined, _w, w_Undefined
 
 # 15.4.4.7
-def push(this, *args):
-    from collections import deque
+def push(this, args):
     o = this.ToObject()
     lenVal = o.Get('length')
     n = lenVal.ToUInt32()
-    items = deque(args)
 
-    while(items):
-        e = items.popleft()
+    for item in args:
+        e = item
         o.Put(str(n), e)
         n = n + 1
 
@@ -18,16 +16,16 @@ def push(this, *args):
     return o
 
 # 15.4.4.2
-def to_string(this, *args):
+def to_string(this, args):
     array = this.ToObject()
     func = array.Get('join')
     if func.IsCallable():
-        return func.Call([], this = this)
+        return func.Call(this = this).ToString()
     else:
-        return object_to_string(this)
+        return this.ToString()
 
 # 15.4.4.5
-def join(this, *args):
+def join(this, args):
     o = this.ToObject()
     lenVal = o.Get('length')
     length = lenVal.ToUInt32()
@@ -60,7 +58,7 @@ def join(this, *args):
     return r
 
 # 15.4.4.6
-def pop(this, *args):
+def pop(this, args):
     o = this.ToObject()
     lenVal = o.Get('length')
     l = lenVal.ToUInt32()
@@ -77,16 +75,16 @@ def pop(this, *args):
         return element
 
 # 15.4.4.8
-def reverse(this, *args):
+def reverse(this, args):
     o = this.ToObject()
-    length = o.Get('lenght').ToUInt32()
+    length = o.Get('length').ToUInt32()
 
     import math
-    middle = math.floor(lenght/2)
+    middle = math.floor(length/2)
 
     lower = 0
     while lower != middle:
-        upper = lenght - lower - 1
+        upper = length - lower - 1
         lowerP = str(lower)
         upperP = str(upper)
         lowerValue = o.Get(lowerP)

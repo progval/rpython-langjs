@@ -19,8 +19,8 @@ def test_simple():
 
 def assertp(code, prints):
     l = []
-    from js import builtins
-    builtins.writer = l.append
+    import js.builtins_global
+    js.builtins_global.writer = l.append
     jsint = interpreter.Interpreter()
     ctx = jsint.w_Global
     try:

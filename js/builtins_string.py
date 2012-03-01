@@ -1,7 +1,9 @@
-from js.jsobj import _w
+from js.jsobj import _w, w_Undefined, W_String
+from pypy.rlib.rfloat import NAN, INFINITY, isnan
+from js.execution import ThrowException
 
 # 15.5.3.2
-def from_char_code(this, *args):
+def from_char_code(this, args):
     temp = []
     for arg in args:
         i = arg.ToInt32() % 65536 # XXX should be uint16
@@ -9,7 +11,7 @@ def from_char_code(this, *args):
     return ''.join(temp)
 
 # 15.5.4.4
-def char_at(this, *args):
+def char_at(this, args):
     string = this.ToString()
     if len(args)>=1:
         pos = args[0].ToInt32()
@@ -20,7 +22,7 @@ def char_at(this, *args):
     return string[pos]
 
 #15.5.4.5
-def char_code_at(this, *args):
+def char_code_at(this, args):
     string = this.ToString()
     if len(args)>=1:
         pos = args[0].ToInt32()
@@ -32,14 +34,14 @@ def char_code_at(this, *args):
     return ord(char)
 
 #15.5.4.6
-def concat(this, *args):
+def concat(this, args):
     string = this.ToString()
     others = [obj.ToString() for obj in args]
     string += ''.join(others)
     return string
 
 # 15.5.4.7
-def index_of(this, *args):
+def index_of(this, args):
     string = this.ToString()
     if len(args) < 1:
         return -1
@@ -55,7 +57,7 @@ def index_of(this, *args):
     return string.find(substr, pos)
 
 # 15.5.4.8
-def last_index_of(this, *args):
+def last_index_of(this, args):
     string = this.ToString()
     if len(args) < 1:
         return -1
@@ -76,7 +78,7 @@ def last_index_of(this, *args):
     return string.rfind(substr, 0, endpos)
 
 # 15.5.4.14
-def split(this, *args):
+def split(this, args):
     string = this.ToString()
 
     if len(args) < 1 or args[0] is w_Undefined:
@@ -101,7 +103,7 @@ def split(this, *args):
     return w_array
 
 # 15.5.4.15
-def substring(this, *args):
+def substring(this, args):
     string = this.ToString()
     size = len(string)
     if len(args) < 1:
@@ -119,12 +121,12 @@ def substring(this, *args):
     return string[start:end]
 
 # 15.5.4.16
-def to_lower_case(this, *args):
+def to_lower_case(this, args):
     string = this.ToString()
     return string.lower()
 
 # 15.5.4.18
-def to_upper_case(this, *args):
+def to_upper_case(this, args):
     string = this.ToString()
     return string.upper()
 

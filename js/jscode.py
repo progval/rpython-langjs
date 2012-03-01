@@ -183,6 +183,9 @@ class Js__Function(object):
     code = ''
     params = []
 
+    def __init__(self):
+        pass
+
     def run(self, ctx, args=[], this=None):
         raise NotImplementedError
 
@@ -216,7 +219,7 @@ class Js_NativeFunction(Js__Function):
 def _native_function(fn):
     from js.jsobj import _w
     def f(this, args):
-        res = fn(this, *args)
+        res = fn(this, args)
         return _w(res)
     return f
 

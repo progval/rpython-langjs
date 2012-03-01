@@ -37,8 +37,8 @@ class TestJs_NativeFunction(object):
         from js.jsexecution_context import make_global_context
         from js.jsobj import _w
 
-        def f(this, a, b):
-            return a.ToInteger() + b.ToInteger()
+        def f(this, args):
+            return args[0].ToInteger() + args[1].ToInteger()
 
         nf = Js_NativeFunction(f, 'foo')
         assert nf.name == 'foo'

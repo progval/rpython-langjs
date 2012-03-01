@@ -21,11 +21,13 @@ class SeePage(NotImplementedError):
     pass
 
 class W___Root(object):
-    pass
+    #_settled_ = True
+    def __init__(self):
+        pass
 
 class W__Root(W___Root):
-    _settled_ = True
-    _attrs_ = []
+    #_settled_ = True
+    #_attrs_ = []
     _type_ = ''
 
     def __str__(self):
@@ -59,8 +61,8 @@ class W__Root(W___Root):
         return r_uint32(self.ToInteger())
 
 class W_Root(W___Root):
-    _settled_ = True
-    _attrs_ = []
+    #_settled_ = True
+    #_attrs_ = []
     def __init__(self):
         pass
 
@@ -184,6 +186,7 @@ class W_BasicObject(W__Root):
         W__Root.__init__(self)
         self._property_map = root_map()
         self._property_values = []
+        #self._set_property('prototype', self._prototype_, DONT_ENUM | DONT_DELETE)
 
     def __repr__(self):
         #keys = self._property_map.keys()
@@ -295,6 +298,7 @@ class W_BasicObject(W__Root):
         assert self.Prototype() is not self
         return self.Prototype().Get(P) # go down the prototype chain
 
+    # 8.12.4
     def CanPut(self, P):
         if self._has_property(P):
             if self._get_property_flags(P) & READ_ONLY: return False
@@ -305,7 +309,10 @@ class W_BasicObject(W__Root):
         assert self.Prototype() is not self
         return self.Prototype().CanPut(P)
 
+    # 8.12.5
     def Put(self, P, V, flags = 0):
+        if not self.CanPut(P): return
+
         # TODO: ???
         if self._has_property(P):
             self._set_property_value(P, V)
@@ -313,7 +320,6 @@ class W_BasicObject(W__Root):
             self._set_property_flags(P, f)
             return
 
-        if not self.CanPut(P): return
         self._set_property(P, V, flags)
 
     def GetPropertyName(self):
@@ -346,11 +352,11 @@ class W__PrimitiveObject(W_BasicObject):
     def ToString(self):
         return self.PrimitiveValue().ToString()
 
+    def ToNumber(self):
+        return self.PrimitiveValue().ToNumber()
+
 class W_BooleanObject(W__PrimitiveObject):
     _class_ = 'Boolean'
-
-    def ToString(self):
-        return self.PrimitiveValue().ToString()
 
 class W_NumericObject(W__PrimitiveObject):
     _class_ = 'Number'
@@ -482,8 +488,10 @@ class W_NumberConstructor(W_BasicFunction):
 # 15.5.2
 class W_StringConstructor(W_BasicFunction):
     def Call(self, args=[], this=None):
-        assert False
-        return w_Undefined
+        if len(args) >= 1:
+            return W_String(args[0].ToString())
+        else:
+            return W_String('')
 
     def Construct(self, args=[]):
         return self.Call(args).ToObject()
@@ -503,7 +511,7 @@ class W_BooleanConstructor(W_BasicFunction):
 class W_DateConstructor(W_BasicFunction):
     def Call(self, args=[], this=None):
         import time
-        return W_DateObject(int(time.time()*1000))
+        return W_DateObject(_w(int(time.time()*1000)))
 
     # 15.7.2.1
     def Construct(self, args=[]):
@@ -535,7 +543,7 @@ class W_Arguments(W_BasicObject):
     def __init__(self, callee, args):
         W_BasicObject.__init__(self)
         self._delete_property('prototype')
-        self.Put('callee', callee)
+        #self.Put('callee', callee)
         self.Put('length', W_IntNumber(len(args)))
         for i in range(len(args)):
             self.Put(str(i), args[i])
@@ -574,7 +582,7 @@ class W__Array(W_BasicObject):
                     self._delete_property(key)
                 i += 1
 
-        self.length = int(newlength)
+        self.length = intmask(newlength)
         self._set_property_value('length', _w(self.length))
 
     def Put(self, P, V, flags = 0):
@@ -640,6 +648,7 @@ class W_String(W__Primitive):
     _type_ = 'string'
 
     def __init__(self, strval):
+        assert isinstance(strval, str)
         W__Primitive.__init__(self)
         self._strval_ = strval
 
@@ -717,10 +726,11 @@ def r_uint32(n):
     return intmask(rffi.cast(rffi.UINT, n))
 
 class W_FloatNumber(W_Number):
-    _immutable_fields_ = ['_floatval_']
+    #_immutable_fields_ = ['_floatval_']
     """ Number known to be a float
     """
     def __init__(self, floatval):
+        assert isinstance(floatval, float)
         W_Number.__init__(self)
         self._floatval_ = float(floatval)
 
@@ -827,6 +837,9 @@ def newbool(val):
         return w_True
     return w_False
 
+from pypy.rlib.objectmodel import specialize
+
+@specialize.argtype(0)
 def _w(value):
     if isinstance(value, W___Root):
         return value

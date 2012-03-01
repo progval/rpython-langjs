@@ -36,7 +36,7 @@ def load_file(filename):
     return t
 
 def make_loadjs(interp):
-    def f(this, *args):
+    def f(this, args):
         filename = str(args[0].ToString())
         t = load_file(filename)
         interp.run(t)
@@ -366,10 +366,16 @@ def setup_builtins(interp):
     w_Boolean = W_BooleanConstructor(ctx)
     w_Global.Put('Boolean', w_Boolean)
 
+    # 15.6.3
+    w_Boolean.Put('length', _w(1), flags = allon)
+
     # 15.6.4
     from js.jsobj import W_BooleanObject
     w_BooleanPrototype = W_BooleanObject(False)
     w_BooleanPrototype._prototype_ = W__Object._prototype_
+
+    # 15.6.3.1
+    w_Boolean.Put('prototype', w_BooleanPrototype, flags = allon)
 
     # 15.6.4.1
     w_BooleanPrototype.Put('constructor', w_Boolean)
@@ -377,6 +383,9 @@ def setup_builtins(interp):
     import js.builtins_boolean as boolean_builtins
     # 15.6.4.2
     put_native_function(w_BooleanPrototype, 'toString', boolean_builtins.to_string)
+
+    # 15.6.4.3
+    put_native_function(w_BooleanPrototype, 'valueOf', boolean_builtins.value_of)
 
     # 15.6.3.1
     W_BooleanObject._prototype_ = w_BooleanPrototype
@@ -597,6 +606,8 @@ def setup_builtins(interp):
     put_native_function(w_Global, 'print', global_builtins.printjs)
 
     put_native_function(w_Global, 'unescape', global_builtins.unescape)
+
+    put_native_function(w_Global, 'version', global_builtins.version)
 
     w_Global.Put('this', w_Global)
 

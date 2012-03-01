@@ -11,7 +11,7 @@ from js.jsparser import parse, ParseError
 from js.jsobj import W_String, ThrowException, w_Undefined, W_Boolean
 from pypy.rlib.streamio import open_file_as_stream
 
-sys.setrecursionlimit(100)
+#sys.setrecursionlimit(100)
 
 import code
 sys.ps1 = 'js> '
@@ -34,18 +34,18 @@ except ImportError:
 
 DEBUG = False
 
-def debugjs(this, *args):
+def debugjs(this, args):
     global DEBUG
     DEBUG = not DEBUG
     return W_Boolean(DEBUG)
 
-def tracejs(this, *args):
+def tracejs(this, args):
     arguments = args
     import pdb
     pdb.set_trace()
     return w_Undefined
 
-def quitjs(this, *args):
+def quitjs(this, args):
     sys.exit(0)
 
 class JSInterpreter(code.InteractiveConsole):

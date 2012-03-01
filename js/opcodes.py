@@ -111,7 +111,7 @@ class LOAD_VARIABLE(Opcode):
         self.identifier = identifier
 
     def eval(self, ctx):
-        ctx.append(ctx.resolve_identifier(ctx, self.identifier))
+        ctx.append(ctx.resolve_identifier(self.identifier))
 
     def __repr__(self):
         return 'LOAD_VARIABLE "%s"' % (self.identifier,)
@@ -221,7 +221,7 @@ class TYPEOF_VARIABLE(Opcode):
 
     def eval(self, ctx):
         try:
-            var = ctx.resolve_identifier(ctx, self.name)
+            var = ctx.resolve_identifier(self.name)
             ctx.append(W_String(var.type()))
         except ThrowException:
             ctx.append(W_String('undefined'))
@@ -259,7 +259,8 @@ class URSH(BaseBinaryBitwiseOp):
         op2 = ctx.pop().ToUInt32()
         op1 = ctx.pop().ToUInt32()
         # XXX check if it could fit into int
-        ctx.append(W_FloatNumber(op1 >> (op2 & 0x1F)))
+        f = float(op1 >> (op2 & 0x1F))
+        ctx.append(W_FloatNumber(f))
 
 class RSH(BaseBinaryBitwiseOp):
     def eval(self, ctx):

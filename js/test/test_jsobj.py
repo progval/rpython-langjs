@@ -7,7 +7,7 @@ def test_intnumber():
     assert n.ToUInt32() == 0x80000000
 
 def test_floatnumber():
-    n = W_FloatNumber(0x80000000)
+    n = W_FloatNumber(float(0x80000000))
     assert n.ToInt32() == -0x80000000
     assert n.ToUInt32() == 0x80000000
 
@@ -133,7 +133,7 @@ class TestW__Function(object):
 
         ctx = make_global_context()
 
-        def f(this, a, b):
+        def f(this, args):
             return 1
 
         nf = Js_NativeFunction(f)
