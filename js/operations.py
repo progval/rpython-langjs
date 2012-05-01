@@ -5,11 +5,10 @@ Implements the javascript operations nodes for the interpretation tree
 """
 
 from js.jsobj import W_IntNumber, W_FloatNumber, \
-     w_Undefined, W_String, W_List, W_Boolean,\
+     w_Undefined, W_String, W_Boolean,\
      w_Null, isnull_or_undefined
 from pypy.rlib.parsing.ebnfparse import Symbol, Nonterminal
 from js.execution import JsTypeError, ThrowException
-from js.jscode import JsCode
 from constants import unescapedict
 from pypy.rlib.unroll import unrolling_iterable
 
@@ -174,9 +173,10 @@ class BaseAssignment(Expression):
         raise NotImplementedError
 
 class AssignmentOperation(BaseAssignment):
-    def __init__(self, pos, left, right, operand, post = False):
+    def __init__(self, pos, left, identifier, index, right, operand, post = False):
         self.left = left
-        self.identifier = left.get_literal()
+        self.identifier = identifier
+        self.index = index
         self.right = right
         if self.right is None:
             self.right = Empty(pos)
@@ -185,7 +185,7 @@ class AssignmentOperation(BaseAssignment):
         self.post = post
 
     def emit_store(self, bytecode):
-        bytecode.emit('STORE', self.identifier)
+        bytecode.emit('STORE', self.index)
 
 class LocalAssignmentOperation(AssignmentOperation):
     def __init__(self, pos, left, right, operand, post = False):
@@ -312,48 +312,48 @@ class MemberDot(Expression):
         bytecode.emit('LOAD_MEMBER')
 
 class FunctionStatement(Statement):
-    def __init__(self, pos, name, params, body, scope):
-        self.pos = pos
-        if name is None:
-            self.name = None
-        else:
-            self.name = name.get_literal()
-        self.body = body
-        self.params = params
-        self.scope = scope
-
-    def emit(self, bytecode):
-        code = JsCode()
-        code.scope = self.scope
-        if self.body is not None:
-            self.body.emit(code)
-        funcobj = code.make_js_function(self.name, self.params)
-        bytecode.emit('DECLARE_FUNCTION', funcobj)
-        if self.name is None:
-            bytecode.emit('LOAD_FUNCTION', funcobj)
-        #else:
-        #    bytecode.emit('LOAD_FUNCTION', funcobj)
-        #    bytecode.emit('STORE', self.name)
-        #    bytecode.emit('POP')
-
-class Identifier(Expression):
-    def __init__(self, pos, name):
+    def __init__(self, pos, name, index, body_ast, symbol_map):
         self.pos = pos
         self.name = name
-
-    def __repr__(self):
-        return "Identifier '%s'" % (self.name )
+        self.index = index
+        self.body_ast = body_ast
+        self.symbol_map = symbol_map
 
     def emit(self, bytecode):
-        bytecode.emit('LOAD_VARIABLE', self.name)
+        from jscode import ast_to_bytecode
+        body_code = ast_to_bytecode(self.body_ast, self.symbol_map)
+
+        from js.functions import JsFunction
+        name = self.name
+        jsfunc = JsFunction(name, body_code)
+
+        index = self.index
+
+        #bytecode.emit('DECLARE_FUNCTION', jsfunc)
+        bytecode.emit('LOAD_FUNCTION', jsfunc)
+        if index is not None:
+            bytecode.emit('STORE', index)
+            bytecode.emit('POP')
+
+class Identifier(Expression):
+    def __init__(self, pos, name, index):
+        self.pos = pos
+        self.name = name
+        self.index = index
+
+    def __repr__(self):
+        return "Identifier '%s'@%d" % (self.name, self.index )
+
+    def emit(self, bytecode):
+        bytecode.emit('LOAD_VARIABLE', self.index)
 
     def get_literal(self):
         return self.name
 
 
 class This(Identifier):
-    pass
-
+    def emit(self, bytecode):
+        bytecode.emit('LOAD_THIS')
 
 class If(Statement):
     def __init__(self, pos, condition, thenpart, elsepart=None):
@@ -682,8 +682,8 @@ class SourceElements(Statement):
         self.sourcename = sourcename
 
     def emit(self, bytecode):
-        for varname in self.var_decl:
-            bytecode.emit('DECLARE_VAR', varname)
+        #for varname in self.var_decl:
+            #bytecode.emit('DECLARE_VAR', varname)
         for funcname, funccode in self.func_decl.items():
             funccode.emit(bytecode)
 
@@ -691,9 +691,10 @@ class SourceElements(Statement):
             node.emit(bytecode)
 
 class Program(Statement):
-    def __init__(self, pos, body):
+    def __init__(self, pos, body, symbol_map):
         self.pos = pos
         self.body = body
+        self.symbol_map = symbol_map
 
     def emit(self, bytecode):
         self.body.emit(bytecode)
@@ -728,6 +729,7 @@ class Try(Statement):
         self.finallyblock = finallyblock
 
     def emit(self, bytecode):
+        from js.jscode import JsCode
         # a bit naive operator for now
         trycode = JsCode()
         self.tryblock.emit(trycode)
@@ -747,48 +749,51 @@ class Try(Statement):
         bytecode.emit('TRYCATCHBLOCK', tryfunc, self.catchparam.get_literal(), catchfunc, finallyfunc)
 
 class VariableDeclaration(Expression):
-    def __init__(self, pos, identifier, expr=None):
+    def __init__(self, pos, identifier, index, expr=None):
         self.pos = pos
         self.identifier = identifier.get_literal()
+        assert identifier is not None
         self.expr = expr
+        assert index is not None
+        self.index = index
 
     def emit(self, bytecode):
         if self.expr is not None:
             self.expr.emit(bytecode)
-            bytecode.emit('STORE', self.identifier)
+            bytecode.emit('STORE', self.index)
 
-    def __repr__(self):
+    def __str__(self):
         return "VariableDeclaration %s:%s" % (self.identifier, self.expr)
 
-class LocalVariableDeclaration(Expression):
-    def __init__(self, pos, identifier, local, expr=None):
-        self.pos = pos
-        self.identifier = identifier.get_literal()
-        self.local = local
-        self.expr = expr
+#class LocalVariableDeclaration(Expression):
+#    def __init__(self, pos, identifier, local, expr=None):
+#        self.pos = pos
+#        self.identifier = identifier.get_literal()
+#        self.local = local
+#        self.expr = expr
+#
+#    def emit(self, bytecode):
+#        if self.expr is not None:
+#            self.expr.emit(bytecode)
+#            bytecode.emit('STORE_LOCAL', self.local)
+#
+#    def __repr__(self):
+#        return "LocalVariableDeclaration %d(%s):%s" % (self.local, self.identifier, self.expr)
 
-    def emit(self, bytecode):
-        if self.expr is not None:
-            self.expr.emit(bytecode)
-            bytecode.emit('STORE_LOCAL', self.local)
-
-    def __repr__(self):
-        return "LocalVariableDeclaration %d(%s):%s" % (self.local, self.identifier, self.expr)
-
-class LocalIdentifier(Expression):
-    def __init__(self, pos, identifier, local):
-        self.pos = pos
-        self.identifier = identifier
-        self.local = local
-
-    def emit(self, bytecode):
-        bytecode.emit('LOAD_LOCAL', self.local)
-
-    def get_literal(self):
-        return self.identifier
-
-    def get_local(self):
-        return self.local
+#class LocalIdentifier(Expression):
+#    def __init__(self, pos, identifier, local):
+#        self.pos = pos
+#        self.identifier = identifier
+#        self.local = local
+#
+#    def emit(self, bytecode):
+#        bytecode.emit('LOAD_LOCAL', self.local)
+#
+#    def get_literal(self):
+#        return self.identifier
+#
+#    def get_local(self):
+#        return self.local
 
 class VariableIdentifier(Expression):
     def __init__(self, identifier):
@@ -895,7 +900,7 @@ class ForVarIn(Statement):
 
 
     def emit(self, bytecode):
-        bytecode.emit('DECLARE_VAR', self.iteratorname)
+        #bytecode.emit('DECLARE_VAR', self.iteratorname)
         self.object.emit(bytecode)
         bytecode.emit('LOAD_ITERATOR')
         precond = bytecode.emit_startloop_label()

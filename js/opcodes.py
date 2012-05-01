@@ -1,6 +1,6 @@
 from js.jsobj import W_IntNumber, W_FloatNumber, W_String,\
      w_Undefined, newbool, W__Object, \
-     w_True, w_False, W_List, w_Null, W_Iterator, W_Root, W__Function
+     w_True, w_False, w_Null, W_Root, W__Function
 import js.jsobj as jsobj
 from js.execution import JsTypeError, ReturnException, ThrowException
 from js.baseop import plus, sub, compare, AbstractEC, StrictEC,\
@@ -21,15 +21,15 @@ class Opcode(object):
     def stack_change(self):
         return self._stack_change
 
-    def __repr__(self):
+    def __str__(self):
         return self.__class__.__name__
 
 class BaseBinaryComparison(Opcode):
     _stack_change = 0
     def eval(self, ctx):
-        s4 = ctx.pop()
-        s2 = ctx.pop()
-        ctx.append(self.decision(ctx, s2, s4))
+        s4 = ctx.stack_pop()
+        s2 = ctx.stack_pop()
+        ctx.stack_append(self.decision(ctx, s2, s4))
 
     def decision(self, ctx, op1, op2):
         raise NotImplementedError
@@ -37,9 +37,9 @@ class BaseBinaryComparison(Opcode):
 class BaseBinaryBitwiseOp(Opcode):
     _stack_change = 0
     def eval(self, ctx):
-        s5 = ctx.pop().ToInt32()
-        s6 = ctx.pop().ToInt32()
-        ctx.append(self.operation(ctx, s5, s6))
+        s5 = ctx.stack_pop().ToInt32()
+        s6 = ctx.stack_pop().ToInt32()
+        ctx.stack_append(self.operation(ctx, s5, s6))
 
     def operation(self, ctx, op1, op2):
         raise NotImplementedError
@@ -47,16 +47,16 @@ class BaseBinaryBitwiseOp(Opcode):
 class BaseBinaryOperation(Opcode):
     _stack_change = 0
     def eval(self, ctx):
-        right = ctx.pop()
-        left = ctx.pop()
-        ctx.append(self.operation(ctx, left, right))
+        right = ctx.stack_pop()
+        left = ctx.stack_pop()
+        ctx.stack_append(self.operation(ctx, left, right))
 
 class BaseUnaryOperation(Opcode):
     _stack_change = 0
 
 class Undefined(Opcode):
     def eval(self, ctx):
-        ctx.append(w_Undefined)
+        ctx.stack_append(w_Undefined)
 
 class LOAD_INTCONSTANT(Opcode):
     _immutable_fields_ = ['w_intvalue']
@@ -64,27 +64,27 @@ class LOAD_INTCONSTANT(Opcode):
         self.w_intvalue = W_IntNumber(int(value))
 
     def eval(self, ctx):
-        ctx.append(self.w_intvalue)
+        ctx.stack_append(self.w_intvalue)
 
-    def __repr__(self):
-        return 'LOAD_INTCONSTANT %s' % (self.w_intvalue.ToInteger(),)
+    #def __repr__(self):
+        #return 'LOAD_INTCONSTANT %s' % (self.w_intvalue.ToInteger(),)
 
 class LOAD_BOOLCONSTANT(Opcode):
     def __init__(self, value):
         self.boolval = value
 
     def eval(self, ctx):
-        ctx.append(newbool(self.boolval))
+        ctx.stack_append(newbool(self.boolval))
 
 class LOAD_FLOATCONSTANT(Opcode):
     def __init__(self, value):
         self.w_floatvalue = W_FloatNumber(float(value))
 
     def eval(self, ctx):
-        ctx.append(self.w_floatvalue)
+        ctx.stack_append(self.w_floatvalue)
 
-    def __repr__(self):
-        return 'LOAD_FLOATCONSTANT %s' % (self.w_floatvalue.ToNumber(),)
+    #def __repr__(self):
+        #return 'LOAD_FLOATCONSTANT %s' % (self.w_floatvalue.ToNumber(),)
 
 class LOAD_STRINGCONSTANT(Opcode):
     _immutable_fields_ = ['w_stringvalue']
@@ -92,29 +92,37 @@ class LOAD_STRINGCONSTANT(Opcode):
         self.w_stringvalue = W_String(value)
 
     def eval(self, ctx):
-        ctx.append(self.w_stringvalue)
+        ctx.stack_append(self.w_stringvalue)
 
-    def __repr__(self):
-        return 'LOAD_STRINGCONSTANT "%s"' % (self.w_stringvalue.ToString(),)
+    #def __repr__(self):
+        #return 'LOAD_STRINGCONSTANT "%s"' % (self.w_stringvalue.ToString(),)
 
 class LOAD_UNDEFINED(Opcode):
     def eval(self, ctx):
-        ctx.append(w_Undefined)
+        ctx.stack_append(w_Undefined)
 
 class LOAD_NULL(Opcode):
     def eval(self, ctx):
-        ctx.append(w_Null)
+        ctx.stack_append(w_Null)
 
 class LOAD_VARIABLE(Opcode):
-    _immutable_fields_ = ['identifier']
-    def __init__(self, identifier):
-        self.identifier = identifier
+    #_immutable_fields_ = ['identifier']
+    def __init__(self, index):
+        assert index is not None
+        self.index = index
 
+    # 11.1.2
     def eval(self, ctx):
-        ctx.append(ctx.resolve_identifier(self.identifier))
+        # TODO put ref onto stack
+        ref = ctx.get_ref(self.index)
+        value = ref.get_value()
+        ctx.stack_append(value)
 
-    def __repr__(self):
-        return 'LOAD_VARIABLE "%s"' % (self.identifier,)
+class LOAD_THIS(Opcode):
+    # 11.1.1
+    def eval(self, ctx):
+        this = ctx.this_binding()
+        ctx.stack_append(this)
 
 class LOAD_ARRAY(Opcode):
     def __init__(self, counter):
@@ -124,14 +132,14 @@ class LOAD_ARRAY(Opcode):
         from js.jsobj import W__Array
         array = W__Array()
         for i in range(self.counter):
-            array.Put(str(self.counter - i - 1), ctx.pop())
-        ctx.append(array)
+            array.Put(str(self.counter - i - 1), ctx.stack_pop())
+        ctx.stack_append(array)
 
     def stack_change(self):
         return -1 * self.counter + 1
 
-    def __repr__(self):
-        return 'LOAD_ARRAY %d' % (self.counter,)
+    #def __repr__(self):
+        #return 'LOAD_ARRAY %d' % (self.counter,)
 
 class LOAD_LIST(Opcode):
     _immutable_fields_ = ['counter']
@@ -139,14 +147,15 @@ class LOAD_LIST(Opcode):
         self.counter = counter
 
     def eval(self, ctx):
-        list_w = ctx.pop_n(self.counter)[:] # pop_n returns a non-resizable list
-        ctx.append(W_List(list_w))
+        from js.jsobj import W_List
+        list_w = ctx.stack_pop_n(self.counter) # [:] # pop_n returns a non-resizable list
+        ctx.stack_append(W_List(list_w))
 
     def stack_change(self):
         return -1 * self.counter + 1
 
-    def __repr__(self):
-        return 'LOAD_LIST %d' % (self.counter,)
+    #def __repr__(self):
+        #return 'LOAD_LIST %d' % (self.counter,)
 
 class LOAD_FUNCTION(Opcode):
     def __init__(self, funcobj):
@@ -156,16 +165,17 @@ class LOAD_FUNCTION(Opcode):
         #proto = ctx.get_global().Get('Function').Get('prototype')
         #from js.builtins import get_builtin_prototype
         #proto = get_builtin_prototype('Function')
-        w_func = W__Function(ctx, self.funcobj)
+        scope = ctx.lexical_environment()
+        w_func = W__Function(self.funcobj, scope)
         #w_func = W_CallableObject(ctx, proto, self.funcobj)
         #w_func.Put('length', W_IntNumber(len(self.funcobj.params)))
         #w_obj = create_object('Object')
         #w_obj.Put('constructor', w_func, flags = jsobj.DONT_ENUM)
         #w_func.Put('prototype', w_obj)
-        ctx.append(w_func)
+        ctx.stack_append(w_func)
 
-    def __repr__(self):
-        return 'LOAD_FUNCTION' # XXX
+    #def __repr__(self):
+        #return 'LOAD_FUNCTION' # XXX
 
 class LOAD_OBJECT(Opcode):
     _immutable_fields_ = ["counter"]
@@ -176,26 +186,27 @@ class LOAD_OBJECT(Opcode):
     def eval(self, ctx):
         w_obj = W__Object()
         for _ in range(self.counter):
-            name = ctx.pop().ToString()
-            w_elem = ctx.pop()
+            name = ctx.stack_pop().ToString()
+            w_elem = ctx.stack_pop()
             w_obj.Put(name, w_elem)
-        ctx.append(w_obj)
+        ctx.stack_append(w_obj)
 
-    def __repr__(self):
-        return 'LOAD_OBJECT %d' % (self.counter,)
+    #def __repr__(self):
+        #return 'LOAD_OBJECT %d' % (self.counter,)
 
 class LOAD_MEMBER(Opcode):
     _stack_change = -1
     def eval(self, ctx):
-        w_obj = ctx.pop().ToObject()
-        name = ctx.pop().ToString()
-        ctx.append(w_obj.Get(name))
+        w_obj = ctx.stack_pop().ToObject()
+        name = ctx.stack_pop().ToString()
+        value = w_obj.get(name)
+        ctx.stack_append(value)
 
 class COMMA(BaseUnaryOperation):
     def eval(self, ctx):
-        one = ctx.pop()
-        ctx.pop()
-        ctx.append(one)
+        one = ctx.stack_pop()
+        ctx.stack_pop()
+        ctx.stack_append(one)
         # XXX
 
 class SUB(BaseBinaryOperation):
@@ -212,8 +223,8 @@ class IN(BaseBinaryOperation):
 
 class TYPEOF(BaseUnaryOperation):
     def eval(self, ctx):
-        one = ctx.pop()
-        ctx.append(W_String(one.type()))
+        one = ctx.stack_pop()
+        ctx.stack_append(W_String(one.type()))
 
 class TYPEOF_VARIABLE(Opcode):
     def __init__(self, name):
@@ -222,9 +233,9 @@ class TYPEOF_VARIABLE(Opcode):
     def eval(self, ctx):
         try:
             var = ctx.resolve_identifier(self.name)
-            ctx.append(W_String(var.type()))
+            ctx.stack_append(W_String(var.type()))
         except ThrowException:
-            ctx.append(W_String('undefined'))
+            ctx.stack_append(W_String('undefined'))
 
 #class Typeof(UnaryOp):
 #    def eval(self, ctx):
@@ -251,28 +262,28 @@ class BITOR(BaseBinaryBitwiseOp):
 
 class BITNOT(BaseUnaryOperation):
     def eval(self, ctx):
-        op = ctx.pop().ToInt32()
-        ctx.append(W_IntNumber(~op))
+        op = ctx.stack_pop().ToInt32()
+        ctx.stack_append(W_IntNumber(~op))
 
 class URSH(BaseBinaryBitwiseOp):
     def eval(self, ctx):
-        op2 = ctx.pop().ToUInt32()
-        op1 = ctx.pop().ToUInt32()
+        op2 = ctx.stack_pop().ToUInt32()
+        op1 = ctx.stack_pop().ToUInt32()
         # XXX check if it could fit into int
         f = float(op1 >> (op2 & 0x1F))
-        ctx.append(W_FloatNumber(f))
+        ctx.stack_append(W_FloatNumber(f))
 
 class RSH(BaseBinaryBitwiseOp):
     def eval(self, ctx):
-        op2 = ctx.pop().ToUInt32()
-        op1 = ctx.pop().ToInt32()
-        ctx.append(W_IntNumber(op1 >> intmask(op2 & 0x1F)))
+        op2 = ctx.stack_pop().ToUInt32()
+        op1 = ctx.stack_pop().ToInt32()
+        ctx.stack_append(W_IntNumber(op1 >> intmask(op2 & 0x1F)))
 
 class LSH(BaseBinaryBitwiseOp):
     def eval(self, ctx):
-        op2 = ctx.pop().ToUInt32()
-        op1 = ctx.pop().ToInt32()
-        ctx.append(W_IntNumber(op1 << intmask(op2 & 0x1F)))
+        op2 = ctx.stack_pop().ToUInt32()
+        op1 = ctx.stack_pop().ToInt32()
+        ctx.stack_append(W_IntNumber(op1 << intmask(op2 & 0x1F)))
 
 class MUL(BaseBinaryOperation):
     def operation(self, ctx, op1, op2):
@@ -288,31 +299,31 @@ class MOD(BaseBinaryOperation):
 
 class UPLUS(BaseUnaryOperation):
     def eval(self, ctx):
-        if isinstance(ctx.top(), W_IntNumber):
+        if isinstance(ctx.stack_top(), W_IntNumber):
             return
-        if isinstance(ctx.top(), W_FloatNumber):
+        if isinstance(ctx.stack_top(), W_FloatNumber):
             return
-        ctx.append(W_FloatNumber(ctx.pop().ToNumber()))
+        ctx.stack_append(W_FloatNumber(ctx.stack_pop().ToNumber()))
 
 class UMINUS(BaseUnaryOperation):
     def eval(self, ctx):
-        ctx.append(uminus(ctx.pop(), ctx))
+        ctx.stack_append(uminus(ctx.stack_pop(), ctx))
 
 class NOT(BaseUnaryOperation):
     def eval(self, ctx):
-        ctx.append(newbool(not ctx.pop().ToBoolean()))
+        ctx.stack_append(newbool(not ctx.stack_pop().ToBoolean()))
 
 class INCR(BaseUnaryOperation):
     def eval(self, ctx):
-        value = ctx.pop()
+        value = ctx.stack_pop()
         newvalue = increment(ctx, value)
-        ctx.append(newvalue)
+        ctx.stack_append(newvalue)
 
 class DECR(BaseUnaryOperation):
     def eval(self, ctx):
-        value = ctx.pop()
+        value = ctx.stack_pop()
         newvalue = decrement(ctx, value)
-        ctx.append(newvalue)
+        ctx.stack_append(newvalue)
 
 class GT(BaseBinaryComparison):
     def decision(self, ctx, op1, op2):
@@ -349,33 +360,33 @@ class ISNOT(BaseBinaryComparison):
 class STORE_MEMBER(Opcode):
     _stack_change = 0
     def eval(self, ctx):
-        left = ctx.pop()
-        member = ctx.pop()
-        value = ctx.pop()
+        left = ctx.stack_pop()
+        member = ctx.stack_pop()
+        value = ctx.stack_pop()
         name = member.ToString()
         left.ToObject().Put(name, value)
-        ctx.append(value)
+        ctx.stack_append(value)
 
 class STORE(Opcode):
-    _immutable_fields_ = ['name']
+    #_immutable_fields_ = ['name']
     _stack_change = 0
-    def __init__(self, name):
-        self.name = name
+    def __init__(self, index):
+        assert index is not None
+        self.index = index
 
     def eval(self, ctx):
-        value = ctx.top()
-        ctx.assign(self.name, value)
+        value = ctx.stack_top()
+        ref = ctx.get_ref(self.index)
+        ref.put_value(value)
 
-    def __repr__(self):
-        return '%s "%s"' % (self.__class__.__name__, self.name)
 
 class LABEL(Opcode):
     _stack_change = 0
     def __init__(self, num):
         self.num = num
 
-    def __repr__(self):
-        return 'LABEL %d' % (self.num,)
+    #def __repr__(self):
+        #return 'LABEL %d' % (self.num,)
 
 class BaseJump(Opcode):
     _immutable_fields_ = ['where']
@@ -387,8 +398,8 @@ class BaseJump(Opcode):
     def do_jump(self, ctx, pos):
         return 0
 
-    def __repr__(self):
-        return '%s %d' % (self.__class__.__name__, self.where)
+    #def __repr__(self):
+        #return '%s %d' % (self.__class__.__name__, self.where)
 
 class JUMP(BaseJump):
     def eval(self, ctx):
@@ -399,12 +410,12 @@ class JUMP(BaseJump):
 
 class BaseIfJump(BaseJump):
     def eval(self, ctx):
-        value = ctx.pop()
+        value = ctx.stack_pop()
         self.decision = value.ToBoolean()
 
 class BaseIfNopopJump(BaseJump):
     def eval(self, ctx):
-        value = ctx.top()
+        value = ctx.stack_top()
         self.decision = value.ToBoolean()
 
 class JUMP_IF_FALSE(BaseIfJump):
@@ -416,7 +427,7 @@ class JUMP_IF_FALSE(BaseIfJump):
 class JUMP_IF_FALSE_NOPOP(BaseIfNopopJump):
     def do_jump(self, ctx, pos):
         if self.decision:
-            ctx.pop()
+            ctx.stack_pop()
             return pos + 1
         return self.where
 
@@ -430,7 +441,7 @@ class JUMP_IF_TRUE_NOPOP(BaseIfNopopJump):
     def do_jump(self, ctx, pos):
         if self.decision:
             return self.where
-        ctx.pop()
+        ctx.stack_pop()
         return pos + 1
 
 class DECLARE_FUNCTION(Opcode):
@@ -439,30 +450,42 @@ class DECLARE_FUNCTION(Opcode):
         self.funcobj = funcobj
 
     def eval(self, ctx):
-        from js.jsobj import DONT_ENUM, READ_ONLY
-        # 13.2 Creating Function Objects
-        # TODO move this to W__Function.__init__ ?
+        pass
+        #from js.jsobj import DONT_ENUM, READ_ONLY
+        ## 13.2 Creating Function Objects
+        ## TODO move this to W__Function.__init__ ?
 
-        func = W__Function(ctx, self.funcobj)
+        #func = W__Function(ctx, self.funcobj)
 
-        func.Put('length', W_IntNumber(len(self.funcobj.params)), flags = DONT_ENUM | READ_ONLY)
+        #func.Put('length', W_IntNumber(len(self.funcobj.params())), flags = DONT_ENUM | READ_ONLY)
 
-        proto = W__Object()
-        proto.Put('constructor', func, flags = DONT_ENUM)
+        #proto = W__Object()
+        #proto.Put('constructor', func, flags = DONT_ENUM)
 
-        func.Put('prototype', proto, flags = DONT_ENUM)
+        #func.Put('prototype', proto, flags = DONT_ENUM)
 
-        if self.funcobj.name is not None:
-            ctx.put(self.funcobj.name, func)
+        #ctx.stack_append(funcobj)
 
-    def __repr__(self):
+        #if self.funcobj.name is not None:
+            #ctx.set_value(self.funcobj.name, func)
+
+    def __str__(self):
         funcobj = self.funcobj
         if funcobj.name is None:
             name = ""
         else:
             name = funcobj.name + " "
-        codestr = '\n'.join(['  %r' % (op,) for op in funcobj.opcodes])
-        return 'DECLARE_FUNCTION %s%r [\n%s\n]' % (name, funcobj.params, codestr)
+        return 'DECLARE_FUNCTION %s%r' % (name, funcobj.params)
+
+    ##def __repr__(self):
+    ##    funcobj = self.funcobj
+    ##    if funcobj.name is None:
+    ##        name = ""
+    ##    else:
+    ##        name = funcobj.name + " "
+    ##    codestr = '\n'.join(['  %r' % (op,) for op in funcobj.opcodes])
+    ##    ##return 'DECLARE_FUNCTION %s%r [\n%s\n]' % (name, funcobj.params, codestr)
+    ##    return 'DECLARE_FUNCTION %s%r' % (name, funcobj.params)
 
 class DECLARE_VAR(Opcode):
     _stack_change = 0
@@ -470,20 +493,22 @@ class DECLARE_VAR(Opcode):
         self.name = name
 
     def eval(self, ctx):
-        ctx.declare_variable(self.name)
+        pass
+        #ctx.declare_variable(self.name)
 
-    def __repr__(self):
-        return 'DECLARE_VAR "%s"' % (self.name,)
+    #def __repr__(self):
+        #return 'DECLARE_VAR "%s"' % (self.name,)
 
 class RETURN(Opcode):
     _stack_change = 0
     def eval(self, ctx):
-        raise ReturnException(ctx.pop())
+        pass
+        #raise ReturnException(ctx.stack_pop())
 
 class POP(Opcode):
     _stack_change = -1
     def eval(self, ctx):
-        ctx.pop()
+        ctx.stack_pop()
 
 def common_call(ctx, r1, args, this, name):
     # TODO
@@ -492,7 +517,7 @@ def common_call(ctx, r1, args, this, name):
         raise ThrowException(W_String("%s is not a callable (%s)"%(r1.ToString(), name.ToString())))
     jit.promote(r1)
     try:
-        res = r1.Call(args.tolist(), this)
+        res = r1.Call(args.ToList(), this)
     except JsTypeError:
         raise ThrowException(W_String("%s is not a function (%s)"%(r1.ToString(), name.ToString())))
     return res
@@ -500,30 +525,29 @@ def common_call(ctx, r1, args, this, name):
 class CALL(Opcode):
     _stack_change = 0
     def eval(self, ctx):
-        r1 = ctx.pop()
-        args = ctx.pop()
-        this = ctx.to_context_object()
-        #XXX hack, this should be comming from context
-        ctx.append(common_call(ctx, r1, args, this, r1))
+        r1 = ctx.stack_pop()
+        args = ctx.stack_pop()
+        this = ctx.this_binding()
+        ctx.stack_append(common_call(ctx, r1, args, this, r1))
 
 class CALL_METHOD(Opcode):
     _stack_change = -2
     def eval(self, ctx):
-        method = ctx.pop()
-        what = ctx.pop().ToObject()
-        args = ctx.pop()
+        method = ctx.stack_pop()
+        what = ctx.stack_pop().ToObject()
+        args = ctx.stack_pop()
         name = method.ToString()
         r1 = what.Get(name)
-        ctx.append(common_call(ctx, r1, args, what, method))
+        ctx.stack_append(common_call(ctx, r1, args, what, method))
 
 class DUP(Opcode):
     def eval(self, ctx):
-        ctx.append(ctx.top())
+        ctx.stack_append(ctx.stack_top())
 
 class THROW(Opcode):
     _stack_change = 0
     def eval(self, ctx):
-        val = ctx.pop()
+        val = ctx.stack_pop()
         raise ThrowException(val)
 
 class TRYCATCHBLOCK(Opcode):
@@ -554,30 +578,30 @@ class TRYCATCHBLOCK(Opcode):
                 self.finallyfunc.run(ctx)
             raise
 
-    def __repr__(self):
-        return "TRYCATCHBLOCK" # XXX shall we add stuff here???
+    #def __repr__(self):
+        #return "TRYCATCHBLOCK" # XXX shall we add stuff here???
 
 class NEW(Opcode):
     _stack_change = 0
     def eval(self, ctx):
-        y = ctx.pop()
-        x = ctx.pop()
+        y = ctx.stack_pop()
+        x = ctx.stack_pop()
         assert isinstance(y, W_List)
         args = y.get_args()
-        ctx.append(commonnew(ctx, x, args))
+        ctx.stack_append(commonnew(ctx, x, args))
 
 class NEW_NO_ARGS(Opcode):
     _stack_change = 0
     def eval(self, ctx):
-        x = ctx.pop()
-        ctx.append(commonnew(ctx, x, []))
+        x = ctx.stack_pop()
+        ctx.stack_append(commonnew(ctx, x, []))
 
 # ------------ iterator support ----------------
 
 class LOAD_ITERATOR(Opcode):
     _stack_change = 0
     def eval(self, ctx):
-        obj = ctx.pop().ToObject()
+        obj = ctx.stack_pop().ToObject()
         props = []
         from js.jsobj import W_BasicObject
         assert isinstance(obj, W_BasicObject)
@@ -586,14 +610,14 @@ class LOAD_ITERATOR(Opcode):
             if not obj._get_property_flags(prop) & jsobj.DONT_ENUM:
                 props.append(obj._get_property_value(prop))
 
-        ctx.append(W_Iterator(props))
+        ctx.stack_append(W_Iterator(props))
 
 class JUMP_IF_ITERATOR_EMPTY(BaseJump):
     def eval(self, ctx):
         pass
 
     def do_jump(self, ctx, pos):
-        iterator = ctx.top()
+        iterator = ctx.stack_top()
         assert isinstance(iterator, W_Iterator)
         if iterator.empty():
             return self.where
@@ -605,7 +629,7 @@ class NEXT_ITERATOR(Opcode):
         self.name = name
 
     def eval(self, ctx):
-        iterator = ctx.top()
+        iterator = ctx.stack_top()
         assert isinstance(iterator, W_Iterator)
         ctx.assign(self.name, iterator.next())
 
@@ -617,7 +641,7 @@ class WITH_START(Opcode):
         self.newctx = None
 
     def eval(self, ctx):
-        obj = ctx.pop().ToObject()
+        obj = ctx.stack_pop().ToObject()
         from js.jsexecution_context import make_with_context
         self.newctx = make_with_context(ctx, obj)
 
@@ -633,14 +657,14 @@ class DELETE(Opcode):
         self.name = name
 
     def eval(self, ctx):
-        ctx.append(newbool(ctx.delete_identifier(self.name)))
+        ctx.stack_append(newbool(ctx.delete_identifier(self.name)))
 
 class DELETE_MEMBER(Opcode):
     _stack_change = 0
     def eval(self, ctx):
-        what = ctx.pop().ToString()
-        obj = ctx.pop().ToObject()
-        ctx.append(newbool(obj.Delete(what)))
+        what = ctx.stack_pop().ToString()
+        obj = ctx.stack_pop().ToObject()
+        ctx.stack_append(newbool(obj.Delete(what)))
 
 class LOAD_LOCAL(Opcode):
     _immutable_fields_ = ['local']
@@ -648,10 +672,10 @@ class LOAD_LOCAL(Opcode):
         self.local = local
 
     def eval(self, ctx):
-        ctx.append(ctx.get_local_value(self.local))
+        ctx.stack_append(ctx.get_local_value(self.local))
 
-    def __repr__(self):
-        return 'LOAD_LOCAL %d' % (self.local,)
+    #def __repr__(self):
+        #return 'LOAD_LOCAL %d' % (self.local,)
 
 class STORE_LOCAL(Opcode):
     _stack_change = 0
@@ -660,11 +684,11 @@ class STORE_LOCAL(Opcode):
         self.local = local
 
     def eval(self, ctx):
-        value = ctx.top()
+        value = ctx.stack_top()
         ctx.assign_local(self.local, value)
 
-    def __repr__(self):
-        return 'STORE_LOCAL %d' % (self.local,)
+    #def __repr__(self):
+        #return 'STORE_LOCAL %d' % (self.local,)
 
 # different opcode mappings, to make annotator happy
 

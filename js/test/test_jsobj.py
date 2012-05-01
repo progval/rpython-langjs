@@ -1,142 +1,177 @@
 import py
-from js.jsobj import W_IntNumber, W_FloatNumber, w_Null, w_Undefined, w_True, w_False, NAN, W_String, W__Object as W_Object, W_BasicObject, W_BooleanObject
+from js.jsobj import W_BasicObject, PropertyDescriptor
 
-def test_intnumber():
-    n = W_IntNumber(0x80000000)
-    assert n.ToInt32() == -0x80000000
-    assert n.ToUInt32() == 0x80000000
+class TestWObjectProperties(object):
+    def test_has_property(self):
+        obj = W_BasicObject()
+        assert obj.has_property('foo') is False
 
-def test_floatnumber():
-    n = W_FloatNumber(float(0x80000000))
-    assert n.ToInt32() == -0x80000000
-    assert n.ToUInt32() == 0x80000000
+    def test_define_property(self):
+        obj = W_BasicObject()
 
-class TestType(object):
-    def test_undefined(self):
-        assert w_Undefined.type() == 'undefined'
+        desc = PropertyDescriptor(enumerable = True, configurable = True)
+        obj.define_own_property('foo', desc)
+        assert obj.has_property('foo') is True
 
-    def test_null(self):
-        assert w_Null.type() == 'null'
+    def test_define_data_property(self):
+        obj = W_BasicObject()
 
-    def test_boolean(self):
-        assert w_True.type() == 'boolean'
-        assert w_False.type() == 'boolean'
+        desc = PropertyDescriptor(value = 1)
+        obj.define_own_property('foo', desc)
+        assert obj.has_property('foo') is True
 
-    def test_number(self):
-        assert W_IntNumber(0).type() == 'number'
-        assert W_FloatNumber(0.0).type() == 'number'
-        assert W_FloatNumber(NAN).type() == 'number'
+    def test_get(self):
+        obj = W_BasicObject()
 
-    def test_string(self):
-        assert W_String('').type() == 'string'
+        desc = PropertyDescriptor(value = 1)
+        obj.define_own_property('foo', desc)
+        assert obj.get('foo') == 1
 
-    def test_object(self):
-        assert W_Object().type() == 'object'
+    def test_put(self):
+        obj = W_BasicObject()
 
-class TestToBoolean(object):
-    def test_undefined(self):
-        assert w_Undefined.ToBoolean() == False
+        desc = PropertyDescriptor(enumerable = True, configurable = True)
+        obj.define_own_property('foo', desc)
+        obj.put('foo', 1)
+        assert obj.get('foo') == 1
 
-    def test_null(self):
-        assert w_Null.ToBoolean() == False
+#def test_intnumber():
+    #n = W_IntNumber(0x80000000)
+    #assert n.ToInt32() == -0x80000000
+    #assert n.ToUInt32() == 0x80000000
 
-    def test_boolean(self):
-        assert w_True.ToBoolean() == True
-        assert w_False.ToBoolean() == False
+#def test_floatnumber():
+    #n = W_FloatNumber(float(0x80000000))
+    #assert n.ToInt32() == -0x80000000
+    #assert n.ToUInt32() == 0x80000000
 
-    def test_number(self):
-        assert W_IntNumber(0).ToBoolean() == False
-        assert W_IntNumber(1).ToBoolean() == True
-        assert W_FloatNumber(0.0).ToBoolean() == False
-        assert W_FloatNumber(1.0).ToBoolean() == True
-        assert W_FloatNumber(NAN).ToBoolean() == False
+#class TestType(object):
+    #def test_undefined(self):
+        #assert w_Undefined.type() == 'undefined'
 
-    def test_string(self):
-        assert W_String('').ToBoolean() == False
-        assert W_String('a').ToBoolean() == True
+    #def test_null(self):
+        #assert w_Null.type() == 'null'
 
-    def test_object(self):
-        assert W_Object().ToBoolean() == True
+    #def test_boolean(self):
+        #assert w_True.type() == 'boolean'
+        #assert w_False.type() == 'boolean'
 
-class TestToNumber(object):
-    def test_undefined(self):
-        assert w_Undefined.ToNumber() is NAN
+    #def test_number(self):
+        #assert W_IntNumber(0).type() == 'number'
+        #assert W_FloatNumber(0.0).type() == 'number'
+        #assert W_FloatNumber(NAN).type() == 'number'
 
-    def test_null(self):
-        assert w_Null.ToNumber() == 0
+    #def test_string(self):
+        #assert W_String('').type() == 'string'
 
-    def test_boolean(self):
-        assert w_True.ToNumber() == 1
-        assert w_False.ToNumber() == 0
+    #def test_object(self):
+        #assert W_Object().type() == 'object'
 
-    def test_number(self):
-        assert W_IntNumber(0).ToNumber() == 0
-        assert W_IntNumber(1).ToNumber() == 1
-        assert W_FloatNumber(0.0).ToNumber() == 0
-        assert W_FloatNumber(1.0).ToNumber() == 1.0
-        assert W_FloatNumber(NAN).ToNumber() is NAN
+#class TestToBoolean(object):
+    #def test_undefined(self):
+        #assert w_Undefined.ToBoolean() == False
 
-    def test_string(self):
-        assert W_String('').ToNumber() == 0
-        assert W_String('x').ToNumber() is NAN
-        assert W_String('1').ToNumber() == 1
+    #def test_null(self):
+        #assert w_Null.ToBoolean() == False
 
-    def test_object(self):
-        py.test.skip()
-        W_Object().ToNumber()
+    #def test_boolean(self):
+        #assert w_True.ToBoolean() == True
+        #assert w_False.ToBoolean() == False
 
-class TestToString(object):
-    def test_undefined(self):
-        assert w_Undefined.ToString() == 'undefined'
+    #def test_number(self):
+        #assert W_IntNumber(0).ToBoolean() == False
+        #assert W_IntNumber(1).ToBoolean() == True
+        #assert W_FloatNumber(0.0).ToBoolean() == False
+        #assert W_FloatNumber(1.0).ToBoolean() == True
+        #assert W_FloatNumber(NAN).ToBoolean() == False
 
-    def test_null(self):
-        assert w_Null.ToString() == 'null'
+    #def test_string(self):
+        #assert W_String('').ToBoolean() == False
+        #assert W_String('a').ToBoolean() == True
 
-    def test_boolean(self):
-        assert w_True.ToString() == 'true'
-        assert w_False.ToString() == 'false'
+    #def test_object(self):
+        #assert W_Object().ToBoolean() == True
 
-    def test_number(self):
-        assert W_IntNumber(0).ToString() == '0'
-        assert W_IntNumber(1).ToString() == '1'
-        assert W_FloatNumber(0.0).ToString() == '0'
-        assert W_FloatNumber(1.0).ToString() == '1'
-        assert W_FloatNumber(NAN).ToString() == 'NaN'
+#class TestToNumber(object):
+    #def test_undefined(self):
+        #assert w_Undefined.ToNumber() is NAN
 
-    def test_string(self):
-        assert W_String('').ToString() == ''
-        assert W_String('x').ToString() == 'x'
-        assert W_String('1').ToString() == '1'
+    #def test_null(self):
+        #assert w_Null.ToNumber() == 0
 
-    def test_object(self):
-        py.test.skip()
-        W_Object().ToString()
+    #def test_boolean(self):
+        #assert w_True.ToNumber() == 1
+        #assert w_False.ToNumber() == 0
 
-class TestW_BasicObject(object):
-    def test_Prototype(self):
-        assert W_BasicObject().Prototype() is w_Undefined
+    #def test_number(self):
+        #assert W_IntNumber(0).ToNumber() == 0
+        #assert W_IntNumber(1).ToNumber() == 1
+        #assert W_FloatNumber(0.0).ToNumber() == 0
+        #assert W_FloatNumber(1.0).ToNumber() == 1.0
+        #assert W_FloatNumber(NAN).ToNumber() is NAN
 
-    def test_Class(self):
-        assert W_BasicObject().Class() == 'Object'
+    #def test_string(self):
+        #assert W_String('').ToNumber() == 0
+        #assert W_String('x').ToNumber() is NAN
+        #assert W_String('1').ToNumber() == 1
 
-class TestW_BooleanObject(object):
-    def test_toPrimitive(self):
-        py.test.skip()
-        b = W_BooleanObject(w_True)
-        assert b.ToPrimitive() == w_True
+    #def test_object(self):
+        #py.test.skip()
+        #W_Object().ToNumber()
 
-class TestW__Function(object):
-    def test_Call(self):
-        from js.jsobj import W__Function, W_List, _w
-        from js.jscode import Js_NativeFunction
-        from js.jsexecution_context import make_global_context
+#class TestToString(object):
+    #def test_undefined(self):
+        #assert w_Undefined.ToString() == 'undefined'
 
-        ctx = make_global_context()
+    #def test_null(self):
+        #assert w_Null.ToString() == 'null'
 
-        def f(this, args):
-            return 1
+    #def test_boolean(self):
+        #assert w_True.ToString() == 'true'
+        #assert w_False.ToString() == 'false'
 
-        nf = Js_NativeFunction(f)
-        f = W__Function(ctx, nf)
+    #def test_number(self):
+        #assert W_IntNumber(0).ToString() == '0'
+        #assert W_IntNumber(1).ToString() == '1'
+        #assert W_FloatNumber(0.0).ToString() == '0'
+        #assert W_FloatNumber(1.0).ToString() == '1'
+        #assert W_FloatNumber(NAN).ToString() == 'NaN'
 
-        assert f.Call([_w(None), _w(None)]).ToInteger() == 1
+    #def test_string(self):
+        #assert W_String('').ToString() == ''
+        #assert W_String('x').ToString() == 'x'
+        #assert W_String('1').ToString() == '1'
+
+    #def test_object(self):
+        #py.test.skip()
+        #W_Object().ToString()
+
+#class TestW_BasicObject(object):
+    #def test_Prototype(self):
+        #assert W_BasicObject().Prototype() is w_Undefined
+
+    #def test_Class(self):
+        #assert W_BasicObject().Class() == 'Object'
+
+#class TestW_BooleanObject(object):
+    #def test_toPrimitive(self):
+        #py.test.skip()
+        #b = W_BooleanObject(w_True)
+        #assert b.ToPrimitive() == w_True
+
+
+##class TestW__Function(object):
+    ##def test_Call(self):
+        ##from js.jsobj import W__Function, W_List, _w
+        ##from js.jscode import Js_NativeFunction
+        ##from js.jsexecution_context import make_global_context
+
+        ##ctx = make_global_context()
+
+        ##def f(this, args):
+            ##return 1
+
+        ##nf = Js_NativeFunction(f)
+        ##f = W__Function(ctx, nf)
+
+        ##assert f.Call([_w(None), _w(None)]).ToInteger() == 1

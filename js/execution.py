@@ -27,4 +27,7 @@ class ThrowException(JsBaseExcept):
 class JsTypeError(JsBaseExcept):
     pass
 
+class JsReferenceError(JsBaseExcept):
+    pass
+
 class RangeError(JsBaseExcept): pass

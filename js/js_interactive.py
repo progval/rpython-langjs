@@ -52,11 +52,11 @@ class JSInterpreter(code.InteractiveConsole):
     def __init__(self, locals=None, filename="<console>"):
         code.InteractiveConsole.__init__(self, locals, filename)
         self.interpreter = Interpreter()
-        ctx = self.interpreter.global_context
-        from builtins import new_native_function
-        self.interpreter.w_Global.Put('quit', new_native_function(ctx, quitjs))
-        self.interpreter.w_Global.Put('trace', new_native_function(ctx, tracejs))
-        self.interpreter.w_Global.Put('debug', new_native_function(ctx, debugjs))
+        #ctx = self.interpreter.global_context
+        #from builtins import new_native_function
+        #self.interpreter.w_Global.Put('quit', new_native_function(ctx, quitjs))
+        #self.interpreter.w_Global.Put('trace', new_native_function(ctx, tracejs))
+        #self.interpreter.w_Global.Put('debug', new_native_function(ctx, debugjs))
 
     def runcodefromfile(self, filename):
         f = open_file_as_stream(filename)
@@ -70,16 +70,15 @@ class JSInterpreter(code.InteractiveConsole):
         traceback.
         """
         try:
-            res = self.interpreter.run(ast, interactive=True)
-            if DEBUG:
-                print self.interpreter._code
-            if res not in (None, w_Undefined):
-                try:
-                    if DEBUG:
-                        print repr(res)
-                    print res.ToString()
-                except ThrowException, exc:
-                    print exc.exception.ToString()
+            res = self.interpreter.run_ast(ast)
+            #if DEBUG:
+                #print self.interpreter._code
+            try:
+                #if DEBUG:
+                    #print repr(res)
+                print res.ToString()
+            except ThrowException, exc:
+                print exc.exception.ToString()
         except SystemExit:
             raise
         except ThrowException, exc:

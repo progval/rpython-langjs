@@ -8,96 +8,146 @@ from js.object_map import ROOT_MAP
 def _get_root_map():
     return ROOT_MAP
 
-class Scope(object):
-    _immutable_fields_ = ['local_variables']
+#class Scope(object):
+#    _immutable_fields_ = ['local_variables']
+#    def __init__(self):
+#        self.local_variables = ROOT_MAP
+#        self.declared_variables = []
+#
+#    def __repr__(self):
+#        return '%s: %s; %s' % (object.__repr__(self), repr(self.local_variables), repr(self.declared_variables))
+#
+#    def add_local(self, identifier):
+#        if not self.is_local(identifier):
+#            self.local_variables = self.local_variables.add(identifier)
+#
+#    def declare_local(self, identifier):
+#        if not self.is_local(identifier):
+#            self.add_local(identifier)
+#            if not identifier in self.declared_variables:
+#                self.declared_variables.append(identifier)
+#
+#    def is_local(self, identifier):
+#        return self.local_variables.lookup(identifier) != self.local_variables.NOT_FOUND
+#
+#    def get_local(self, identifier):
+#        idx = self.local_variables.lookup(identifier)
+#        if idx == self.local_variables.NOT_FOUND:
+#            raise ValueError
+#        return idx
+
+#class GlobalScope(Scope):
+#    def add_local(self, identifier):
+#        pass
+#
+#    def declare_local(self, identifier):
+#        if not identifier in self.declared_variables:
+#            self.declared_variables.append(identifier)
+#
+#    def is_local(self, identifier):
+#        return False
+#
+#    def get_local(self, identifier):
+#        raise ValueError
+#
+#class EvalScope(GlobalScope):
+#    def declare_local(self, identifier):
+#        pass
+
+#class Scopes(object):
+#    def __init__(self):
+#        self._scopes = []
+#        self._scopes.append(GlobalScope())
+#
+#    def current_scope(self):
+#        if not self._scopes:
+#            return None
+#        else:
+#            return self._scopes[-1]
+#
+#    def new_scope(self):
+#        self._scopes.append(Scope())
+#
+#    def end_scope(self):
+#        self._scopes.pop()
+#
+#    def declarations(self):
+#        if self.scope_present():
+#            return self.current_scope().declared_variables
+#        else:
+#            return []
+#
+#    def is_local(self, identifier):
+#        return self.scope_present() == True and self.current_scope().is_local(identifier) == True
+#
+#    def scope_present(self):
+#        return self.current_scope() is not None
+#
+#    def add_local(self, identifier):
+#        if self.scope_present():
+#            self.current_scope().add_local(identifier)
+#
+#    def declare_local(self, identifier):
+#        if self.scope_present():
+#            self.current_scope().declare_local(identifier)
+#
+#    def get_local(self, identifier):
+#        return self.current_scope().get_local(identifier)
+
+class SymbolMap(object):
     def __init__(self):
-        self.local_variables = ROOT_MAP
-        self.declared_variables = []
+        self.functions = {}
+        self.variables = {}
+        self.symbols = {}
+        self.parameters = {}
+        self.next_index = 0
 
-    def __repr__(self):
-        return '%s: %s; %s' % (object.__repr__(self), repr(self.local_variables), repr(self.declared_variables))
+    def add_symbol(self, identifyer):
+        assert identifyer is not None
+        if identifyer not in self.symbols:
+            self.symbols[identifyer] = self.next_index
+            self.next_index += 1
+        return self.symbols[identifyer]
 
-    def add_local(self, identifier):
-        if not self.is_local(identifier):
-            self.local_variables = self.local_variables.add(identifier)
+    def add_variable(self, identifyer):
+        idx = self.add_symbol(identifyer)
 
-    def declare_local(self, identifier):
-        if not self.is_local(identifier):
-            self.add_local(identifier)
-            if not identifier in self.declared_variables:
-                self.declared_variables.append(identifier)
-
-    def is_local(self, identifier):
-        return self.local_variables.lookup(identifier) != self.local_variables.NOT_FOUND
-
-    def get_local(self, identifier):
-        idx = self.local_variables.lookup(identifier)
-        if idx == self.local_variables.NOT_FOUND:
-            raise ValueError
+        if identifyer not in self.variables:
+            self.variables[identifyer] = idx
         return idx
 
-class GlobalScope(Scope):
-    def add_local(self, identifier):
-        pass
+    def add_function(self, identifyer):
+        idx = self.add_symbol(identifyer)
 
-    def declare_local(self, identifier):
-        if not identifier in self.declared_variables:
-            self.declared_variables.append(identifier)
+        if identifyer not in self.functions:
+            self.functions[identifyer] = idx
+        return idx
 
-    def is_local(self, identifier):
-        return False
+    def add_parameter(self, identifyer):
+        idx = self.add_symbol(identifyer)
 
-    def get_local(self, identifier):
-        raise ValueError
+        if identifyer not in self.parameters:
+            self.parameters[identifyer] = idx
+        return idx
 
-class EvalScope(GlobalScope):
-    def declare_local(self, identifier):
-        pass
+    def get_index(self, identifyer):
+        return self.symbols[identifyer]
 
-class Scopes(object):
-    def __init__(self):
-        self._scopes = []
-        self._scopes.append(GlobalScope())
+    def get_symbols(self):
+        return self.symbols.keys()
 
-    def current_scope(self):
-        if not self._scopes:
-            return None
-        else:
-            return self._scopes[-1]
+    def get_symbol(self, index):
+        for symbol, idx in self.symbols.items():
+            if idx == index:
+                return symbol
 
-    def new_scope(self):
-        self._scopes.append(Scope())
-
-    def end_scope(self):
-        self._scopes.pop()
-
-    def declarations(self):
-        if self.scope_present():
-            return self.current_scope().declared_variables
-        else:
-            return []
-
-    def is_local(self, identifier):
-        return self.scope_present() == True and self.current_scope().is_local(identifier) == True
-
-    def scope_present(self):
-        return self.current_scope() is not None
-
-    def add_local(self, identifier):
-        if self.scope_present():
-            self.current_scope().add_local(identifier)
-
-    def declare_local(self, identifier):
-        if self.scope_present():
-            self.current_scope().declare_local(identifier)
-
-    def get_local(self, identifier):
-        return self.current_scope().get_local(identifier)
+empty_symbols = SymbolMap()
 
 class FakeParseError(Exception):
     def __init__(self, pos, msg):
         self.pos = pos
         self.msg = msg
+
 
 class ASTBuilder(RPythonVisitor):
     BINOP_TO_CLS = {
@@ -143,12 +193,58 @@ class ASTBuilder(RPythonVisitor):
 
     def __init__(self):
         self.funclists = []
-        self.scopes = Scopes()
+        self.scopes = []
         self.sourcename = ""
         RPythonVisitor.__init__(self)
+        self.depth = -1
+
+    def enter_scope(self):
+        self.depth = self.depth + 1
+
+        new_scope = SymbolMap()
+        self.scopes.append(new_scope)
+        #print 'starting new scope %d' % (self.depth, )
+
+    def declare_symbol(self, symbol):
+        idx = self.scopes[-1].add_symbol(symbol)
+        #print 'symbol "%s"@%d in scope %d' % (symbol, idx, self.depth,)
+        return idx
+
+    def declare_variable(self, symbol):
+        idx = self.scopes[-1].add_variable(symbol)
+        #print 'var declaration "%s"@%d in scope %d' % (symbol, idx, self.depth,)
+        return idx
+
+    def declare_function(self, symbol, funcobj):
+        self.funclists[-1][symbol] = funcobj
+        idx = self.scopes[-1].add_function(symbol)
+        #print 'func declaration "%s"@%d in scope %d' % (symbol, idx, self.depth,)
+        return idx
+
+    def declare_parameter(self, symbol):
+        idx = self.scopes[-1].add_parameter(symbol)
+        print 'parameter declaration "%s"@%d in scope %d' % (symbol, idx, self.depth,)
+        return idx
+
+    def exit_scope(self):
+        self.depth = self.depth - 1
+        self.scopes.pop()
+        #print 'closing scope, returning to %d' % (self.depth, )
+
+    def current_scope_variables(self):
+        return self.current_scope().variables.keys()
+
+    def current_scope_parameters(self):
+        return self.current_scope().parameters.keys()
+
+    def current_scope(self):
+        try:
+            return self.scopes[-1]
+        except IndexError:
+            return None
 
     def set_sourcename(self, sourcename):
-        self.sourcename = sourcename #XXX I should call this
+        self.stsourcename = sourcename #XXX I should call this
 
     def get_pos(self, node):
         value = ''
@@ -296,7 +392,7 @@ class ASTBuilder(RPythonVisitor):
         pos = self.get_pos(node)
         nodes = [self.dispatch(child) for child in node.children]
         for node in nodes:
-            self.scopes.add_local(node.name)
+            self.declare_parameter(node.name)
         return operations.ArgumentList(pos, nodes)
 
     def visit_variabledeclarationlist(self, node):
@@ -309,8 +405,10 @@ class ASTBuilder(RPythonVisitor):
         pos = self.get_pos(node)
         l = node.children[0]
         if l.symbol == "IDENTIFIERNAME":
+            identifier = l.additional_info
+            index = self.declare_symbol(identifier)
             lpos = self.get_pos(l)
-            left = operations.Identifier(lpos, l.additional_info)
+            left = operations.Identifier(lpos, identifier, index)
         else:
             left = self.dispatch(l)
         right = self.dispatch(node.children[1])
@@ -319,15 +417,18 @@ class ASTBuilder(RPythonVisitor):
     def visit_IDENTIFIERNAME(self, node):
         pos = self.get_pos(node)
         name = node.additional_info
-        if self.scopes.is_local(name):
-            local = self.scopes.get_local(name)
-            return operations.LocalIdentifier(pos, name, local)
-        return operations.Identifier(pos, name)
+        index = self.declare_symbol(name)
+        #if self.scopes.is_local(name):
+            #local = self.scopes.get_local(name)
+            #return operations.LocalIdentifier(pos, name, local)
+        return operations.Identifier(pos, name, index)
 
     def visit_program(self, node):
+        self.enter_scope()
         pos = self.get_pos(node)
         body = self.dispatch(node.children[0])
-        return operations.Program(pos, body)
+        scope = self.current_scope()
+        return operations.Program(pos, body, scope)
 
     def visit_variablestatement(self, node):
         pos = self.get_pos(node)
@@ -348,28 +449,45 @@ class ASTBuilder(RPythonVisitor):
             if node is not None:
                 nodes.append(node)
         # XXX is this still needed or can it be dropped?
-        var_decl = self.scopes.declarations()
+        #var_decl = self.scopes.declarations()
+        var_decl = self.current_scope_variables()
         func_decl = self.funclists.pop()
+        #func_decl = self.scopes.functions.keys()
         return operations.SourceElements(pos, var_decl, func_decl, nodes, self.sourcename)
 
     def functioncommon(self, node, declaration=True):
-        self.scopes.new_scope()
+        self.enter_scope()
+
         pos = self.get_pos(node)
         i=0
         identifier, i = self.get_next_expr(node, i)
         parameters, i = self.get_next_expr(node, i)
         functionbody, i = self.get_next_expr(node, i)
-        if parameters is None:
-            p = []
-        else:
-            p = [pident.get_literal() for pident in parameters.nodes]
-        funcobj = operations.FunctionStatement(pos, identifier, p, functionbody, self.scopes.current_scope())
-        self.scopes.end_scope()
+
+        #params = []
+        #if parameters is not None:
+        #    params = [pident.get_literal() for pident in parameters.nodes]
+
+        params = self.current_scope_parameters()
+
+        funcname = None
+        if identifier is not None:
+            funcname = identifier.get_literal()
+
+        scope = self.current_scope()
+
+        self.exit_scope()
+
+        funcindex = None
+
         if declaration:
-            n = identifier.get_literal()
-            # XXX functions are local variables too
-            self.scopes.add_local(n)
-            self.funclists[-1][n] = funcobj
+            funcindex = self.declare_symbol(funcname)
+
+        funcobj = operations.FunctionStatement(pos, funcname, funcindex, functionbody, scope)
+
+        if declaration:
+            self.declare_function(funcname, funcobj)
+
         return funcobj
 
     def visit_functiondeclaration(self, node):
@@ -383,17 +501,17 @@ class ASTBuilder(RPythonVisitor):
         pos = self.get_pos(node)
         identifier = self.dispatch(node.children[0])
         identifier_name = identifier.get_literal()
-        self.scopes.declare_local(identifier_name)
+        index = self.declare_variable(identifier_name)
         if len(node.children) > 1:
             expr = self.dispatch(node.children[1])
         else:
             expr = None
 
-        if self.scopes.is_local(identifier_name):
-            local = self.scopes.get_local(identifier_name)
-            return operations.LocalVariableDeclaration(pos, identifier, local, expr)
-        else:
-            return operations.VariableDeclaration(pos, identifier, expr)
+        #if self.scopes.is_local(identifier_name):
+        #    local = self.scopes.get_local(identifier_name)
+        #    return operations.LocalVariableDeclaration(pos, identifier, local, expr)
+        #else:
+        return operations.VariableDeclaration(pos, identifier, index, expr)
     visit_variabledeclarationnoin = visit_variabledeclaration
 
     def visit_expressionstatement(self, node):
@@ -425,8 +543,9 @@ class ASTBuilder(RPythonVisitor):
         return isinstance(obj, Member) or isinstance(obj, MemberDot)
 
     def is_local_identifier(self, obj):
-        from js.operations import LocalIdentifier
-        return isinstance(obj, LocalIdentifier)
+        #from js.operations import LocalIdentifier
+        #return isinstance(obj, LocalIdentifier)
+        return False
 
     def visit_assignmentexpression(self, node):
 
@@ -438,7 +557,9 @@ class ASTBuilder(RPythonVisitor):
         if self.is_local_identifier(left):
             return operations.LocalAssignmentOperation(pos, left, right, operation)
         elif self.is_identifier(left):
-            return operations.AssignmentOperation(pos, left, right, operation)
+            identifier = left.get_literal()
+            index = self.declare_symbol(identifier)
+            return operations.AssignmentOperation(pos, left, identifier, index, right, operation)
         elif self.is_member(left):
             return operations.MemberAssignmentOperation(pos, left, right, operation)
         else:
@@ -615,7 +736,8 @@ class ASTBuilder(RPythonVisitor):
 
     def visit_primaryexpression(self, node):
         pos = self.get_pos(node)
-        return operations.This(pos, 'this')
+        index = self.declare_symbol('this')
+        return operations.This(pos, 'this', index)
 
     def visit_withstatement(self, node):
         pos = self.get_pos(node)
@@ -627,10 +749,10 @@ ASTBUILDER = ASTBuilder()
 
 # XXX this is somewhat hackish
 def new_ast_builder():
-    b = ASTBUILDER
-    b.funclists = []
-    b.scopes = Scopes()
-    b.sourcename = ""
+    b = ASTBuilder() #ASTBUILDER
+    #b.funclists = []
+    #b.scopes = Scopes()
+    #b.sourcename = ""
     return b
 
 def make_ast_builder(sourcename = ''):
@@ -642,3 +764,14 @@ def make_eval_ast_builder(sourcename = ''):
     b = make_ast_builder(sourcename)
     b.scopes._scopes = [EvalScope()]
     return b
+
+def parse_tree_to_ast(parse_tree):
+    builder = make_ast_builder()
+    tree = builder.dispatch(parse_tree)
+    return tree
+
+def parse_to_ast(code):
+    from js.jsparser import parse, ParseError
+    parse_tree = parse(code)
+    ast = parse_tree_to_ast(parse_tree)
+    return ast

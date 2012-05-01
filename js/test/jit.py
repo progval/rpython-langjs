@@ -5,27 +5,23 @@ class o:
     viewloops = True
 conftest.option = o
 
-#from pypy.jit.metainterp.test.test_basic import LLJitMixin
 from pypy.jit.metainterp.test.support import LLJitMixin
-
 
 from js import interpreter
 from js.jscode import JsCode, jitdriver
-from js.jsobj import ExecutionContext
 
 class TestLLtype(LLJitMixin):
     def test_append(self):
         code = """
-        function f() {
-            var i = 0;
-            while(i < 100) {
-                i++;
+          var x = {i:0};
+          function f() {
+            while(x.i < 100) {
+              x = {i:x.i + 1};
             }
-        }
-        f();
+          }
+          f();
         """
         jsint = interpreter.Interpreter()
-        ctx = jsint.w_Global
         bytecode = JsCode()
         interpreter.load_source(code, '').emit(bytecode)
         func = bytecode.make_js_function()

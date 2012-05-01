@@ -21,8 +21,7 @@ import py
 
 from _pytest.runner import Failed
 from js.interpreter import Interpreter, load_file
-from js.builtins import W_Builtin, W_IntNumber, W_Eval
-from js.jsobj import W_Array, W_String
+from js.jsobj import _w
 from js import interpreter
 from js.execution import JsBaseExcept
 from pypy.rlib.parsing.parsing import ParseError
@@ -30,13 +29,6 @@ from pypy.rlib.parsing.parsing import ParseError
 interpreter.TEST = True
 
 rootdir = py.path.local(__file__).dirpath()
-
-def overriden_evaljs(ctx, args, this):
-    try:
-        w_eval = W_Eval(ctx)
-        return w_eval.Call(args, this)
-    except JsBaseExcept:
-        return W_String("error")
 
 
 class JSTestFile(pytest.File):
@@ -61,9 +53,9 @@ class JSTestFile(pytest.File):
         except:
             raise
         ctx = self.interp.global_context
-        testcases = ctx.resolve_identifier(ctx, 'testcases')
-        self.tc = ctx.resolve_identifier(ctx, 'tc')
-        testcount = testcases.Get(ctx, 'length').ToInt32(ctx)
+        testcases = ctx.resolve_identifier('testcases')
+        self.tc = ctx.resolve_identifier('tc')
+        testcount = testcases.Get('length').ToInt32()
         self.testcases = testcases
 
         for number in xrange(testcount):
@@ -71,18 +63,31 @@ class JSTestFile(pytest.File):
 
     def init_interp(cls):
         if hasattr(cls, 'interp'):
-            cls.testcases.PutValue(W_Array(), cls.interp.global_context)
-            cls.tc.PutValue(W_IntNumber(0), cls.interp.global_context)
+            from js.jsobj import W__Array
+            cls.testcases.PutValue(W__Array(), cls.interp.global_context)
+            cls.tc.PutValue(_w(0), cls.interp.global_context)
 
         cls.interp = Interpreter()
         shellpath = rootdir/'shell.js'
         if not hasattr(cls, 'shellfile'):
             cls.shellfile = load_file(str(shellpath))
         cls.interp.run(cls.shellfile)
-        cls.testcases = cls.interp.global_context.resolve_identifier(cls.interp.global_context, 'testcases')
-        cls.tc = cls.interp.global_context.resolve_identifier(cls.interp.global_context, 'tc')
+        cls.testcases = cls.interp.global_context.resolve_identifier('testcases')
+        cls.tc = cls.interp.global_context.resolve_identifier('tc')
+
         # override eval
-        cls.interp.w_Global.Put(cls.interp.global_context, 'eval', W_Builtin(overriden_evaljs))
+        from js.builtins import new_native_function
+
+        ctx = cls.interp.global_context
+        def overriden_evaljs(this, args):
+            from js.builtins import W__Eval
+            try:
+                w_eval = W__Eval(ctx)
+                return w_eval.Call(args, this)
+            except JsBaseExcept:
+                return "error"
+
+        cls.interp.w_Global.Put('eval', new_native_function(ctx, overriden_evaljs, 'eval'))
 
 #
 #    init_interp = classmethod(init_interp)
@@ -98,9 +103,9 @@ class JSTestItem(pytest.Item):
 
     def runtest(self):
         ctx = self.parent.interp.global_context
-        r3 = ctx.resolve_identifier(ctx, 'run_test')
-        w_test_number = W_IntNumber(self.test_number)
-        result = r3.Call(ctx=ctx, args=[w_test_number]).ToString()
+        r3 = ctx.resolve_identifier('run_test')
+        w_test_number = _w(self.test_number)
+        result = r3.Call([w_test_number]).ToString()
         __tracebackhide__ = True
         if result != "passed":
             raise JsTestException(self, result)

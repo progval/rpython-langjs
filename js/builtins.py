@@ -267,6 +267,9 @@ def new_native_function(ctx, function, name = None):
     from js.jsobj import W__Function
     return W__Function(ctx, Js_NativeFunction(function, name))
 
+def setup(w_global):
+    pass
+
 def setup_builtins(interp):
     def put_native_function(obj, name, func):
         obj.Put(name, new_native_function(ctx, func, name))
