@@ -5,23 +5,34 @@ import py
 #from js.execution import ThrowException
 #from js.jscode import JsCode
 #from js.baseop import AbstractEC
-from js.jscode import ExecutionContext
 
 def test_simple():
+    from js.jscode import JsCode
     bytecode = JsCode()
     bytecode.emit('LOAD_FLOATCONSTANT', 2)
     bytecode.emit('LOAD_FLOATCONSTANT', 4)
     bytecode.emit('ADD')
     bytecode.emit('POP')
 
+    from js.execution_context import ExecutionContext
+
+    from js.functions import JsExecutableCode
     f = JsExecutableCode(bytecode)
+
+    from js.execution_context import ExecutionContext
     ctx = ExecutionContext()
     res = f.run(ctx)
 
     assert res.ToNumber() == 6.0
 
-def assertp(code, prints):
-    pass
+def assertp(code, prints, captured):
+    out, err = captured.readouterr()
+
+    from js.interpreter import Interpreter
+    jsint = Interpreter()
+    jsint.run_src(code)
+    out, err = captured.readouterr()
+    assert out.strip() == prints.strip()
     #l = []
     #import js.builtins_global
     #js.builtins_global.writer = l.append
@@ -30,7 +41,7 @@ def assertp(code, prints):
     #try:
         #jsint.run(interpreter.load_source(code, ''))
     #except ThrowException, excpt:
-        #l.append("uncaught exception: "+str(excpt.exception.ToString()))
+        #l.append("uncaught exception: "+str(excpt.exception.to_string()))
     #print l, prints
     #if isinstance(prints, list):
         #assert l == prints
@@ -60,17 +71,17 @@ def assertv(code, value):
     #elif isinstance(value, float):
         #assert code_val.ToNumber() == value
     #else:
-        #assert code_val.ToString() == value
+        #assert code_val.to_string() == value
 
 def asserte(code, value):
     pass
     #jsint = interpreter.Interpreter()
     #py.test.raises(value, 'jsint.run(interpreter.load_source(code, ""))')
 
-def test_interp_parse():
-    yield assertv, "1+1;", 2
-    yield assertp, "print(1+2+3); print(1);", ["6", "1"]
-    yield assertp, "print(1,2,3);\n", "1,2,3"
+def test_interp_parse(capsys):
+    assertv("1+1;", 2)
+    assertp("print(1+2+3); print(1);", "6\n1", capsys)
+    assertp("print(1,2,3);", "1,2,3", capsys)
 
 def test_var_assign():
     assertv("x=3;x;", 3)
@@ -80,38 +91,38 @@ def test_minus():
     assertv("2-1;", 1)
 
 def test_string_var():
-    assertv('\"sss\";', 'sss')
+    assertv('"sss";', 'sss')
 
-def test_string_concat():
-    assertp('x="xxx"; y="yyy"; print(x+y);', "xxxyyy")
+def test_string_concat(capsys):
+    assertp('x="xxx"; y="yyy"; print(x+y);', "xxxyyy", capsys)
 
-def test_string_num_concat():
-    assertp('x=4; y="x"; print(x+y, y+x);', ["4x,x4"])
+def test_string_num_concat(capsys):
+    assertp('x=4; y="x"; print(x+y, y+x);', "4x,x4", capsys)
 
-def test_to_string():
-    assertp("x={}; print(x);", ["[object Object]"])
+def test_to_string(capsys):
+    assertp("x={}; print(x);", "[object Object]", capsys)
 
-def test_object_access():
-    yield assertp, "x={d:3}; print(x.d);", "3"
-    yield assertp, "x={d:3}; print(x.d.d);", "undefined"
-    yield assertp, "x={d:3, z:4}; print(x.d-x.z);", "-1"
+def test_object_access(capsys):
+    assertp("x={d:3}; print(x.d);", "3", capsys)
+    assertp("x={d:3}; print(x.d.d);", "undefined", capsys)
+    assertp("x={d:3, z:4}; print(x.d-x.z);", "-1", capsys)
 
-def test_object_access_index():
-    assertp('x={d:"x"}; print(x["d"]);', 'x')
+def test_object_access_index(capsys):
+    assertp('x={d:"x"}; print(x["d"]);', 'x', capsys)
 
-def test_function_prints():
-    assertp('x=function(){print(3);}; x();', '3')
+def test_function_prints(capsys):
+    assertp('x=function(){print(3);}; x();', '3', capsys)
 
-def test_function_returns():
-    yield assertv, 'x=function(){return 1;}; x()+x();', 2
-    yield assertp, 'function x() { return; };', []
-    yield assertv, 'function x() { d=2; return d;}; x()', 2
+def test_function_returns(capsys):
+    assertv('x=function(){return 1;}; x()+x();', 2)
+    assertp('function x() { return; };', '', capsys)
+    assertv('function x() { d=2; return d;}; x()', 2)
 
 def test_var_declaration():
-    yield assertv, 'var x = 3; x;', 3
-    yield assertv, 'var x = 3; x+x;', 6
+    assertv('var x = 3; x;', 3)
+    assertv('var x = 3; x+x;', 6)
 
-def test_var_scoping():
+def test_var_scoping(capsys):
     assertp("""
     var y;
     var p;
@@ -124,36 +135,36 @@ def test_var_scoping():
     };
     var z = 2;
     print(x(), y, p);
-    """, ["5,3,0"])
+    """, "5,3,0", capsys)
 
 def test_var_scoping_default_global():
-    yield assertv, 'd = 1; function x() { d=2;}; x(); d;', 2
-    yield assertv, 'd = 1; function x() { var d=2;}; x(); d;', 1
-    yield assertv, 'function x() { d=2;}; x(); d;', 2
-    yield assertv, 'var d = 1; function x() { d=2; }; x(); d;', 2
-    yield assertv, 'function x() { d=2;}; function y() { return d; }; x(); y();', 2
-    yield assertv, 'var d; function x() { d=2;}; function y() { return d; }; x(); y();', 2
+    assertv('d = 1; function x() { d=2;}; x(); d;', 2)
+    assertv('d = 1; function x() { var d=2;}; x(); d;', 1)
+    assertv('function x() { d=2;}; x(); d;', 2)
+    assertv('var d = 1; function x() { d=2; }; x(); d;', 2)
+    assertv('function x() { d=2;}; function y() { return d; }; x(); y();', 2)
+    assertv('var d; function x() { d=2;}; function y() { return d; }; x(); y();', 2)
 
 def test_function_args():
     assertv("""
     x = function (t,r) {
-           return t+r;
+       return t+r;
     };
     x(2,3);
     """, 5)
 
-def test_function_less_args():
+def test_function_less_args(capsys):
     assertp("""
     x = function (t, r) {
-            return t + r;
+        return t + r;
     };
     print(x(2));
-    """, "NaN")
+    """, "NaN", capsys)
 
 def test_function_more_args():
     assertv("""
     x = function (t, r) {
-            return t + r;
+        return t + r;
     };
     x(2,3,4);
     """, 5)
@@ -161,8 +172,8 @@ def test_function_more_args():
 def test_function_has_var():
     assertv("""
     x = function () {
-            var t = 'test';
-            return t;
+        var t = 'test';
+        return t;
     };
     x();
     """, 'test')
@@ -170,9 +181,9 @@ def test_function_has_var():
 def test_function_arguments():
     assertv("""
     x = function () {
-            r = arguments[0];
-            t = arguments[1];
-            return t + r;
+        r = arguments[0];
+        t = arguments[1];
+        return t + r;
     };
     x(2,3);
     """, 5)
@@ -184,15 +195,29 @@ def test_index():
     x[1];
     """, 'test')
 
-def test_array_initializer():
+def test_print_object(capsys):
+    assertp("""
+    x = {1:"test"};
+    print(x);
+    """, "[object Object]", capsys)
+    assertp("""
+    print(Object);
+    """, "function Object() { [native code] }", capsys)
+    assertp("""
+    print(Object.prototype);
+    """, "[object Object]", capsys)
+
+@py.test.mark.xfail
+def test_array_initializer(capsys):
     assertp("""
     x = [];
     print(x);
     print(x.length)
-    """, ['', '0'])
+    """, '\n0', capsys)
 
-def test_throw():
-    assertp("throw(3);", "uncaught exception: 3")
+@py.test.mark.xfail
+def test_throw(capsys):
+    assertp("throw(3);", "uncaught exception: 3", capsys)
 
 def test_group():
     assertv("(2+1);", 3)
@@ -200,20 +225,21 @@ def test_group():
 def test_comma():
     assertv("(500,3);", 3)
 
-def test_block():
-    yield assertp, "{print(5);}", '5'
-    yield assertp, "{3; print(5);}", '5'
+def test_block(capsys):
+    assertp("{print(5);}", '5', capsys)
+    assertp("{3; print(5);}", '5', capsys)
 
-def test_try_catch_finally():
-    yield assertp, """
+@py.test.mark.xfail
+def test_try_catch_finally(capsys):
+    assertp("""
     try {
         throw(3);
     }
     catch (x) {
         print(x);
     }
-    """, "3"
-    yield assertp, """
+    """, "3", capsys)
+    assertp("""
     try {
         throw(3);
     }
@@ -223,53 +249,53 @@ def test_try_catch_finally():
     finally {
         print(5);
     }
-    """, ["3", "5"]
+    """, "3\n5", capsys)
 
-def test_if_then():
+def test_if_then(capsys):
     assertp("""
     if (1) {
         print(1);
     }
-    """, "1")
+    """, "1", capsys)
 
-def test_if_then_else():
+def test_if_then_else(capsys):
     assertp("""
     if (0) {
         print(1);
     } else {
         print(2);
     }
-    """, "2")
+    """, "2", capsys)
 
 def test_compare():
-    yield assertv, "1>0;", True
-    yield assertv, "0>1;", False
-    yield assertv, "0>0;", False
-    yield assertv, "1<0;", False
-    yield assertv, "0<1;", True
-    yield assertv, "0<0;", False
-    yield assertv, "1>=0;", True
-    yield assertv, "1>=1;", True
-    yield assertv, "1>=2;", False
-    yield assertv, "0<=1;", True
-    yield assertv, "1<=1;", True
-    yield assertv, "1<=0;", False
-    yield assertv, "0==0;", True
-    yield assertv, "1==1;", True
-    yield assertv, "0==1;", False
-    yield assertv, "0!=1;", True
-    yield assertv, "1!=1;", False
-    yield assertv, "1===1;", True
-    yield assertv, "1!==1;", False
+    assertv("1>0;", True)
+    assertv("0>1;", False)
+    assertv("0>0;", False)
+    assertv("1<0;", False)
+    assertv("0<1;", True)
+    assertv("0<0;", False)
+    assertv("1>=0;", True)
+    assertv("1>=1;", True)
+    assertv("1>=2;", False)
+    assertv("0<=1;", True)
+    assertv("1<=1;", True)
+    assertv("1<=0;", False)
+    assertv("0==0;", True)
+    assertv("1==1;", True)
+    assertv("0==1;", False)
+    assertv("0!=1;", True)
+    assertv("1!=1;", False)
+    assertv("1===1;", True)
+    assertv("1!==1;", False)
 
 def test_string_compare():
-    yield assertv, "'aaa' > 'a';", True
-    yield assertv, "'aaa' < 'a';", False
-    yield assertv, "'a' > 'a';", False
+    assertv("'aaa' > 'a';", True)
+    assertv("'aaa' < 'a';", False)
+    assertv("'a' > 'a';", False)
 
-def test_binary_opb():
-    yield assertp, "print(0||0); print(1||0);", ["0", "1"]
-    yield assertp, "print(0&&1); print(1&&1);", ["0", "1"]
+def test_binary_opb(capsys):
+    assertp("print(0||0); print(1||0);", "0\n1", capsys)
+    assertp("print(0&&1); print(1&&1);", "0\n1", capsys)
 
 def test_while():
     assertp("""

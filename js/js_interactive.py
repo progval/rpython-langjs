@@ -76,9 +76,9 @@ class JSInterpreter(code.InteractiveConsole):
             try:
                 #if DEBUG:
                     #print repr(res)
-                print res.ToString()
+                print res.to_string()
             except ThrowException, exc:
-                print exc.exception.ToString()
+                print exc.exception.to_string()
         except SystemExit:
             raise
         except ThrowException, exc:
@@ -112,7 +112,7 @@ class JSInterpreter(code.InteractiveConsole):
 
     def showtraceback(self, exc):
         # XXX format exceptions nicier
-        print exc.exception.ToString()
+        print exc.exception.to_string()
 
     def showsyntaxerror(self, filename, exc):
         # XXX format syntax errors nicier

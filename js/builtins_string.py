@@ -12,7 +12,7 @@ def from_char_code(this, args):
 
 # 15.5.4.4
 def char_at(this, args):
-    string = this.ToString()
+    string = this.to_string()
     if len(args)>=1:
         pos = args[0].ToInt32()
         if (not pos >=0) or (pos > len(string) - 1):
@@ -23,7 +23,7 @@ def char_at(this, args):
 
 #15.5.4.5
 def char_code_at(this, args):
-    string = this.ToString()
+    string = this.to_string()
     if len(args)>=1:
         pos = args[0].ToInt32()
         if pos < 0 or pos > len(string) - 1:
@@ -35,17 +35,17 @@ def char_code_at(this, args):
 
 #15.5.4.6
 def concat(this, args):
-    string = this.ToString()
-    others = [obj.ToString() for obj in args]
+    string = this.to_string()
+    others = [obj.to_string() for obj in args]
     string += ''.join(others)
     return string
 
 # 15.5.4.7
 def index_of(this, args):
-    string = this.ToString()
+    string = this.to_string()
     if len(args) < 1:
         return -1
-    substr = args[0].ToString()
+    substr = args[0].to_string()
     size = len(string)
     subsize = len(substr)
     if len(args) < 2:
@@ -58,10 +58,10 @@ def index_of(this, args):
 
 # 15.5.4.8
 def last_index_of(this, args):
-    string = this.ToString()
+    string = this.to_string()
     if len(args) < 1:
         return -1
-    substr = args[0].ToString()
+    substr = args[0].to_string()
     if len(args) < 2:
         pos = INFINITY
     else:
@@ -79,12 +79,12 @@ def last_index_of(this, args):
 
 # 15.5.4.14
 def split(this, args):
-    string = this.ToString()
+    string = this.to_string()
 
     if len(args) < 1 or args[0] is w_Undefined:
         return _create_array([_w(string)])
     else:
-        separator = args[0].ToString()
+        separator = args[0].to_string()
 
     if len(args) >= 2:
         limit = args[1].ToUInt32()
@@ -104,7 +104,7 @@ def split(this, args):
 
 # 15.5.4.15
 def substring(this, args):
-    string = this.ToString()
+    string = this.to_string()
     size = len(string)
     if len(args) < 1:
         start = 0
@@ -122,12 +122,12 @@ def substring(this, args):
 
 # 15.5.4.16
 def to_lower_case(this, args):
-    string = this.ToString()
+    string = this.to_string()
     return string.lower()
 
 # 15.5.4.18
 def to_upper_case(this, args):
-    string = this.ToString()
+    string = this.to_string()
     return string.upper()
 
 def _create_array(elements=[]):

@@ -30,9 +30,9 @@ class TestJsFunctionAndStuff(object):
         code.emit('RETURN')
 
         f = JsFunction('foo', code)
-        ctx = FunctionExecutionContext(f, None, [])
+        ctx = FunctionExecutionContext()
+        res = f.run(ctx)
 
-        res = ctx.run()
         assert res == _w(2)
 
 
@@ -302,7 +302,7 @@ class TestJsFunctionAndStuff(object):
         assert res == _w(55)
 
     def test_foo12(self):
-        def f(args, this):
+        def f(this, args):
             a = args[0].ToInteger()
             return _w(a + 1)
 
@@ -313,7 +313,7 @@ class TestJsFunctionAndStuff(object):
         assert res == _w(42)
 
     def test_foo13(self):
-        def f(args, this):
+        def f(this, args):
             a = args[0].ToInteger()
             return _w(a + 1)
 
@@ -379,6 +379,14 @@ class TestJsFunctionAndStuff(object):
 
         res = self.run_src(src)
         assert res == _w(42)
+
+    def test_foo18(self):
+        src = '''
+        function x() { d=2; return d;}; x();
+        '''
+
+        res = self.run_src(src)
+        assert res == _w(2)
 
 
     def run_src(self, src):

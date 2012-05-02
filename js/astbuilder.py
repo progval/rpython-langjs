@@ -223,7 +223,7 @@ class ASTBuilder(RPythonVisitor):
 
     def declare_parameter(self, symbol):
         idx = self.scopes[-1].add_parameter(symbol)
-        print 'parameter declaration "%s"@%d in scope %d' % (symbol, idx, self.depth,)
+        #print 'parameter declaration "%s"@%d in scope %d' % (symbol, idx, self.depth,)
         return idx
 
     def exit_scope(self):

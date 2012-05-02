@@ -191,10 +191,3 @@ class JsCode(object):
     #def __repr__(self):
         #return "\n".join([repr(i) for i in self.opcodes])
 
-
-def _native_function(fn):
-    from js.jsobj import _w
-    def f(this, args):
-        res = fn(this, args)
-        return _w(res)
-    return f

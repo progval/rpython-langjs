@@ -1,5 +1,7 @@
+from js.jsobj import _w
 def to_string(this, args):
-    return "[object %s]" % (this.Class(), )
+    s = "[object %s]" % (this.klass(), )
+    return _w(s)
 
 def value_of(this, args):
     return this

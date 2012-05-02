@@ -20,9 +20,9 @@ def to_string(this, args):
     array = this.ToObject()
     func = array.Get('join')
     if func.IsCallable():
-        return func.Call(this = this).ToString()
+        return func.Call(this = this).to_string()
     else:
-        return this.ToString()
+        return this.to_string()
 
 # 15.4.4.5
 def join(this, args):
@@ -32,7 +32,7 @@ def join(this, args):
 
     sep = ','
     if (len(args) > 0):
-        sep = args[0].ToString()
+        sep = args[0].to_string()
 
     if length == 0:
         return ''
@@ -41,7 +41,7 @@ def join(this, args):
     if isnull_or_undefined(element0):
         return ''
 
-    r = element0.ToString()
+    r = element0.to_string()
 
     k = 1
 
@@ -51,7 +51,7 @@ def join(this, args):
         if isnull_or_undefined(element):
             n = ''
         else:
-            n = element.ToString()
+            n = element.to_string()
         r = s + n
         k = k + 1
 

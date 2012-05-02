@@ -1,7 +1,7 @@
 from js.jsobj import isnull_or_undefined
 
 def to_string(this, args):
-    return this.ToString()
+    return this.to_string()
 
 def empty(this, args):
     from js.jsobj import w_Undefined

@@ -35,7 +35,7 @@ class W_Load(W_NewBuiltin):
 
     def Call(self, ctx, args=[], this=None):
         if len(args) >= 1:
-            filename = args[0].ToString(self.interpreter.global_context)
+            filename = args[0].to_string(self.interpreter.global_context)
             try:
                 assert filename is not None
                 program = load_file(filename)
@@ -89,9 +89,9 @@ class JSConsole(object):
             res = self.interpreter.run(ast, interactive=True)
             if res is not None and res != w_Undefined:
                 try:
-                    printmessage(res.ToString(self.interpreter.global_context))
+                    printmessage(res.to_string(self.interpreter.global_context))
                 except ThrowException, exc:
-                    printmessage(exc.exception.ToString(self.interpreter.global_context))
+                    printmessage(exc.exception.to_string(self.interpreter.global_context))
                 printmessage('\n')
         except SystemExit:
             raise
@@ -99,7 +99,7 @@ class JSConsole(object):
             self.showtraceback(exc)
 
     def showtraceback(self, exc):
-        printmessage(exc.exception.ToString(self.interpreter.global_context))
+        printmessage(exc.exception.to_string(self.interpreter.global_context))
         printmessage('\n')
 
     def showsyntaxerror(self, filename, exc):

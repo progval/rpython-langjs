@@ -1,4 +1,5 @@
 from js.jsobj import w_Undefined
+from js.execution import JsReferenceError
 
 def get_identifier_reference(lex, identifier, strict = False):
     if lex is None:

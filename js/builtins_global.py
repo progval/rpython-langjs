@@ -22,7 +22,7 @@ def is_finite(this, args):
 def parse_int(this, args):
     if len(args) < 1:
         return NAN
-    s = args[0].ToString().strip(" ")
+    s = args[0].to_string().strip(" ")
     if len(args) > 1:
         radix = args[1].ToInt32()
     else:
@@ -42,7 +42,7 @@ def parse_int(this, args):
 def parse_float(this, args):
     if len(args) < 1:
         return NAN
-    s = args[0].ToString().strip(" ")
+    s = args[0].to_string().strip(" ")
     try:
         n = float(s)
     except ValueError:
@@ -52,11 +52,8 @@ def parse_float(this, args):
 def alert(this, args):
     pass
 
-def writer(x):
-    print x
-
 def printjs(this, args):
-    writer(",".join([i.ToString() for i in args]))
+    print ",".join([i.to_string() for i in args])
 
 def _ishex(ch):
     return ((ch >= 'a' and ch <= 'f') or (ch >= '0' and ch <= '9') or
@@ -69,7 +66,7 @@ def unescape(this, args):
     if not isinstance(w_string, W_String):
         raise JsTypeError(W_String("Expected string"))
     assert isinstance(w_string, W_String)
-    strval = w_string.ToString()
+    strval = w_string.to_string()
     lgt = len(strval)
     i = 0
     while i < lgt:

@@ -119,32 +119,32 @@ class TestWObjectProperties(object):
         #py.test.skip()
         #W_Object().ToNumber()
 
-#class TestToString(object):
+#class Testto_string(object):
     #def test_undefined(self):
-        #assert w_Undefined.ToString() == 'undefined'
+        #assert w_Undefined.to_string() == 'undefined'
 
     #def test_null(self):
-        #assert w_Null.ToString() == 'null'
+        #assert w_Null.to_string() == 'null'
 
     #def test_boolean(self):
-        #assert w_True.ToString() == 'true'
-        #assert w_False.ToString() == 'false'
+        #assert w_True.to_string() == 'true'
+        #assert w_False.to_string() == 'false'
 
     #def test_number(self):
-        #assert W_IntNumber(0).ToString() == '0'
-        #assert W_IntNumber(1).ToString() == '1'
-        #assert W_FloatNumber(0.0).ToString() == '0'
-        #assert W_FloatNumber(1.0).ToString() == '1'
-        #assert W_FloatNumber(NAN).ToString() == 'NaN'
+        #assert W_IntNumber(0).to_string() == '0'
+        #assert W_IntNumber(1).to_string() == '1'
+        #assert W_FloatNumber(0.0).to_string() == '0'
+        #assert W_FloatNumber(1.0).to_string() == '1'
+        #assert W_FloatNumber(NAN).to_string() == 'NaN'
 
     #def test_string(self):
-        #assert W_String('').ToString() == ''
-        #assert W_String('x').ToString() == 'x'
-        #assert W_String('1').ToString() == '1'
+        #assert W_String('').to_string() == ''
+        #assert W_String('x').to_string() == 'x'
+        #assert W_String('1').to_string() == '1'
 
     #def test_object(self):
         #py.test.skip()
-        #W_Object().ToString()
+        #W_Object().to_string()
 
 #class TestW_BasicObject(object):
     #def test_Prototype(self):

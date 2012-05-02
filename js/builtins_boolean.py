@@ -1,6 +1,6 @@
 # 15.6.4.2
 def to_string(this, args):
-    return this.ToString()
+    return this.to_string()
 
 def value_of(this, args):
     return this.ToBoolean()

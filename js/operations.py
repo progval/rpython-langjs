@@ -345,7 +345,7 @@ class Identifier(Expression):
         return "Identifier '%s'@%d" % (self.name, self.index )
 
     def emit(self, bytecode):
-        bytecode.emit('LOAD_VARIABLE', self.index)
+        bytecode.emit('LOAD_VARIABLE', self.index, self.name)
 
     def get_literal(self):
         return self.name
@@ -551,7 +551,7 @@ class Delete(Expression):
 #class Index(BinaryOp):
 #    def eval(self, ctx):
 #        w_obj = self.left.eval(ctx).GetValue().ToObject(ctx)
-#        name= self.right.eval(ctx).GetValue().ToString(ctx)
+#        name= self.right.eval(ctx).GetValue().to_string(ctx)
 #        return W_Reference(name, w_obj)
 
 class ArgumentList(ListOp):
@@ -796,18 +796,20 @@ class VariableDeclaration(Expression):
 #        return self.local
 
 class VariableIdentifier(Expression):
-    def __init__(self, identifier):
-        self.pos = pos
-        self.identifier = identifier
+    pass
+    #def __init__(self, index, identifier):
+        #self.pos = pos
+        #self.index = index
+        #self.identifier = identifier
 
-    def __repr__(self):
-        return "VariableIdentifier %s" % (self.identifier)
+    #def __repr__(self):
+        #return "VariableIdentifier %s" % (self.identifier)
 
-    def emit(self, bytecode):
-        bytecode.emit('LOAD_VARIABLE', self.identifier)
+    #def emit(self, bytecode):
+        #bytecode.emit('LOAD_VARIABLE', self.index, self.identifier)
 
-    def get_literal(self):
-        return self.identifier
+    #def get_literal(self):
+        #return self.identifier
 
 class VariableDeclList(Statement):
     def __init__(self, pos, nodes):

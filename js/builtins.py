@@ -262,29 +262,29 @@ class Sorter(TimSort):
     #def Construct(self, args=[]):
         #return self.Call(args)
 
-def new_native_function(ctx, function, name = None):
-    from js.jscode import Js_NativeFunction
+def new_native_function(function, name = None):
+    from js.functions import JsNativeFunction
     from js.jsobj import W__Function
-    return W__Function(ctx, Js_NativeFunction(function, name))
 
-def setup(w_global):
-    pass
+    scope = None
+    jsfunc = JsNativeFunction(function, name)
+    return W__Function(jsfunc, scope)
 
-def setup_builtins(interp):
-    def put_native_function(obj, name, func):
-        obj.Put(name, new_native_function(ctx, func, name))
+def setup_builtins(global_object):
+    def put_native_function(obj, name, func, writable = False, configurable = False, enumerable = False):
+        jsfunc = new_native_function(func, name)
+        put_property(obj, name, jsfunc, writable = writable, configurable = configurable, enumerable = enumerable)
 
-    allon = DONT_ENUM | DONT_DELETE | READ_ONLY
-    from js.jsexecution_context import make_global_context
-
-    ctx = make_global_context()
-    w_Global = ctx.to_context_object()
+    # 15
+    def put_property(obj, name, value, writable = True, configurable = False, enumerable = True):
+        from js.jsobj import put_property as _put_property
+        _put_property(obj, name, value, writable, configurable, enumerable)
 
     # Forward declaration
     # 15.2.3
     from js.jsobj import W_ObjectConstructor
     w_Object = W_ObjectConstructor()
-    w_Global.Put('Object', w_Object)
+    put_property(global_object, 'Object', w_Object)
 
     # 15.2.4
     from js.jsobj import W_BasicObject
@@ -292,15 +292,15 @@ def setup_builtins(interp):
 
     # 15.3.2
     from js.jsobj import W_FunctionConstructor
-    w_Function = W_FunctionConstructor(ctx)
-    w_Global.Put('Function', w_Function)
+    w_Function = W_FunctionConstructor()
+    put_property(global_object, 'Function', w_Function)
 
     # 15.3.4
     import js.builtins_function as function_builtins
-    w_FunctionPrototype = new_native_function(ctx, function_builtins.empty, 'Empty')
+    w_FunctionPrototype = new_native_function(function_builtins.empty, 'Empty')
 
     # 15.2.4 Properties of the Object Prototype Object
-    w_ObjectPrototype._prototype_ = w_Null
+    w_ObjectPrototype._prototype_ = w_Undefined
 
     # 15.3.4 Properties of the Function Prototype Object
     w_FunctionPrototype._prototype_ = w_ObjectPrototype
@@ -314,13 +314,13 @@ def setup_builtins(interp):
     # 15.2.3 Properties of the Object Constructor
     w_Object._prototype_ = w_FunctionPrototype
 
-    w_Object.Put('length', _w(1), flags = allon)
+    put_property(w_Object, 'length', _w(1))
 
     # 15.2.3.1 Object.prototype
-    w_Object.Put('prototype', w_ObjectPrototype, flags = allon)
+    put_property(w_Object, 'prototype', w_ObjectPrototype, writable = False, configurable = False, enumerable = False)
 
     # 14.2.4.1 Object.prototype.constructor
-    w_ObjectPrototype.Put('constructor', w_Object)
+    put_property(w_ObjectPrototype, 'constructor', w_Object)
 
     import js.builtins_object as object_builtins
     # 15.2.4.2 Object.prototype.toString()
@@ -334,13 +334,13 @@ def setup_builtins(interp):
     # 15.3.3 Properties of the Function Constructor
 
     # 15.3.3.1 Function.prototype
-    w_Function.Put('prototype', w_FunctionPrototype, flags = allon)
+    put_property(w_Function, 'prototype', w_FunctionPrototype, writable = False, configurable = False, enumerable = False)
 
     # 15.3.3.2 Function.length
-    w_Function.Put('length', _w(1), flags = allon)
+    put_property(w_Function, 'length', _w(1), writable = False, configurable = False, enumerable = False)
 
     # 14.3.4.1 Function.prototype.constructor
-    w_FunctionPrototype.Put('constructor', w_Function)
+    put_property(w_FunctionPrototype, 'constructor', w_Function)
 
     # 15.3.4.2 Function.prototype.toString()
     import js.builtins_function as function_builtins
@@ -352,25 +352,13 @@ def setup_builtins(interp):
     # 15.3.4.4 Function.prototype.call
     put_native_function(w_FunctionPrototype, 'call', function_builtins.call)
 
-    # XXXXXXXX
-    #put_values(w_ObjPrototype, {
-        #'constructor': w_Object,
-        #'__proto__': w_Null,
-        #'toString': toString,
-        #'toLocaleString': toString,
-        #'valueOf': W_ValueOf(),
-        #'hasOwnProperty': W_HasOwnProperty(),
-        #'isPrototypeOf': W_IsPrototypeOf(),
-        #'propertyIsEnumerable': W_PropertyIsEnumerable(),
-    #})
-
     # 15.6.2
     from js.jsobj import W_BooleanConstructor
-    w_Boolean = W_BooleanConstructor(ctx)
-    w_Global.Put('Boolean', w_Boolean)
+    w_Boolean = W_BooleanConstructor()
+    put_property(global_object, 'Boolean', w_Boolean)
 
     # 15.6.3
-    w_Boolean.Put('length', _w(1), flags = allon)
+    put_property(w_Boolean, 'length', _w(1), writable = False, enumerable = False, configurable = False)
 
     # 15.6.4
     from js.jsobj import W_BooleanObject
@@ -378,10 +366,10 @@ def setup_builtins(interp):
     w_BooleanPrototype._prototype_ = W__Object._prototype_
 
     # 15.6.3.1
-    w_Boolean.Put('prototype', w_BooleanPrototype, flags = allon)
+    put_property(w_Boolean, 'prototype', w_BooleanPrototype, writable = False, enumerable = False, configurable = False)
 
     # 15.6.4.1
-    w_BooleanPrototype.Put('constructor', w_Boolean)
+    put_property(w_BooleanPrototype, 'constructor', w_Boolean)
 
     import js.builtins_boolean as boolean_builtins
     # 15.6.4.2
@@ -393,17 +381,10 @@ def setup_builtins(interp):
     # 15.6.3.1
     W_BooleanObject._prototype_ = w_BooleanPrototype
 
-    #put_values(w_BoolPrototype, {
-        #'constructor': w_FncPrototype,
-        #'__proto__': w_ObjPrototype,
-        #'toString': W_BooleanValueToString(),
-        #'valueOf': get_value_of('Boolean')(),
-    #})
-
     # 15.7.2
     from js.jsobj import W_NumberConstructor
-    w_Number = W_NumberConstructor(ctx)
-    w_Global.Put('Number', w_Number)
+    w_Number = W_NumberConstructor()
+    put_property(global_object, 'Number', w_Number)
 
     # 15.7.4
     from js.jsobj import W_NumericObject
@@ -411,39 +392,39 @@ def setup_builtins(interp):
     w_NumberPrototype._prototype_ = W__Object._prototype_
 
     # 15.7.4.1
-    w_NumberPrototype.Put('constructor', w_NumberPrototype)
+    put_property(w_NumberPrototype, 'constructor', w_NumberPrototype)
 
     import js.builtins_number as number_builtins
     # 15.7.4.2
     put_native_function(w_NumberPrototype, 'toString', number_builtins.to_string)
 
     # 15.7.3.1
-    w_Number.Put('prototype', w_NumberPrototype)
+    put_property(w_Number, 'prototype', w_NumberPrototype)
     W_NumericObject._prototype_ = w_NumberPrototype
 
     # 15.7.3.2
-    w_Number.Put('MAX_VALUE', _w(1.7976931348623157e308), flags = READ_ONLY | DONT_DELETE)
+    put_property(w_Number, 'MAX_VALUE', _w(1.7976931348623157e308), writable = False, configurable = False)
 
     # 15.7.3.3
-    w_Number.Put('MIN_VALUE', _w(5e-320), flags = READ_ONLY | DONT_DELETE)
+    put_property(w_Number, 'MIN_VALUE', _w(5e-320), writable = False, configurable = False)
 
     # 15.7.3.4
     w_NAN = _w(NAN)
-    w_Number.Put('NaN', w_NAN, flags = READ_ONLY | DONT_DELETE)
+    put_property(w_Number, 'NaN', w_NAN, writable = False, configurable = False)
 
     # 15.7.3.5
     w_POSITIVE_INFINITY = _w(INFINITY)
-    w_Number.Put('POSITIVE_INFINITY', w_POSITIVE_INFINITY, flags = READ_ONLY | DONT_DELETE)
+    put_property(w_Number, 'POSITIVE_INFINITY', w_POSITIVE_INFINITY, writable = False, configurable = False)
 
     # 15.7.3.6
     w_NEGATIVE_INFINITY = _w(-INFINITY)
-    w_Number.Put('NEGATIVE_INFINITY', w_NEGATIVE_INFINITY, flags = READ_ONLY | DONT_DELETE)
+    put_property(w_Number, 'NEGATIVE_INFINITY', w_NEGATIVE_INFINITY, writable = False, configurable = False)
 
     #String
     # 15.5.1
     from js.jsobj import W_StringConstructor
-    w_String = W_StringConstructor(ctx)
-    w_Global.Put('String', w_String)
+    w_String = W_StringConstructor()
+    put_property(global_object, 'String', w_String)
 
     import js.builtins_string as string_builtins
     # 15.5.3.2
@@ -458,7 +439,7 @@ def setup_builtins(interp):
     W_StringObject._prototype_ = w_StringPrototype
 
     # 15.5.4.1
-    w_StringPrototype.Put('constructor', w_String)
+    put_property(w_StringPrototype, 'constructor', w_String)
 
     # 15.5.4.4
     put_native_function(w_StringPrototype, 'charAt', string_builtins.char_at)
@@ -489,19 +470,19 @@ def setup_builtins(interp):
 
     from js.jsobj import W_ArrayConstructor, W__Array
     w_Array = W_ArrayConstructor()
-    w_Global.Put('Array', w_Array)
+    put_property(global_object, 'Array', w_Array)
 
     # 15.4.4
     w_ArrayPrototype = W__Array()
 
     w_ArrayPrototype._prototype_ = W__Object._prototype_
-    w_ArrayPrototype.Put('__proto__', w_ArrayPrototype._prototype_)
+    put_property(w_ArrayPrototype, '__proto__', w_ArrayPrototype._prototype_)
 
     # 15.4.3.1
     W__Array._prototype_ = w_ArrayPrototype
 
     # 15.4.4.1
-    w_ArrayPrototype.Put('constructor', w_Array)
+    put_property(w_ArrayPrototype, 'constructor', w_Array)
 
     import js.builtins_array as array_builtins
     # 15.4.4.2
@@ -519,7 +500,7 @@ def setup_builtins(interp):
     from js.jsobj import W_Math
     # 15.8
     w_Math = W_Math()
-    w_Global.Put('Math', w_Math)
+    put_property(global_object, 'Math', w_Math)
 
     #w_math.Put('__proto__',  w_ObjPrototype)
 
@@ -537,28 +518,28 @@ def setup_builtins(interp):
     # 15.8.1
 
     # 15.8.1.1
-    w_Math.Put('E', _w(math_builtins.E), flags = allon)
+    put_property(w_Math, 'E', _w(math_builtins.E), writable = False, enumerable = False, configurable = False)
 
     # 15.8.1.2
-    w_Math.Put('LN10', _w(math_builtins.LN10), flags = allon)
+    put_property(w_Math, 'LN10', _w(math_builtins.LN10), writable = False, enumerable = False, configurable = False)
 
     # 15.8.1.3
-    w_Math.Put('LN2', _w(math_builtins.LN2), flags = allon)
+    put_property(w_Math, 'LN2', _w(math_builtins.LN2), writable = False, enumerable = False, configurable = False)
 
     # 15.8.1.4
-    w_Math.Put('LOG2E', _w(math_builtins.LOG2E), flags = allon)
+    put_property(w_Math, 'LOG2E', _w(math_builtins.LOG2E), writable = False, enumerable = False, configurable = False)
 
     # 15.8.1.5
-    w_Math.Put('LOG10E', _w(math_builtins.LOG10E), flags = allon)
+    put_property(w_Math, 'LOG10E', _w(math_builtins.LOG10E), writable = False, enumerable = False, configurable = False)
 
     # 15.8.1.6
-    w_Math.Put('PI', _w(math_builtins.PI), flags = allon)
+    put_property(w_Math, 'PI', _w(math_builtins.PI), writable = False, enumerable = False, configurable = False)
 
     # 15.8.1.7
-    w_Math.Put('SQRT1_2', _w(math_builtins.SQRT1_2), flags = allon)
+    put_property(w_Math, 'SQRT1_2', _w(math_builtins.SQRT1_2), writable = False, enumerable = False, configurable = False)
 
     # 15.8.1.8
-    w_Math.Put('SQRT2', _w(math_builtins.SQRT2), flags = allon)
+    put_property(w_Math, 'SQRT2', _w(math_builtins.SQRT2), writable = False, enumerable = False, configurable = False)
 
     ##Date
 
@@ -575,51 +556,48 @@ def setup_builtins(interp):
     put_native_function(w_DatePrototype, 'getTime', date_builtins.get_time)
 
     # 15.9.3
-    w_Date = W_DateConstructor(ctx)
-    w_Global.Put('Date', w_Date)
+    w_Date = W_DateConstructor()
+    put_property(global_object, 'Date', w_Date)
 
     # 15.1.1.1
-    w_Global.Put('NaN', w_NAN, flags = DONT_ENUM | DONT_DELETE)
+    put_property(global_object, 'NaN', w_NAN, enumerable = False, configurable = False)
 
     # 15.1.1.2
-    w_Global.Put('Infinity', w_POSITIVE_INFINITY, flags = DONT_ENUM | DONT_DELETE)
+    put_property(global_object, 'Infinity', w_POSITIVE_INFINITY, enumerable = False, configurable = False)
 
     # 15.1.1.3
-    w_Global.Put('undefined', w_Undefined, flags = DONT_ENUM | DONT_DELETE)
+    put_property(global_object, 'undefined', w_Undefined, enumerable = False, configurable = False)
 
     # 15.1.2.1
-    w_Global.Put('eval', W__Eval(ctx))
+    put_property(global_object, 'eval', W__Eval())
 
     import js.builtins_global as global_builtins
 
     # 15.1.2.2
-    put_native_function(w_Global, 'parseInt', global_builtins.parse_int)
+    put_native_function(global_object, 'parseInt', global_builtins.parse_int)
 
     # 15.1.2.3
-    put_native_function(w_Global, 'parseFloat', global_builtins.parse_float)
+    put_native_function(global_object, 'parseFloat', global_builtins.parse_float)
 
     # 15.1.2.4
-    put_native_function(w_Global, 'isNaN', global_builtins.is_nan)
+    put_native_function(global_object, 'isNaN', global_builtins.is_nan)
 
     # 15.1.2.5
-    put_native_function(w_Global, 'isFinite', global_builtins.is_finite)
+    put_native_function(global_object, 'isFinite', global_builtins.is_finite)
 
-    put_native_function(w_Global, 'alert', global_builtins.alert)
+    put_native_function(global_object, 'alert', global_builtins.alert)
 
-    put_native_function(w_Global, 'print', global_builtins.printjs)
+    put_native_function(global_object, 'print', global_builtins.printjs)
 
-    put_native_function(w_Global, 'unescape', global_builtins.unescape)
+    put_native_function(global_object, 'unescape', global_builtins.unescape)
 
-    put_native_function(w_Global, 'version', global_builtins.version)
+    put_native_function(global_object, 'version', global_builtins.version)
 
-    w_Global.Put('this', w_Global)
+    #put_property(global_object, 'this', global_object)
 
     ## debugging
     if not we_are_translated():
-        put_native_function(w_Global, 'pypy_repr', global_builtins.pypy_repr)
-        put_native_function(w_Global, 'inspect', global_builtins.inspect)
+        put_native_function(global_object, 'pypy_repr', global_builtins.pypy_repr)
+        put_native_function(global_object, 'inspect', global_builtins.inspect)
 
-    put_native_function(w_Global, 'load', make_loadjs(interp))
-
-    #return (ctx, w_Global, w_Object)
-    return (ctx, w_Global, None)
+    #put_native_function(global_object, 'load', make_loadjs(interp))

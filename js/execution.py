@@ -30,4 +30,5 @@ class JsTypeError(JsBaseExcept):
 class JsReferenceError(JsBaseExcept):
     pass
 
-class RangeError(JsBaseExcept): pass
+class JsRangeError(JsBaseExcept):
+    pass

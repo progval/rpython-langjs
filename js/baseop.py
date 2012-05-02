@@ -12,8 +12,8 @@ import math
 
 def plus(ctx, nleft, nright):
     if isinstance(nleft, W_String) or isinstance(nright, W_String):
-        sleft = nleft.ToString()
-        sright = nright.ToString()
+        sleft = nleft.to_string()
+        sright = nright.to_string()
         return W_String(sleft + sright)
     # hot path
     if isinstance(nleft, W_IntNumber) and isinstance(nright, W_IntNumber):
@@ -102,8 +102,8 @@ def compare(ctx, x, y):
             return False
         return s4 > s5
     else:
-        s4 = s1.ToString()
-        s5 = s2.ToString()
+        s4 = s1.to_string()
+        s5 = s2.to_string()
         return s4 > s5
 
 def compare_e(ctx, x, y):
@@ -122,8 +122,8 @@ def compare_e(ctx, x, y):
             return False
         return s4 >= s5
     else:
-        s4 = s1.ToString()
-        s5 = s2.ToString()
+        s4 = s1.to_string()
+        s5 = s2.to_string()
         return s4 >= s5
 
 def AbstractEC(ctx, x, y):
@@ -151,11 +151,11 @@ def AbstractEC(ctx, x, y):
                 return True
             return False
         elif type1 == "string":
-            return x.ToString() == y.ToString()
+            return x.to_string() == y.to_string()
         elif type1 == "boolean":
             return x.ToBoolean() == x.ToBoolean()
         # XXX rethink it here
-        return x.ToString() == y.ToString()
+        return x.to_string() == y.to_string()
     else:
         #step 14
         if (type1 == "undefined" and type2 == "null") or \
@@ -184,7 +184,7 @@ def AbstractEC(ctx, x, y):
             return True
 
     if isinstance(x, W_String) and isinstance(y, W_String):
-        r = x.ToString() == y.ToString()
+        r = x.to_string() == y.to_string()
     else:
         r = x.ToNumber() == y.ToNumber()
     return r
@@ -209,7 +209,7 @@ def StrictEC(ctx, x, y):
             return True
         return False
     if type1 == "string":
-        return x.ToString() == y.ToString()
+        return x.to_string() == y.to_string()
     if type1 == "boolean":
         return x.ToBoolean() == x.ToBoolean()
     return x == y

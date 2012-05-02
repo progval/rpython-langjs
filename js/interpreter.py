@@ -18,6 +18,8 @@ class Interpreter(object):
     def __init__(self):
         from js.jsobj import W_BasicObject
         self.global_object = W_BasicObject()
+        from js.builtins import setup_builtins
+        setup_builtins(self.global_object)
 
     def run_ast(self, ast):
         symbol_map = ast.symbol_map

@@ -1,12 +1,13 @@
 from js.jsobj import W_IntNumber, W_FloatNumber, W_String,\
      w_Undefined, newbool, W__Object, \
      w_True, w_False, w_Null, W_Root, W__Function
-import js.jsobj as jsobj
 from js.execution import JsTypeError, ReturnException, ThrowException
 from js.baseop import plus, sub, compare, AbstractEC, StrictEC,\
      compare_e, increment, decrement, commonnew, mult, division, uminus, mod
 from pypy.rlib.rarithmetic import intmask
 from pypy.rlib import jit
+
+from js.jsobj import put_property
 
 class Opcode(object):
     _stack_change = 1
@@ -95,7 +96,7 @@ class LOAD_STRINGCONSTANT(Opcode):
         ctx.stack_append(self.w_stringvalue)
 
     #def __repr__(self):
-        #return 'LOAD_STRINGCONSTANT "%s"' % (self.w_stringvalue.ToString(),)
+        #return 'LOAD_STRINGCONSTANT "%s"' % (self.w_stringvalue.to_string(),)
 
 class LOAD_UNDEFINED(Opcode):
     def eval(self, ctx):
@@ -107,7 +108,7 @@ class LOAD_NULL(Opcode):
 
 class LOAD_VARIABLE(Opcode):
     #_immutable_fields_ = ['identifier']
-    def __init__(self, index):
+    def __init__(self, index, identifier):
         assert index is not None
         self.index = index
 
@@ -186,9 +187,9 @@ class LOAD_OBJECT(Opcode):
     def eval(self, ctx):
         w_obj = W__Object()
         for _ in range(self.counter):
-            name = ctx.stack_pop().ToString()
+            name = ctx.stack_pop().to_string()
             w_elem = ctx.stack_pop()
-            w_obj.Put(name, w_elem)
+            put_property(w_obj, name, w_elem, writable = True, configurable = True, enumerable = True)
         ctx.stack_append(w_obj)
 
     #def __repr__(self):
@@ -198,7 +199,7 @@ class LOAD_MEMBER(Opcode):
     _stack_change = -1
     def eval(self, ctx):
         w_obj = ctx.stack_pop().ToObject()
-        name = ctx.stack_pop().ToString()
+        name = ctx.stack_pop().to_string()
         value = w_obj.get(name)
         ctx.stack_append(value)
 
@@ -218,7 +219,7 @@ class IN(BaseBinaryOperation):
         from js.jsobj import W_BasicObject
         if not isinstance(right, W_BasicObject):
             raise ThrowException(W_String("TypeError: "+ repr(right)))
-        name = left.ToString()
+        name = left.to_string()
         return newbool(right.HasProperty(name))
 
 class TYPEOF(BaseUnaryOperation):
@@ -363,7 +364,7 @@ class STORE_MEMBER(Opcode):
         left = ctx.stack_pop()
         member = ctx.stack_pop()
         value = ctx.stack_pop()
-        name = member.ToString()
+        name = member.to_string()
         left.ToObject().Put(name, value)
         ctx.stack_append(value)
 
@@ -514,12 +515,12 @@ def common_call(ctx, r1, args, this, name):
     # TODO
     from js.jsobj import W_BasicFunction, W_BasicObject
     if not (isinstance(r1, W_BasicFunction) or isinstance(r1, W_BasicObject)):
-        raise ThrowException(W_String("%s is not a callable (%s)"%(r1.ToString(), name.ToString())))
-    jit.promote(r1)
-    try:
-        res = r1.Call(args.ToList(), this)
-    except JsTypeError:
-        raise ThrowException(W_String("%s is not a function (%s)"%(r1.ToString(), name.ToString())))
+        raise ThrowException(W_String("%s is not a callable (%s)"%(r1.to_string(), name.to_string())))
+    #jit.promote(r1)
+    #try:
+    res = r1.Call(args.ToList(), this)
+    #except JsTypeError:
+        #raise ThrowException(W_String("%s is not a function (%s)"%(r1.to_string(), name.to_string())))
     return res
 
 class CALL(Opcode):
@@ -536,7 +537,7 @@ class CALL_METHOD(Opcode):
         method = ctx.stack_pop()
         what = ctx.stack_pop().ToObject()
         args = ctx.stack_pop()
-        name = method.ToString()
+        name = method.to_string()
         r1 = what.Get(name)
         ctx.stack_append(common_call(ctx, r1, args, what, method))
 
@@ -662,7 +663,7 @@ class DELETE(Opcode):
 class DELETE_MEMBER(Opcode):
     _stack_change = 0
     def eval(self, ctx):
-        what = ctx.stack_pop().ToString()
+        what = ctx.stack_pop().to_string()
         obj = ctx.stack_pop().ToObject()
         ctx.stack_append(newbool(obj.Delete(what)))
 
