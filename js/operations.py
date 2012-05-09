@@ -185,7 +185,7 @@ class AssignmentOperation(BaseAssignment):
         self.post = post
 
     def emit_store(self, bytecode):
-        bytecode.emit('STORE', self.index)
+        bytecode.emit('STORE', self.index, self.identifier)
 
 class LocalAssignmentOperation(AssignmentOperation):
     def __init__(self, pos, left, right, operand, post = False):
@@ -332,7 +332,7 @@ class FunctionStatement(Statement):
         #bytecode.emit('DECLARE_FUNCTION', jsfunc)
         bytecode.emit('LOAD_FUNCTION', jsfunc)
         if index is not None:
-            bytecode.emit('STORE', index)
+            bytecode.emit('STORE', index, name)
             bytecode.emit('POP')
 
 class Identifier(Expression):
@@ -519,7 +519,7 @@ class Typeof(Expression):
     def emit(self, bytecode):
         # obscure hack to be compatible
         if isinstance(self.left, Identifier):
-            bytecode.emit('TYPEOF_VARIABLE', self.left.name)
+            bytecode.emit('TYPEOF_VARIABLE', self.left.index, self.left.name)
         else:
             self.left.emit(bytecode)
             bytecode.emit('TYPEOF')
@@ -760,7 +760,7 @@ class VariableDeclaration(Expression):
     def emit(self, bytecode):
         if self.expr is not None:
             self.expr.emit(bytecode)
-            bytecode.emit('STORE', self.index)
+            bytecode.emit('STORE', self.index, self.identifier)
 
     def __str__(self):
         return "VariableDeclaration %s:%s" % (self.identifier, self.expr)

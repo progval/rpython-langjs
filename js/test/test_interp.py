@@ -6,6 +6,8 @@ import py
 #from js.jscode import JsCode
 #from js.baseop import AbstractEC
 
+xfail = py.test.mark.xfail
+
 def test_simple():
     from js.jscode import JsCode
     bytecode = JsCode()
@@ -73,10 +75,10 @@ def assertv(code, value):
     #else:
         #assert code_val.to_string() == value
 
-def asserte(code, value):
-    pass
-    #jsint = interpreter.Interpreter()
-    #py.test.raises(value, 'jsint.run(interpreter.load_source(code, ""))')
+def asserte(code, exception):
+    from js.interpreter import Interpreter
+    jsint = Interpreter()
+    py.test.raises(exception, jsint.run_src, code)
 
 def test_interp_parse(capsys):
     assertv("1+1;", 2)
@@ -207,7 +209,6 @@ def test_print_object(capsys):
     print(Object.prototype);
     """, "[object Object]", capsys)
 
-@py.test.mark.xfail
 def test_array_initializer(capsys):
     assertp("""
     x = [];
@@ -215,7 +216,6 @@ def test_array_initializer(capsys):
     print(x.length)
     """, '\n0', capsys)
 
-@py.test.mark.xfail
 def test_throw(capsys):
     assertp("throw(3);", "uncaught exception: 3", capsys)
 
@@ -229,7 +229,7 @@ def test_block(capsys):
     assertp("{print(5);}", '5', capsys)
     assertp("{3; print(5);}", '5', capsys)
 
-@py.test.mark.xfail
+@xfail
 def test_try_catch_finally(capsys):
     assertp("""
     try {
@@ -297,7 +297,7 @@ def test_binary_opb(capsys):
     assertp("print(0||0); print(1||0);", "0\n1", capsys)
     assertp("print(0&&1); print(1&&1);", "0\n1", capsys)
 
-def test_while():
+def test_while(capsys):
     assertp("""
     i = 0;
     while (i<3) {
@@ -305,39 +305,40 @@ def test_while():
         i++;
     }
     print(i);
-    """, ["0","1","2","3"])
+    """, "0\n1\n2\n3", capsys)
 
 def test_assignments():
-    yield assertv, "var x = 3; x += 4; x;", 7
-    yield assertv, "x = 8; x -= 3; x;", 5
-    yield assertv, "x = {}; x.x = 3; x.x += 8; x.x", 8+3
-    yield assertv, "x = []; x[2] = 1; x[2]++;", 1
-    yield assertv, "x = []; x[2] = 1; x[2]++; x[2]", 2
+    assertv("var x = 3; x += 4; x;", 7)
+    assertv("x = 8; x -= 3; x;", 5)
+    assertv("x = {}; x.x = 3; x.x += 8; x.x", 8+3)
+    assertv("x = []; x[2] = 1; x[2]++;", 1)
+    assertv("x = []; x[2] = 1; x[2]++; x[2]", 2)
 
 def test_object_creation():
-    yield assertv, """
+    assertv("""
     o = new Object();
     o;
-    """, "[object Object]"
+    """, "[object Object]")
 
-def test_var_decl():
-    yield assertp, "print(x); var x;", "undefined"
-    yield assertp, """
+@xfail
+def test_var_decl(capsys):
+    assertp("print(x); var x;", "undefined", capsys)
+    assertp("""
     try {
         print(z);
     }
     catch (e) {
         print(e);
     }
-    """, "ReferenceError: z is not defined"
+    """, "ReferenceError: z is not defined", capsys)
 
-def test_function_name():
+def test_function_name(capsys):
     assertp("""
     function x() {
         print("my name is x");
     }
     x();
-    """, "my name is x")
+    """, "my name is x", capsys)
 
 def test_new_with_function():
     c= """
@@ -347,39 +348,42 @@ def test_new_with_function():
     """
     assertv(c, "hello")
 
-def test_vars():
-    assertp("""
-    var x;x=3; print(x);""", ["3"])
+def test_vars(capsys):
+    assertp("var x;x=3; print(x);", "3", capsys)
 
-def test_in():
+def test_in(capsys):
     assertp("""
     x = {y:3};
     print("y" in x);
     print("z" in x);
-    """, ["true", "false"])
+    """, "true\nfalse", capsys)
 
-def test_for():
+def test_for(capsys):
     assertp("""
     i = 0;
     for (i; i<3; i++) {
         print(i);
     }
     print(i);
-    """, ["0","1","2","3"])
+    """, "0\n1\n2\n3", capsys)
 
-#def test_eval():
-    #yield assertp, """
-    #var x = 2;
-    #eval('x=x+1; print(x); z=2;');
-    #print(z);
-    #""", ["3","2"]
-    #yield asserte, "eval('var do =true;');", ThrowException
+def test_eval(capsys):
+    assertp("""
+    var x = 2;
+    eval('x=x+1; print(x); z=2;');
+    print(z);
+    """, "3\n2", capsys)
+
+@xfail
+def test_eval_syntax_error():
+    from js.execution import JsSyntaxError
+    asserte("eval('var do =true;');", JsSyntaxError)
 
 def test_arrayobject():
     assertv("""var x = new Array();
     x.length == 0;""", 'true')
 
-def test_break():
+def test_break(capsys):
     assertp("""
     while(1){
         break;
@@ -387,25 +391,24 @@ def test_break():
     for(x=0;1==1;x++) {
         break;
     }
-    print('out');""", "out")
+    print('out');""", "out", capsys)
 
+@xfail
 def test_typeof():
     assertv("""
     var x = 3;
     typeof x == 'number';
     """, True)
-    assertv("""
-    typeof x
-    """, 'undefined')
+    assertv("typeof x", 'undefined')
 
-def test_semicolon():
-    assertp(';', [])
+def test_semicolon(capsys):
+    assertp(';', '', capsys)
 
-def test_newwithargs():
+def test_newwithargs(capsys):
     assertp("""
     var x = new Object(1,2,3,4);
     print(x);
-    """, '1')
+    """, '1', capsys)
 
 def test_increment():
     assertv("""
@@ -415,21 +418,21 @@ def test_increment():
     x;""", 2)
 
 def test_ternaryop():
-    yield assertv, "( 1 == 1 ) ? true : false;", True
-    yield assertv, "( 1 == 0 ) ? true : false;", False
+    assertv("( 1 == 1 ) ? true : false;", True)
+    assertv("( 1 == 0 ) ? true : false;", False)
 
-def test_booleanliterals():
+def test_booleanliterals(capsys):
     assertp("""
     var x = false;
     var y = true;
     print(y);
-    print(x);""", ["true", "false"])
+    print(x);""", "true\nfalse", capsys)
 
-def test_unarynot():
+def test_unarynot(capsys):
     assertp("""
     var x = false;
     print(!x);
-    print(!!x);""", ["true", "false"])
+    print(!!x);""", "true\nfalse", capsys)
 
 def test_equals():
     assertv("""
@@ -437,7 +440,7 @@ def test_equals():
     y = z = x;
     y;""", 5)
 
-def test_math_stuff():
+def test_math_stuff(capsys):
     assertp("""
     var x = 5;
     var z = 2;
@@ -451,28 +454,27 @@ def test_math_stuff():
     print(Math.floor(3.2));
     print(null);
     print(-z);
-    """, ['10', '2', 'false', '3', 'NaN', 'Infinity', '-Infinity',
-    '3', 'null', '-2'])
+    """, '10\n2\nfalse\n3\nNaN\nInfinity\n-Infinity\n3\nnull\n-2', capsys)
 
-def test_globalproperties():
+def test_globalproperties(capsys):
     assertp( """
     print(NaN);
     print(Infinity);
     print(undefined);
-    """, ['NaN', 'Infinity', 'undefined'])
+    """, 'NaN\nInfinity\nundefined', capsys)
 
-def test_strangefunc():
-    assertp("""function f1() { var z; var t;}""", [])
-    assertp(""" "'t'"; """, [])
+def test_strangefunc(capsys):
+    assertp("""function f1() { var z; var t;}""", '', capsys)
+    assertp(""" "'t'"; """, '', capsys)
 
 def test_null():
+    from js.jsobj import w_Null
     assertv("null;", w_Null)
 
-def test_void():
-    assertp("print(void print('hello'));",
-                        ["hello", "undefined"])
+def test_void(capsys):
+    assertp("print(void print('hello'));", "hello\nundefined", capsys)
 
-def test_activationprob():
+def test_activationprob(capsys):
     assertp( """
     function intern (int1){
         print(int1);
@@ -485,9 +487,9 @@ def test_activationprob():
     var ins = new x(1);
     print(ins.p1);
     print(ins.p2);
-    """, ['1','1', '1'])
+    """, '1\n1\n1', capsys)
 
-def test_array_acess():
+def test_array_acess(capsys):
     assertp("""
     var x = new Array();
     x[0] = 1;
@@ -498,57 +500,61 @@ def test_array_acess():
     for(i=0; i<3; i++){
         print(x[i]);
     }
-    """, ['1','2', '1', '2', '3'])
+    """, '1\n2\n1\n2\n3', capsys)
 
-def test_array_length():
+def test_array_length(capsys):
     assertp("""
     var testcases = new Array();
     var tc = testcases.length;
     print('tc'+tc);
-    """, 'tc0')
+    """, 'tc0', capsys)
 
-def test_mod_op():
-    assertp("print(2%2);", '0')
+def test_mod_op(capsys):
+    assertp("print(2%2);", '0', capsys)
 
 def test_unary_plus():
-    assertp("print(+1);", '1')
+    assertv("+1;", 1)
+    assertv("-1;", -1)
 
-def test_delete():
+def test_delete(capsys):
     assertp("""
     x = 0;
     delete x;
     print(this.x)
-    """, 'undefined')
+    """, 'undefined', capsys)
     assertp("""
     var x = {};
     x.y = 1;
     delete x.y;
     print(x.y);
-    """, 'undefined')
+    """, 'undefined', capsys)
 
-def test_forin():
+@xfail
+def test_forin(capsys):
     assertp("""
     var x = {a:5};
     for(y in x){
         print(y);
     }
-    """, ['5',])
+    """, '5', capsys)
 
-def test_forinvar():
+@xfail
+def test_forinvar(capsys):
     assertp("""
     var x = {a:5};
     for(var y in x){
         print(y);
     }
-    """, ['5',])
+    """, '5', capsys)
 
 def test_stricteq():
-    yield assertv, "2 === 2;", True
-    yield assertv, "2 === 3;", False
-    yield assertv, "2 !== 3;", True
-    yield assertv, "2 !== 2;", False
+    assertv("2 === 2;", True)
+    assertv("2 === 3;", False)
+    assertv("2 !== 3;", True)
+    assertv("2 !== 2;", False)
 
-def test_with():
+@xfail
+def test_with(capsys):
     assertp("""
     var mock = {x:2};
     var x=4;
@@ -564,29 +570,30 @@ def test_with():
         print(y);
     }
     print(x);
-    """, ['4', '2', '3', '4'])
+    """, '4\n2\n3\n4', capsys)
 
-def test_with_expr():
+@xfail
+def test_with_expr(capsys):
     assertp("""
     var x = 4;
     with({x:2}) {
         print(x);
     }
-    """, ['2'])
+    """, '2', capsys)
 
 def test_bitops():
-    yield assertv, "2 ^ 2;", 0
-    yield assertv, "2 & 3;", 2
-    yield assertv, "2 | 3;", 3
-    yield assertv, "2 << 2;", 8
-    yield assertv, "4 >> 2;", 1
-    yield assertv, "-2 >> 31", -1
-    yield assertv, "-2 >>> 31;", 1
+    assertv("2 ^ 2;", 0)
+    assertv("2 & 3;", 2)
+    assertv("2 | 3;", 3)
+    assertv("2 << 2;", 8)
+    assertv("4 >> 2;", 1)
+    assertv("-2 >> 31", -1)
+    assertv("-2 >>> 31;", 1)
 
-def test_for_vararg():
+def test_for_vararg(capsys):
     assertp("""
     for (var arg = "", i = 0; i < 2; i++) { print(i);}
-    """, ['0', '1'])
+    """, '0\n1', capsys)
 
 def test_recursive_call():
     assertv("""
@@ -594,28 +601,28 @@ def test_recursive_call():
     fact(3);
     """, 6)
 
-def test_function_prototype():
+@xfail
+def test_function_prototype(capsys):
     assertp("""
     function foo() {}; foo.prototype.bar = function() {};
-    """, [])
+    """, '', capsys)
 
-
-def test_function_this():
+def test_function_this(capsys):
     assertp("""
     function foo() {print("debug");this.bar = function() {};};
     var f = new foo();
     f.bar();
-    """, 'debug')
+    """, 'debug', capsys)
 
 def test_inplace_assign():
-    yield assertv, "x=1; x+=1; x;", 2
-    yield assertv, "x=1; x-=1; x;", 0
-    yield assertv, "x=2; x*=2; x;", 4
-    yield assertv, "x=2; x/=2; x;", 1
-    yield assertv, "x=4; x%=2; x;", 0
-    yield assertv, "x=2; x&=2; x;", 2
-    yield assertv, "x=0; x|=1; x;", 1
-    yield assertv, "x=2; x^=2; x;", 0
+    assertv("x=1; x+=1; x;", 2)
+    assertv("x=1; x-=1; x;", 0)
+    assertv("x=2; x*=2; x;", 4)
+    assertv("x=2; x/=2; x;", 1)
+    assertv("x=4; x%=2; x;", 0)
+    assertv("x=2; x&=2; x;", 2)
+    assertv("x=0; x|=1; x;", 1)
+    assertv("x=2; x^=2; x;", 0)
 
 def test_not():
     assertv("~1", -2)
@@ -623,7 +630,7 @@ def test_not():
 def test_delete_member():
     assertv("x = 3; delete this.x", "true")
 
-def test_twoarray():
+def test_twoarray(capsys):
     assertp("""
     a1 = new Array();
     a2 = new Array();
@@ -631,7 +638,7 @@ def test_twoarray():
     print(a1[0]);
     a2[0] = 2;
     print(a1[0]);
-    """, ['1', '1'])
+    """, '1\n1', capsys)
 
 def test_semicolon():
     assertv("1", 1)
@@ -640,60 +647,60 @@ def test_functionjs():
     assertv("x = Function('return 1'); x()", 1)
 
 def test_octal_and_hex():
-    yield assertv, "010;", 8
-    yield assertv, "0xF", 15
+    assertv("010;", 8)
+    assertv("0xF", 15)
 
 def test_switch():
-    yield assertv, """
+    assertv("""
     x = 1;
     switch(x){
         case 1: 15; break;
         default: 30;
-    };""", 15
-    yield assertv, """
+    };""", 15)
+    assertv("""
     x = 0;
     switch(x){
         case 1: 15; break;
         default: 30;
-    };""", 30
+    };""", 30)
 
 def test_autoboxing():
-    yield assertv, "'abc'.charAt(0)", 'a'
-    yield assertv, "true.toString()", 'true'
-    yield assertv, "x=5; x.toString();", '5'
+    assertv("'abc'.charAt(0)", 'a')
+    assertv("true.toString()", 'true')
+    assertv("x=5; x.toString();", '5')
 
 def test_proper_prototype_inheritance():
-    yield assertv, """
+    assertv("""
     Object.prototype.my = function() {return 1};
     x = {};
     x.my();
-    """, 1
-    yield assertv, """
+    """, 1)
+    assertv("""
     Function.prototype.my = function() {return 1};
     function x () {};
     x.my();
-    """, 1
+    """, 1)
 
 def test_new_without_args_really():
     assertv("var x = new Boolean; x.toString();", 'false')
 
 def test_pypy_repr():
-    yield assertv, "pypy_repr(3);", 'W_IntNumber(3)'
+    assertv("pypy_repr(3);", 'W_IntNumber(3)')
     # See optimization on astbuilder.py for a reason to the test below
-    yield assertv, "pypy_repr(3.0);", 'W_IntNumber(3)'
-    yield assertv, "pypy_repr(3.5);", 'W_FloatNumber(3.5)'
+    assertv("pypy_repr(3.0);", 'W_IntNumber(3)')
+    assertv("pypy_repr(3.5);", 'W_FloatNumber(3.5)')
     import sys
-    yield assertv, "x="+str(sys.maxint >> 1)+"; pypy_repr(x*x);", 'W_FloatNumber(2.12676479326e+37)'
+    assertv("x="+str(sys.maxint >> 1)+"; pypy_repr(x*x);", 'W_FloatNumber(2.12676479326e+37)')
 
-def test_number():
-    assertp("print(Number(void 0))", "NaN")
+def test_number(capsys):
+    assertp("print(Number(void 0))", "NaN", capsys)
     assertp("""
     function MyObject( value ) {
       this.value = value;
       this.valueOf = new Function( "return this.value" );
     }
     print (Number(new MyObject(100)));
-    """, "100")
+    """, "100", capsys)
 
 def test_decrement():
     assertv("""
@@ -702,24 +709,24 @@ def test_decrement():
     x;""", 1)
 
 def test_member_increment():
-    yield assertv, "var x = {y:1}; x.y++; x.y;", 2
-    yield assertv, "var x = {y:1}; x.y++;", 1
+    assertv("var x = {y:1}; x.y++; x.y;", 2)
+    assertv("var x = {y:1}; x.y++;", 1)
 
 def test_member_decrement():
-    yield assertv, " var x = {y:2}; x.y--; x.y;", 1
-    yield assertv, " var x = {y:2}; x.y--;", 2
+    assertv(" var x = {y:2}; x.y--; x.y;", 1)
+    assertv(" var x = {y:2}; x.y--;", 2)
 
 def test_member_preincrement():
-    yield assertv, "var x = {y:1}; ++x.y; x.y;", 2
-    yield assertv, "var x = {y:1}; ++x.y;", 2
+    assertv("var x = {y:1}; ++x.y; x.y;", 2)
+    assertv("var x = {y:1}; ++x.y;", 2)
 
 def test_member_predecrement():
-    yield assertv, "var x = {y:2}; --x.y; x.y;", 1
-    yield assertv, "var x = {y:2}; --x.y;", 1
+    assertv("var x = {y:2}; --x.y; x.y;", 1)
+    assertv("var x = {y:2}; --x.y;", 1)
 
 def test_member_sub():
-    yield assertv, "var x = {y:10}; x.y-=5; x.y", 5
-    yield assertv, "var x = {y:10}; x.y-=5;", 5
+    assertv("var x = {y:10}; x.y-=5; x.y", 5)
+    assertv("var x = {y:10}; x.y-=5;", 5)
 
 def switch_test_code(x):
     return """
@@ -744,10 +751,10 @@ def switch_test_code(x):
 
 
 def test_more_switch():
-    yield assertv, switch_test_code(0), 42
-    yield assertv, switch_test_code(1), 1
-    yield assertv, switch_test_code(2), 2
-    yield assertv, switch_test_code(3), 42
+    assertv(switch_test_code(0), 42)
+    assertv(switch_test_code(1), 1)
+    assertv(switch_test_code(2), 2)
+    assertv(switch_test_code(3), 42)
 
 def switch_no_default_test_code(x):
     return """
@@ -764,53 +771,53 @@ def switch_no_default_test_code(x):
     """ % {'x': x}
 
 def test_switch_no_default():
-    yield assertv, switch_no_default_test_code(0), 42
-    yield assertv, switch_no_default_test_code(1), 2
+     assertv(switch_no_default_test_code(0), 42)
+     assertv(switch_no_default_test_code(1), 2)
 
 def test_member_bitxor():
-    yield assertv, 'var i = {x:0}; i.x^=0; i.x;', 0
-    yield assertv, 'var i = {x:0}; i.x^=0;', 0
-    yield assertv, 'var i = {x:0}; i.x^=1; i.x;', 1
-    yield assertv, 'var i = {x:0}; i.x^=1;', 1
-    yield assertv, 'var i = {x:1}; i.x^=0; i.x;', 1
-    yield assertv, 'var i = {x:1}; i.x^=0;', 1
-    yield assertv, 'var i = {x:1}; i.x^=1; i.x;', 0
-    yield assertv, 'var i = {x:1}; i.x^=1;', 0
+    assertv('var i = {x:0}; i.x^=0; i.x;', 0)
+    assertv('var i = {x:0}; i.x^=0;', 0)
+    assertv('var i = {x:0}; i.x^=1; i.x;', 1)
+    assertv('var i = {x:0}; i.x^=1;', 1)
+    assertv('var i = {x:1}; i.x^=0; i.x;', 1)
+    assertv('var i = {x:1}; i.x^=0;', 1)
+    assertv('var i = {x:1}; i.x^=1; i.x;', 0)
+    assertv('var i = {x:1}; i.x^=1;', 0)
 
 def test_member_bitand():
-    yield assertv, 'var i = {x:0}; i.x&=0; i.x;', 0
-    yield assertv, 'var i = {x:0}; i.x&=0;', 0
-    yield assertv, 'var i = {x:0}; i.x&=1; i.x;', 0
-    yield assertv, 'var i = {x:0}; i.x&=1;', 0
-    yield assertv, 'var i = {x:1}; i.x&=0; i.x;', 0
-    yield assertv, 'var i = {x:1}; i.x&=0;', 0
-    yield assertv, 'var i = {x:1}; i.x&=1; i.x;', 1
-    yield assertv, 'var i = {x:1}; i.x&=1;', 1
+    assertv('var i = {x:0}; i.x&=0; i.x;', 0)
+    assertv('var i = {x:0}; i.x&=0;', 0)
+    assertv('var i = {x:0}; i.x&=1; i.x;', 0)
+    assertv('var i = {x:0}; i.x&=1;', 0)
+    assertv('var i = {x:1}; i.x&=0; i.x;', 0)
+    assertv('var i = {x:1}; i.x&=0;', 0)
+    assertv('var i = {x:1}; i.x&=1; i.x;', 1)
+    assertv('var i = {x:1}; i.x&=1;', 1)
 
 def test_member_bitor():
-    yield assertv, 'var i = {x:0}; i.x|=0; i.x;', 0
-    yield assertv, 'var i = {x:0}; i.x|=0;', 0
-    yield assertv, 'var i = {x:0}; i.x|=1; i.x;', 1
-    yield assertv, 'var i = {x:0}; i.x|=1;', 1
-    yield assertv, 'var i = {x:1}; i.x|=0; i.x;', 1
-    yield assertv, 'var i = {x:1}; i.x|=0;', 1
-    yield assertv, 'var i = {x:1}; i.x|=1; i.x;', 1
-    yield assertv, 'var i = {x:1}; i.x|=1;', 1
+    assertv('var i = {x:0}; i.x|=0; i.x;', 0)
+    assertv('var i = {x:0}; i.x|=0;', 0)
+    assertv('var i = {x:0}; i.x|=1; i.x;', 1)
+    assertv('var i = {x:0}; i.x|=1;', 1)
+    assertv('var i = {x:1}; i.x|=0; i.x;', 1)
+    assertv('var i = {x:1}; i.x|=0;', 1)
+    assertv('var i = {x:1}; i.x|=1; i.x;', 1)
+    assertv('var i = {x:1}; i.x|=1;', 1)
 
 def test_store_bitrsh():
-    yield assertv, 'var i = 1; i>>=0; i;', 1
-    yield assertv, 'var i = 1; i>>=0;', 1
-    yield assertv, 'var i = 2; i>>=1; i;', 1
-    yield assertv, 'var i = 2; i>>=1;', 1
-    yield assertv, 'var i = 4; i>>=1; i;', 2
-    yield assertv, 'var i = 4; i>>=1;', 2
-    yield assertv, 'var i = 4; i>>=2; i;', 1
-    yield assertv, 'var i = 4; i>>=2;', 1
-    yield assertv, 'var i = 4; i>>=3; i;', 0
-    yield assertv, 'var i = 4; i>>=3;', 0
+    assertv('var i = 1; i>>=0; i;', 1)
+    assertv('var i = 1; i>>=0;', 1)
+    assertv('var i = 2; i>>=1; i;', 1)
+    assertv('var i = 2; i>>=1;', 1)
+    assertv('var i = 4; i>>=1; i;', 2)
+    assertv('var i = 4; i>>=1;', 2)
+    assertv('var i = 4; i>>=2; i;', 1)
+    assertv('var i = 4; i>>=2;', 1)
+    assertv('var i = 4; i>>=3; i;', 0)
+    assertv('var i = 4; i>>=3;', 0)
 
 def test_loop_continue():
-    yield assertv, """
+    assertv("""
       i = 0;
       n = 0;
       while (i < 3) {
@@ -820,8 +827,8 @@ def test_loop_continue():
          n += i;
       }
       n;
-    """, 5
-    yield assertv, """
+    """, 5)
+    assertv("""
       i = 0;
       n = 0;
       while (i < 3) {
@@ -835,8 +842,8 @@ def test_loop_continue():
          }
       }
       n;
-    """, 80
-    yield assertv, """
+    """, 80)
+    assertv("""
       i = 0;
       n = 0;
       while (i < 3) {
@@ -856,10 +863,10 @@ def test_loop_continue():
          }
       }
       n;
-    """, 400
+    """, 400)
 
 def test_partial_for_loop():
-    yield assertv, """
+    assertv("""
     var i = 0;
     for(;;){
       i++;
@@ -867,16 +874,16 @@ def test_partial_for_loop():
           break;
     }
     i;
-    """, 2
-    yield assertv, """
+    """, 2)
+    assertv("""
     var i = 0;
     for(;;i++){
       if(i == 2)
           break;
     }
     i;
-    """, 2
-    yield assertv, """
+    """, 2)
+    assertv("""
     var i = 0;
     for(i = 2;;){
       if(i == 2)
@@ -884,17 +891,17 @@ def test_partial_for_loop():
       i = 99;
     }
     i;
-    """, 2
-    yield assertv, """
+    """, 2)
+    assertv("""
     var i = 0;
     for(;i <= 1;){
         i++;
     }
     i;
-    """, 2
+    """, 2)
 
 def test_compare_string_null():
-    yield assertv, """
+    assertv("""
     var x;
     if('a' == null){
         x = true;
@@ -902,26 +909,26 @@ def test_compare_string_null():
         x = false;
     }
     x;
-    """, False
+    """, False)
 
 def test_math_random():
-    yield assertv, "var x = Math.random(); var y = Math.random(); x == y;", False
+    assertv("var x = Math.random(); var y = Math.random(); x == y;", False)
 
 def test_math_min():
-    yield assertv, "Math.min(1, 2);", 1
-    yield assertv, "Math.min(0, 2);", 0
-    yield assertv, "Math.min(-1, 1);", -1
+    assertv("Math.min(1, 2);", 1)
+    assertv("Math.min(0, 2);", 0)
+    assertv("Math.min(-1, 1);", -1)
 
 def test_math_max():
-    yield assertv, "Math.max(1, 2);", 2
-    yield assertv, "Math.max(0, 2);", 2
-    yield assertv, "Math.max(-1, 1);", 1
+    assertv("Math.max(1, 2);", 2)
+    assertv("Math.max(0, 2);", 2)
+    assertv("Math.max(-1, 1);", 1)
 
 def test_date_get_time():
-    yield assertv, "var i = new Date(); i.valueOf() == i.getTime()", True
+    assertv("var i = new Date(); i.valueOf() == i.getTime()", True)
 
 def test_declare_local_var():
-    yield assertv, """
+    assertv("""
     function f() {
         var i = 4;
         function g() {
@@ -930,8 +937,8 @@ def test_declare_local_var():
         return g();
     }
     f();
-    """, 12
-    yield assertv, """
+    """, 12)
+    assertv("""
     function f() {
         var i;
         function g() {
@@ -941,7 +948,7 @@ def test_declare_local_var():
         return g() + i;
     }
     f();
-    """, 12
+    """, 12)
 
 def test_empty_function_with_params():
     assertv("x = function(x) { }; x(); false", False)

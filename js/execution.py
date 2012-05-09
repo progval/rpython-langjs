@@ -1,4 +1,3 @@
-
 class JsBaseExcept(Exception):
     pass
 
@@ -24,6 +23,9 @@ class ThrowException(JsBaseExcept):
         self.exception = exception
         self.args = [exception]
 
+class JsThrowException(ThrowException):
+    pass
+
 class JsTypeError(JsBaseExcept):
     pass
 
@@ -31,4 +33,7 @@ class JsReferenceError(JsBaseExcept):
     pass
 
 class JsRangeError(JsBaseExcept):
+    pass
+
+class JsSyntaxError(JsBaseExcept):
     pass

@@ -2,8 +2,8 @@ import py
 #from js.jscode import _JsFunction
 from js.jsobj import _w
 from js.jscode import JsCode
-from js.execution_context import ExecutionContext, FunctionExecutionContext, GlobalExecutionContext
-from js.functions import JsFunction, JsExecutableCode, JsNativeFunction, JsGlobalCode
+from js.execution_context import ExecutionContext, FunctionExecutionContext, GlobalExecutionContext, EvalExecutionContext
+from js.functions import JsFunction, JsExecutableCode, JsNativeFunction, JsGlobalCode, JsEvalCode
 from js.lexical_environment import DeclarativeEnvironment
 from js.astbuilder import parse_to_ast, SymbolMap
 from js.jscode import ast_to_bytecode
@@ -30,28 +30,23 @@ class TestJsFunctionAndStuff(object):
         code.emit('RETURN')
 
         f = JsFunction('foo', code)
-        ctx = FunctionExecutionContext()
+        ctx = FunctionExecutionContext(f)
         res = f.run(ctx)
 
         assert res == _w(2)
-
 
     def test_foo3(self):
         symbol_map = SymbolMap()
         var_idx = symbol_map.add_variable('a')
 
         code = JsCode(symbol_map)
-        code.emit('LOAD_VARIABLE', var_idx)
+        code.emit('LOAD_VARIABLE', var_idx, 'a')
         code.emit('RETURN')
 
         f = JsFunction('foo', code)
-        ctx = FunctionExecutionContext(f, None, [])
+        ctx = FunctionExecutionContext(f, argv = [_w(42)], formal_parameters = ['a'])
 
-        lex_env = ctx.variable_environment()
-        env_rec = lex_env.environment_record
-        env_rec.set_mutable_binding('a', _w(42))
-
-        res = ctx.run()
+        res = f.run(ctx)
         assert res == _w(42)
 
     def test_foo4(self):
@@ -60,19 +55,20 @@ class TestJsFunctionAndStuff(object):
         var_idx_b = symbol_map.add_parameter('b')
 
         code = JsCode(symbol_map)
-        code.emit('LOAD_VARIABLE', var_idx_a)
-        code.emit('LOAD_VARIABLE', var_idx_b)
+        code.emit('LOAD_VARIABLE', var_idx_a, 'a')
+        code.emit('LOAD_VARIABLE', var_idx_b, 'b')
         code.emit('ADD')
         code.emit('RETURN')
 
         f = JsFunction('foo', code)
-        ctx = FunctionExecutionContext(f, None, [_w(21)])
 
-        lex_env = ctx.variable_environment()
-        env_rec = lex_env.environment_record
+        ctx = FunctionExecutionContext(f, formal_parameters = ['b'], argv = [_w(21)])
+
+        lex = ctx.variable_environment()
+        env_rec = lex.environment_record
         env_rec.set_mutable_binding('a', _w(21))
 
-        res = ctx.run()
+        res = f.run(ctx)
         assert res == _w(42)
 
     def test_foo5(self):
@@ -81,20 +77,20 @@ class TestJsFunctionAndStuff(object):
         var_idx_b = symbol_map.add_parameter('b')
 
         code = JsCode(symbol_map)
-        code.emit('LOAD_VARIABLE', var_idx_a)
-        code.emit('LOAD_VARIABLE', var_idx_b)
+        code.emit('LOAD_VARIABLE', var_idx_a, 'a')
+        code.emit('LOAD_VARIABLE', var_idx_b, 'b')
         code.emit('ADD')
-        code.emit('STORE', var_idx_a)
+        code.emit('STORE', var_idx_a, 'a')
         code.emit('RETURN')
 
         f = JsFunction('foo', code)
-        ctx = FunctionExecutionContext(f, None, [_w(21)])
+        ctx = FunctionExecutionContext(f, formal_parameters = ['b'], argv = [_w(21)])
 
         lex_env = ctx.variable_environment()
         env_rec = lex_env.environment_record
         env_rec.set_mutable_binding('a', _w(21))
 
-        res = ctx.run()
+        res = f.run(ctx)
 
         assert env_rec.get_binding_value('a') == _w(42)
         assert res == _w(42)
@@ -105,10 +101,10 @@ class TestJsFunctionAndStuff(object):
         var_idx_b = symbol_map.add_symbol('b')
 
         code = JsCode(symbol_map)
-        code.emit('LOAD_VARIABLE', var_idx_a)
-        code.emit('LOAD_VARIABLE', var_idx_b)
+        code.emit('LOAD_VARIABLE', var_idx_a, 'a')
+        code.emit('LOAD_VARIABLE', var_idx_b, 'b')
         code.emit('ADD')
-        code.emit('STORE', var_idx_a)
+        code.emit('STORE', var_idx_a, 'a')
         code.emit('RETURN')
 
         outer_env = DeclarativeEnvironment()
@@ -116,7 +112,7 @@ class TestJsFunctionAndStuff(object):
 
         f = JsFunction('foo', code)
 
-        ctx = FunctionExecutionContext(f, None, [], outer_env)
+        ctx = FunctionExecutionContext(f, scope = outer_env)
 
         lex_env = ctx.variable_environment()
         env_rec = lex_env.environment_record
@@ -126,7 +122,7 @@ class TestJsFunctionAndStuff(object):
         outer_env_rec.create_mutuable_binding('b', True)
         outer_env_rec.set_mutable_binding('b', _w(21))
 
-        res = ctx.run()
+        res = f.run(ctx)
 
         assert env_rec.get_binding_value('a') == _w(42)
         assert outer_env_rec.get_binding_value('b') == _w(21)
@@ -138,10 +134,10 @@ class TestJsFunctionAndStuff(object):
         var_idx_b = symbol_map.add_symbol('b')
 
         code = JsCode(symbol_map)
-        code.emit('LOAD_VARIABLE', var_idx_a)
-        code.emit('LOAD_VARIABLE', var_idx_b)
+        code.emit('LOAD_VARIABLE', var_idx_a, 'a')
+        code.emit('LOAD_VARIABLE', var_idx_b, 'b')
         code.emit('ADD')
-        code.emit('STORE', var_idx_b)
+        code.emit('STORE', var_idx_b, 'b')
         code.emit('RETURN')
 
         outer_env = DeclarativeEnvironment()
@@ -149,7 +145,7 @@ class TestJsFunctionAndStuff(object):
 
         f = JsFunction('foo', code)
 
-        ctx = FunctionExecutionContext(f, None, [], outer_env)
+        ctx = FunctionExecutionContext(f, scope = outer_env)
 
         lex_env = ctx.variable_environment()
         env_rec = lex_env.environment_record
@@ -159,7 +155,7 @@ class TestJsFunctionAndStuff(object):
         outer_env_rec.create_mutuable_binding('b', True)
         outer_env_rec.set_mutable_binding('b', _w(21))
 
-        res = ctx.run()
+        res = f.run(ctx)
 
         assert env_rec.get_binding_value('a') == _w(21)
         assert outer_env_rec.get_binding_value('b') == _w(42)
@@ -173,15 +169,15 @@ class TestJsFunctionAndStuff(object):
 
         code = JsCode(symbol_map)
         code.emit('LOAD_INTCONSTANT', 21)
-        code.emit('STORE', var_idx_a)
+        code.emit('STORE', var_idx_a, 'a')
         code.emit('POP')
         code.emit('LOAD_INTCONSTANT', 21)
-        code.emit('STORE', var_idx_b)
+        code.emit('STORE', var_idx_b, 'b')
         code.emit('POP')
-        code.emit('LOAD_VARIABLE', var_idx_a)
-        code.emit('LOAD_VARIABLE', var_idx_b)
+        code.emit('LOAD_VARIABLE', var_idx_a, 'a')
+        code.emit('LOAD_VARIABLE', var_idx_b, 'b')
         code.emit('ADD')
-        code.emit('STORE', var_idx_c)
+        code.emit('STORE', var_idx_c, 'c')
         code.emit('RETURN')
 
         f = JsGlobalCode(code)
@@ -189,7 +185,7 @@ class TestJsFunctionAndStuff(object):
         w_global = W_BasicObject()
 
         ctx = GlobalExecutionContext(f, w_global)
-        res = ctx.run()
+        res = f.run(ctx)
 
         lex_env = ctx.variable_environment()
         env_rec = lex_env.environment_record
@@ -215,7 +211,7 @@ class TestJsFunctionAndStuff(object):
 
         w_global = W_BasicObject()
         ctx = GlobalExecutionContext(f, w_global)
-        res = ctx.run()
+        res = f.run(ctx)
 
         lex_env = ctx.variable_environment()
         env_rec = lex_env.environment_record
@@ -241,7 +237,7 @@ class TestJsFunctionAndStuff(object):
         f = JsGlobalCode(code)
 
         ctx = GlobalExecutionContext(f)
-        res = ctx.run()
+        res = f.run(ctx)
 
         lex_env = ctx.variable_environment()
         env_rec = lex_env.environment_record
@@ -267,7 +263,7 @@ class TestJsFunctionAndStuff(object):
 
         w_global = W_BasicObject()
         ctx = GlobalExecutionContext(f, w_global)
-        res = ctx.run()
+        res = f.run(ctx)
 
         lex_env = ctx.variable_environment()
         env_rec = lex_env.environment_record
@@ -297,7 +293,7 @@ class TestJsFunctionAndStuff(object):
 
         w_global = W_BasicObject()
         ctx = GlobalExecutionContext(f, w_global)
-        res = ctx.run()
+        res = f.run(ctx)
 
         assert res == _w(55)
 
@@ -307,8 +303,8 @@ class TestJsFunctionAndStuff(object):
             return _w(a + 1)
 
         func = JsNativeFunction(f)
-        ctx = FunctionExecutionContext(func, None, [_w(41)])
-        res = ctx.run()
+        ctx = FunctionExecutionContext(func, argv=[_w(41)])
+        res = func.run(ctx)
 
         assert res == _w(42)
 
@@ -320,7 +316,7 @@ class TestJsFunctionAndStuff(object):
         func = JsNativeFunction(f)
 
         from js.jsobj import W__Function
-        w_func = W__Function(func, None)
+        w_func = W__Function(func)
 
         w_global = W_BasicObject()
         w_global.put('f', w_func)
@@ -335,7 +331,7 @@ class TestJsFunctionAndStuff(object):
 
         c = JsGlobalCode(code)
         ctx = GlobalExecutionContext(c, w_global)
-        res = ctx.run()
+        res = c.run(ctx)
 
         assert res == _w(42)
 
@@ -388,6 +384,33 @@ class TestJsFunctionAndStuff(object):
         res = self.run_src(src)
         assert res == _w(2)
 
+    def test_foo19(self):
+        src = '''
+        ;
+        '''
+
+        ast = parse_to_ast(src)
+        symbol_map = ast.symbol_map
+        code = ast_to_bytecode(ast, symbol_map)
+
+        global_code = JsGlobalCode(code)
+        global_object = W_BasicObject()
+        global_ctx = GlobalExecutionContext(global_code, global_object)
+
+        src = '''
+        a = 1;
+        '''
+
+        ast = parse_to_ast(src)
+        symbol_map = ast.symbol_map
+        code = ast_to_bytecode(ast, symbol_map)
+
+        f = JsEvalCode(code)
+
+        ctx = EvalExecutionContext(f, calling_context = global_ctx)
+        res = f.run(ctx)
+
+        assert res == _w(1)
 
     def run_src(self, src):
         ast = parse_to_ast(src)
@@ -398,5 +421,5 @@ class TestJsFunctionAndStuff(object):
 
         w_global = W_BasicObject()
         ctx = GlobalExecutionContext(c, w_global)
-        res = ctx.run()
+        res = c.run(ctx)
         return res

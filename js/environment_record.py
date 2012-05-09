@@ -63,7 +63,13 @@ class DeclarativeEnvironmentRecord(EnvironmentRecord):
 
     # 10.2.1.1.5
     def delete_binding(self, identifier):
-        raise NotImplementedError(self.__class__)
+        if not self.has_binding(identifier):
+            return True
+        if self.mutable_bindings[identifier] is False:
+            return False
+        del(self.mutable_bindings[identifier])
+        del(self.bindings[identifier])
+        return False
 
     # 10.2.1.1.6
     def implicit_this_value(self):

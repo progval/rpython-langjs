@@ -356,7 +356,7 @@ class ASTBuilder(RPythonVisitor):
         if self.is_local_identifier(left):
             return operations.LocalAssignmentOperation(pos, left, None, atype, is_post)
         elif self.is_identifier(left):
-            return operations.AssignmentOperation(pos, left, None, atype, is_post)
+            return operations.AssignmentOperation(pos, left, left.name, left.index, None, atype, is_post)
         elif self.is_member(left):
             return operations.MemberAssignmentOperation(pos, left, None, atype, is_post)
         else:

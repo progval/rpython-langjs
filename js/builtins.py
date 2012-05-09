@@ -267,13 +267,28 @@ def new_native_function(function, name = None):
     from js.jsobj import W__Function
 
     scope = None
-    jsfunc = JsNativeFunction(function, name)
-    return W__Function(jsfunc, scope)
+    jsfunc = JsNativeFunction(native_function(function), name)
+    return W__Function(jsfunc)
+
+def native_function(func):
+    from js.jsobj import _w
+    def f(*args):
+        return _w(func(*args))
+    return f
 
 def setup_builtins(global_object):
     def put_native_function(obj, name, func, writable = False, configurable = False, enumerable = False):
         jsfunc = new_native_function(func, name)
         put_property(obj, name, jsfunc, writable = writable, configurable = configurable, enumerable = enumerable)
+
+    def put_intimate_function(obj, name, func, writable = False, configurable = False, enumerable = False):
+        from js.functions import JsIntimateFunction
+        from js.jsobj import W__Function
+
+        scope = None
+        jsfunc = JsIntimateFunction(native_function(func), name)
+        w_func = W__Function(jsfunc)
+        put_property(obj, name, w_func, writable = writable, configurable = configurable, enumerable = enumerable)
 
     # 15
     def put_property(obj, name, value, writable = True, configurable = False, enumerable = True):
@@ -560,18 +575,19 @@ def setup_builtins(global_object):
     put_property(global_object, 'Date', w_Date)
 
     # 15.1.1.1
-    put_property(global_object, 'NaN', w_NAN, enumerable = False, configurable = False)
+    put_property(global_object, 'NaN', w_NAN, writable = False, enumerable = False, configurable = False)
 
     # 15.1.1.2
-    put_property(global_object, 'Infinity', w_POSITIVE_INFINITY, enumerable = False, configurable = False)
+    put_property(global_object, 'Infinity', w_POSITIVE_INFINITY, writable = False, enumerable = False, configurable = False)
 
     # 15.1.1.3
-    put_property(global_object, 'undefined', w_Undefined, enumerable = False, configurable = False)
-
-    # 15.1.2.1
-    put_property(global_object, 'eval', W__Eval())
+    put_property(global_object, 'undefined', w_Undefined, writable = False, enumerable = False, configurable = False)
 
     import js.builtins_global as global_builtins
+
+    # 15.1.2.1
+    #put_property(global_object, 'eval', W__Eval())
+    put_intimate_function(global_object, 'eval', global_builtins.js_eval)
 
     # 15.1.2.2
     put_native_function(global_object, 'parseInt', global_builtins.parse_int)

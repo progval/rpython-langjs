@@ -1,6 +1,6 @@
 from js.jsobj import W_IntNumber, W_FloatNumber, W_String,\
      w_Undefined, newbool, W__Object, \
-     w_True, w_False, w_Null, W_Root, W__Function
+     w_True, w_False, w_Null, W_Root, W__Function, _w
 from js.execution import JsTypeError, ReturnException, ThrowException
 from js.baseop import plus, sub, compare, AbstractEC, StrictEC,\
      compare_e, increment, decrement, commonnew, mult, division, uminus, mod
@@ -111,11 +111,12 @@ class LOAD_VARIABLE(Opcode):
     def __init__(self, index, identifier):
         assert index is not None
         self.index = index
+        self.identifier = identifier
 
     # 11.1.2
     def eval(self, ctx):
         # TODO put ref onto stack
-        ref = ctx.get_ref(self.index)
+        ref = ctx.get_ref(self.identifier)
         value = ref.get_value()
         ctx.stack_append(value)
 
@@ -166,8 +167,15 @@ class LOAD_FUNCTION(Opcode):
         #proto = ctx.get_global().Get('Function').Get('prototype')
         #from js.builtins import get_builtin_prototype
         #proto = get_builtin_prototype('Function')
+
+        # 13.2 Creating Function Objects
+
+        func = self.funcobj
         scope = ctx.lexical_environment()
-        w_func = W__Function(self.funcobj, scope)
+        params = func.params()
+        strict = func.strict
+        w_func = W__Function(func, formal_parameter_list = params, scope = scope, strict = strict)
+
         #w_func = W_CallableObject(ctx, proto, self.funcobj)
         #w_func.Put('length', W_IntNumber(len(self.funcobj.params)))
         #w_obj = create_object('Object')
@@ -220,7 +228,8 @@ class IN(BaseBinaryOperation):
         if not isinstance(right, W_BasicObject):
             raise ThrowException(W_String("TypeError: "+ repr(right)))
         name = left.to_string()
-        return newbool(right.HasProperty(name))
+        has_name = right.has_property(name)
+        return newbool(has_name)
 
 class TYPEOF(BaseUnaryOperation):
     def eval(self, ctx):
@@ -228,13 +237,16 @@ class TYPEOF(BaseUnaryOperation):
         ctx.stack_append(W_String(one.type()))
 
 class TYPEOF_VARIABLE(Opcode):
-    def __init__(self, name):
+    def __init__(self, index, name):
+        self.index = index
         self.name = name
 
     def eval(self, ctx):
         try:
-            var = ctx.resolve_identifier(self.name)
-            ctx.stack_append(W_String(var.type()))
+            ref = ctx.get_ref(self.name)
+            var = ref.get_value()
+            var_type = var.type()
+            ctx.stack_append(W_String(var_type))
         except ThrowException:
             ctx.stack_append(W_String('undefined'))
 
@@ -365,19 +377,20 @@ class STORE_MEMBER(Opcode):
         member = ctx.stack_pop()
         value = ctx.stack_pop()
         name = member.to_string()
-        left.ToObject().Put(name, value)
+        left.ToObject().put(name, value)
         ctx.stack_append(value)
 
 class STORE(Opcode):
     #_immutable_fields_ = ['name']
     _stack_change = 0
-    def __init__(self, index):
+    def __init__(self, index, identifier):
         assert index is not None
         self.index = index
+        self.identifier = identifier
 
     def eval(self, ctx):
         value = ctx.stack_top()
-        ref = ctx.get_ref(self.index)
+        ref = ctx.get_ref(self.identifier)
         ref.put_value(value)
 
 
@@ -518,7 +531,7 @@ def common_call(ctx, r1, args, this, name):
         raise ThrowException(W_String("%s is not a callable (%s)"%(r1.to_string(), name.to_string())))
     #jit.promote(r1)
     #try:
-    res = r1.Call(args.ToList(), this)
+    res = r1.Call(args = args.to_list(), this = this, calling_context = ctx)
     #except JsTypeError:
         #raise ThrowException(W_String("%s is not a function (%s)"%(r1.to_string(), name.to_string())))
     return res
@@ -538,7 +551,7 @@ class CALL_METHOD(Opcode):
         what = ctx.stack_pop().ToObject()
         args = ctx.stack_pop()
         name = method.to_string()
-        r1 = what.Get(name)
+        r1 = what.get(name)
         ctx.stack_append(common_call(ctx, r1, args, what, method))
 
 class DUP(Opcode):
@@ -549,7 +562,8 @@ class THROW(Opcode):
     _stack_change = 0
     def eval(self, ctx):
         val = ctx.stack_pop()
-        raise ThrowException(val)
+        from js.execution import JsThrowException
+        raise JsThrowException(val)
 
 class TRYCATCHBLOCK(Opcode):
     _stack_change = 0
@@ -587,8 +601,9 @@ class NEW(Opcode):
     def eval(self, ctx):
         y = ctx.stack_pop()
         x = ctx.stack_pop()
+        from js.jsobj import W_List
         assert isinstance(y, W_List)
-        args = y.get_args()
+        args = y.to_list()
         ctx.stack_append(commonnew(ctx, x, args))
 
 class NEW_NO_ARGS(Opcode):
@@ -658,14 +673,32 @@ class DELETE(Opcode):
         self.name = name
 
     def eval(self, ctx):
-        ctx.stack_append(newbool(ctx.delete_identifier(self.name)))
+        # 11.4.1
+        ref = ctx.get_ref(self.name)
+        from js.lexical_environment import Reference
+        if not isinstance(ref, Reference):
+            res = True
+        if ref.is_unresolvable_reference():
+            if ref.is_strict_reference():
+                raise JsSyntaxError()
+            res = True
+        if ref.is_property_reference():
+            obj = ref.get_base().ToObject()
+            res = obj.delete(ref.get_referenced_name(), ref.is_strict_reference())
+        else:
+            if ref.is_strict_reference():
+                raise JsSyntaxError()
+            bindings = ref.get_base()
+            res = bindings.delete_binding(ref.get_referenced_name())
+        ctx.stack_append(_w(res))
 
 class DELETE_MEMBER(Opcode):
     _stack_change = 0
     def eval(self, ctx):
         what = ctx.stack_pop().to_string()
         obj = ctx.stack_pop().ToObject()
-        ctx.stack_append(newbool(obj.Delete(what)))
+        res = obj.delete(what, False)
+        ctx.stack_append(_w(res))
 
 class LOAD_LOCAL(Opcode):
     _immutable_fields_ = ['local']

@@ -94,3 +94,22 @@ def inspect(this, args):
 
 def version(this, args):
     return '1.0'
+
+def js_eval(ctx):
+    from js.astbuilder import parse_to_ast
+    from js.jscode import ast_to_bytecode
+    from js.jsobj import _w
+    from js.functions import JsEvalCode
+    from js.execution_context import EvalExecutionContext
+
+    args = ctx.argv()
+    src = args[0].to_string()
+    ast = parse_to_ast(src)
+    symbol_map = ast.symbol_map
+    code = ast_to_bytecode(ast, symbol_map)
+
+    f = JsEvalCode(code)
+    calling_context = ctx._calling_context_
+    ctx = EvalExecutionContext(f, calling_context = calling_context)
+    res = f.run(ctx)
+    return _w(res)

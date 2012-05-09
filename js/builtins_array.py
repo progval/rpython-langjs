@@ -18,8 +18,8 @@ def push(this, args):
 # 15.4.4.2
 def to_string(this, args):
     array = this.ToObject()
-    func = array.Get('join')
-    if func.IsCallable():
+    func = array.get('join')
+    if func.is_callable():
         return func.Call(this = this).to_string()
     else:
         return this.to_string()
@@ -27,7 +27,7 @@ def to_string(this, args):
 # 15.4.4.5
 def join(this, args):
     o = this.ToObject()
-    lenVal = o.Get('length')
+    lenVal = o.get('length')
     length = lenVal.ToUInt32()
 
     sep = ','
@@ -37,7 +37,7 @@ def join(this, args):
     if length == 0:
         return ''
 
-    element0 = o.Get('0')
+    element0 = o.get('0')
     if isnull_or_undefined(element0):
         return ''
 
@@ -47,7 +47,7 @@ def join(this, args):
 
     while(k < length):
         s = r + sep
-        element = o.Get(str(k))
+        element = o.get(str(k))
         if isnull_or_undefined(element):
             n = ''
         else:

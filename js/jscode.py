@@ -18,7 +18,8 @@ def get_printable_location(pc, jsfunction):
 
 def ast_to_bytecode(ast, symbol_map):
     bytecode = JsCode(symbol_map)
-    ast.emit(bytecode)
+    if ast is not None:
+        ast.emit(bytecode)
     return bytecode
 
 class AlreadyRun(Exception):
@@ -155,17 +156,19 @@ class JsCode(object):
     def unpop_or_undefined(self):
         if not self.unpop():
             self.emit('LOAD_UNDEFINED')
-        elif not self.returns():
-            self.emit('LOAD_UNDEFINED')
+        #elif not self.returns():
+            #self.emit('LOAD_UNDEFINED')
 
     def to_function_opcodes(self):
-        self.unpop_or_undefined()
         self.unlabel()
+        self.unpop_or_undefined()
         return self.opcodes
 
     def to_global_opcodes(self):
-        self.unpop()
+        #import pdb; pdb.set_trace()
         self.unlabel()
+        self.unpop_or_undefined()
+        #self.unpop()
         return self.opcodes
 
     def remove_labels(self):
