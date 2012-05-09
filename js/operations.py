@@ -733,19 +733,21 @@ class Try(Statement):
         # a bit naive operator for now
         trycode = JsCode()
         self.tryblock.emit(trycode)
-        tryfunc = trycode.make_js_function()
+
+        #tryfunc = trycode.make_js_function()
         if self.catchblock:
             catchcode = JsCode()
             self.catchblock.emit(catchcode)
-            catchfunc = catchcode.make_js_function()
+        #    catchfunc = catchcode.make_js_function()
         else:
             catchfunc = None
         if self.finallyblock:
             finallycode = JsCode()
             self.finallyblock.emit(finallycode)
-            finallyfunc = finallycode.make_js_function()
+        #    finallyfunc = finallycode.make_js_function()
         else:
             finallyfunc = None
+        raise NotImplementedError()
         bytecode.emit('TRYCATCHBLOCK', tryfunc, self.catchparam.get_literal(), catchfunc, finallyfunc)
 
 class VariableDeclaration(Expression):

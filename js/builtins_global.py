@@ -104,7 +104,14 @@ def js_eval(ctx):
 
     args = ctx.argv()
     src = args[0].to_string()
-    ast = parse_to_ast(src)
+
+    from pypy.rlib.parsing.parsing import ParseError
+    try:
+        ast = parse_to_ast(src)
+    except ParseError, e:
+        from js.execution import JsSyntaxError
+        raise JsSyntaxError()
+
     symbol_map = ast.symbol_map
     code = ast_to_bytecode(ast, symbol_map)
 

@@ -657,14 +657,17 @@ class WITH_START(Opcode):
         self.newctx = None
 
     def eval(self, ctx):
+        from js.lexical_environment import ObjectEnvironment
         obj = ctx.stack_pop().ToObject()
-        from js.jsexecution_context import make_with_context
-        self.newctx = make_with_context(ctx, obj)
+        old_env = ctx.lexical_environment()
+        new_env = ObjectEnvironment(obj, outer_environment = old_env)
+        new_env.environment_record.provide_this = True
+        ctx._lexical_environment_ = new_env
 
 class WITH_END(Opcode):
     _stack_change = 0
     def eval(self, ctx):
-        ctx = ctx.parent
+        ctx._lexical_environment_ = ctx.lexical_environment().outer_environment
 
 # ------------------ delete -------------------------
 

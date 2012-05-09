@@ -216,6 +216,7 @@ def test_array_initializer(capsys):
     print(x.length)
     """, '\n0', capsys)
 
+@xfail
 def test_throw(capsys):
     assertp("throw(3);", "uncaught exception: 3", capsys)
 
@@ -374,14 +375,15 @@ def test_eval(capsys):
     print(z);
     """, "3\n2", capsys)
 
-@xfail
 def test_eval_syntax_error():
     from js.execution import JsSyntaxError
     asserte("eval('var do =true;');", JsSyntaxError)
 
 def test_arrayobject():
-    assertv("""var x = new Array();
-    x.length == 0;""", 'true')
+    assertv("""
+    var x = new Array();
+    x.length == 0;
+    """, 'true')
 
 def test_break(capsys):
     assertp("""
@@ -572,7 +574,6 @@ def test_with(capsys):
     print(x);
     """, '4\n2\n3\n4', capsys)
 
-@xfail
 def test_with_expr(capsys):
     assertp("""
     var x = 4;
