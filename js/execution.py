@@ -23,17 +23,24 @@ class ThrowException(JsBaseExcept):
         self.exception = exception
         self.args = [exception]
 
-class JsThrowException(ThrowException):
+class JsException(Exception):
+    def __init__(self, value = None):
+        from js.jsobj import _w
+        self.value = _w(value)
+
+class JsThrowException(JsException):
     pass
 
-class JsTypeError(JsBaseExcept):
+class JsTypeError(JsException):
     pass
 
-class JsReferenceError(JsBaseExcept):
+class JsReferenceError(JsException):
+    def __init__(self, identifier):
+        s = "ReferenceError: %s is not defined" % (identifier)
+        JsException.__init__(self, s)
+
+class JsRangeError(JsException):
     pass
 
-class JsRangeError(JsBaseExcept):
-    pass
-
-class JsSyntaxError(JsBaseExcept):
+class JsSyntaxError(JsException):
     pass

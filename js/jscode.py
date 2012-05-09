@@ -3,7 +3,7 @@ from pypy.rlib.objectmodel import we_are_translated
 from pypy.rlib.jit import JitDriver, purefunction
 
 from js.execution import JsTypeError, ReturnException, ThrowException, JsReferenceError
-from js.opcodes import opcodes, LABEL, BaseJump, WITH_START, WITH_END
+from js.opcodes import opcodes, LABEL, BaseJump
 from js.jsobj import W_Root, W_String, _w, w_Null, w_Undefined
 
 from pypy.rlib import jit, debug
@@ -169,6 +169,11 @@ class JsCode(object):
         self.unlabel()
         self.unpop_or_undefined()
         #self.unpop()
+        return self.opcodes
+
+    def to_executable_opcodes(self):
+        self.unlabel()
+        self.unpop()
         return self.opcodes
 
     def remove_labels(self):

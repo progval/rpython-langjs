@@ -730,25 +730,27 @@ class Try(Statement):
 
     def emit(self, bytecode):
         from js.jscode import JsCode
-        # a bit naive operator for now
+        from js.functions import JsExecutableCode
+
         trycode = JsCode()
         self.tryblock.emit(trycode)
+        tryexec = JsExecutableCode(trycode)
 
-        #tryfunc = trycode.make_js_function()
         if self.catchblock:
             catchcode = JsCode()
             self.catchblock.emit(catchcode)
-        #    catchfunc = catchcode.make_js_function()
+            catchexec = JsExecutableCode(catchcode)
         else:
             catchfunc = None
+
         if self.finallyblock:
             finallycode = JsCode()
             self.finallyblock.emit(finallycode)
-        #    finallyfunc = finallycode.make_js_function()
+            finallyexec = JsExecutableCode(finallycode)
         else:
-            finallyfunc = None
-        raise NotImplementedError()
-        bytecode.emit('TRYCATCHBLOCK', tryfunc, self.catchparam.get_literal(), catchfunc, finallyfunc)
+            finallyexec = None
+        catchparam = self.catchparam.get_literal()
+        bytecode.emit('TRYCATCHBLOCK', tryexec, catchparam, catchexec, finallyexec)
 
 class VariableDeclaration(Expression):
     def __init__(self, pos, identifier, index, expr=None):
@@ -860,10 +862,18 @@ class With(Statement):
         self.body = body
 
     def emit(self, bytecode):
-        self.expr.emit(bytecode)
-        bytecode.emit('WITH_START')
-        self.body.emit(bytecode)
-        bytecode.emit('WITH_END')
+        from js.jscode import JsCode
+        from js.functions import JsExecutableCode
+
+        expr_code = JsCode()
+        self.expr.emit(expr_code)
+        expr_exec = JsExecutableCode(expr_code)
+
+        body_code = JsCode()
+        self.body.emit(body_code)
+        body_exec = JsExecutableCode(body_code)
+
+        bytecode.emit('WITH', expr_exec, body_exec)
 
 class WhileBase(Statement):
     def __init__(self, pos, condition, body):

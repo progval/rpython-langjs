@@ -216,9 +216,9 @@ def test_array_initializer(capsys):
     print(x.length)
     """, '\n0', capsys)
 
-@xfail
 def test_throw(capsys):
-    assertp("throw(3);", "uncaught exception: 3", capsys)
+    from js.execution import JsThrowException
+    asserte("throw(3);", JsThrowException)
 
 def test_group():
     assertv("(2+1);", 3)
@@ -230,7 +230,6 @@ def test_block(capsys):
     assertp("{print(5);}", '5', capsys)
     assertp("{3; print(5);}", '5', capsys)
 
-@xfail
 def test_try_catch_finally(capsys):
     assertp("""
     try {
@@ -321,14 +320,13 @@ def test_object_creation():
     o;
     """, "[object Object]")
 
-@xfail
 def test_var_decl(capsys):
     assertp("print(x); var x;", "undefined", capsys)
     assertp("""
     try {
         print(z);
     }
-    catch (e) {
+    catch(e){
         print(e);
     }
     """, "ReferenceError: z is not defined", capsys)
@@ -395,7 +393,6 @@ def test_break(capsys):
     }
     print('out');""", "out", capsys)
 
-@xfail
 def test_typeof():
     assertv("""
     var x = 3;
@@ -555,7 +552,6 @@ def test_stricteq():
     assertv("2 !== 3;", True)
     assertv("2 !== 2;", False)
 
-@xfail
 def test_with(capsys):
     assertp("""
     var mock = {x:2};

@@ -2,7 +2,7 @@
 from pypy.rpython.lltypesystem import rffi
 from pypy.rlib.rarithmetic import r_uint, intmask, ovfcheck_float_to_int
 from pypy.rlib.rfloat import isnan, isinf, NAN, formatd
-from js.execution import ThrowException, JsTypeError, JsRangeError, ReturnException
+from js.execution import JsTypeError, JsRangeError, ReturnException
 
 from pypy.rlib.jit import hint
 from pypy.rlib import jit, debug

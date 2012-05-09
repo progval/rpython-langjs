@@ -81,7 +81,8 @@ def get_value(v):
     base = v.get_base()
 
     if v.is_unresolvable_reference():
-        raise JsReferenceError()
+        referenced = v.get_referenced_name()
+        raise JsReferenceError(referenced)
 
     if v.is_property_reference():
         raise NotImplementedError('8.7.1 4.')
@@ -100,7 +101,8 @@ def put_value(v, w):
     base = v.get_base()
     if v.is_unresolvable_reference():
         if v.is_strict_reference():
-            raise JsReferenceError()
+            referenced = v.get_referenced_name()
+            raise JsReferenceError(referenced)
         else:
             name = v.get_referenced_name()
             # TODO how to solve this ????

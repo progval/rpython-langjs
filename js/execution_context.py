@@ -45,6 +45,9 @@ class ExecutionContext(object):
     def lexical_environment(self):
         return self._lexical_environment_
 
+    def set_lexical_environment(self, lex_env):
+        self._lexical_environment_ = lex_env
+
     def declaration_binding_initialization(self):
         env = self._variable_environment_.environment_record
         strict = self._strict_

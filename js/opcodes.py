@@ -233,7 +233,7 @@ class IN(BaseBinaryOperation):
 
 class TYPEOF(BaseUnaryOperation):
     def eval(self, ctx):
-        one = ctx.stack_pop()
+        var = ctx.stack_pop()
         ctx.stack_append(W_String(one.type()))
 
 class TYPEOF_VARIABLE(Opcode):
@@ -242,20 +242,13 @@ class TYPEOF_VARIABLE(Opcode):
         self.name = name
 
     def eval(self, ctx):
-        try:
-            ref = ctx.get_ref(self.name)
+        ref = ctx.get_ref(self.name)
+        if ref.is_unresolvable_reference():
+            var_type = 'undefined'
+        else:
             var = ref.get_value()
             var_type = var.type()
-            ctx.stack_append(W_String(var_type))
-        except ThrowException:
-            ctx.stack_append(W_String('undefined'))
-
-#class Typeof(UnaryOp):
-#    def eval(self, ctx):
-#        val = self.expr.eval(ctx)
-#        if isinstance(val, W_Reference) and val.GetBase() is None:
-#            return W_String("undefined")
-#        return W_String(val.GetValue().type())
+        ctx.stack_append(W_String(var_type))
 
 class ADD(BaseBinaryOperation):
     def operation(self, ctx, left, right):
@@ -568,33 +561,39 @@ class THROW(Opcode):
 class TRYCATCHBLOCK(Opcode):
     _stack_change = 0
     def __init__(self, tryfunc, catchparam, catchfunc, finallyfunc):
-        self.tryfunc     = tryfunc
-        self.catchfunc   = catchfunc
+        self.tryexec     = tryfunc
+        self.catchexec   = catchfunc
         self.catchparam  = catchparam
-        self.finallyfunc = finallyfunc
+        self.finallyexec = finallyfunc
 
     def eval(self, ctx):
+        from js.execution import JsException
         try:
-            try:
-                self.tryfunc.run(ctx)
-            except ThrowException, e:
-                if self.catchfunc is not None:
-                    # XXX just copied, I don't know if it's right
-                    from js.jsexecution_context import make_catch_context
-                    newctx = make_catch_context(ctx, self.catchparam, e.exception)
-                    self.catchfunc.run(newctx)
-                if self.finallyfunc is not None:
-                    self.finallyfunc.run(ctx)
-                if not self.catchfunc:
-                    raise
-        except ReturnException:
-            # we run finally block here and re-raise the exception
-            if self.finallyfunc is not None:
-                self.finallyfunc.run(ctx)
-            raise
+            b = self.tryexec.run(ctx)
+        except JsException, e:
+            if self.catchexec is not None:
+                old_env = ctx.lexical_environment()
 
-    #def __repr__(self):
-        #return "TRYCATCHBLOCK" # XXX shall we add stuff here???
+                from js.lexical_environment import DeclarativeEnvironment
+                catch_env = DeclarativeEnvironment(old_env)
+                catch_env_rec = catch_env.environment_record
+                catch_env_rec.create_mutuable_binding(self.catchparam, True)
+                b = e.value
+                catch_env_rec.set_mutable_binding(self.catchparam, b, False)
+                ctx.set_lexical_environment(catch_env)
+                c = self.catchexec.run(ctx)
+                ctx.set_lexical_environment(old_env)
+        else:
+            c = b
+
+        if self.finallyexec is not None:
+            f = self.finallyexec.run(ctx)
+            if f is None:
+                f = c
+        else:
+            f = c
+
+        ctx.stack_append(f)
 
 class NEW(Opcode):
     _stack_change = 0
@@ -651,23 +650,27 @@ class NEXT_ITERATOR(Opcode):
 
 # ---------------- with support ---------------------
 
-class WITH_START(Opcode):
-    _stack_change = 0
-    def __init__(self):
-        self.newctx = None
+class WITH(Opcode):
+    def __init__(self, expr, body):
+        self.expr = expr
+        self.body = body
 
     def eval(self, ctx):
-        from js.lexical_environment import ObjectEnvironment
-        obj = ctx.stack_pop().ToObject()
+        from lexical_environment import ObjectEnvironment
+        # 12.10
+        expr = self.expr.run(ctx)
+        expr_obj = expr.ToObject()
+
         old_env = ctx.lexical_environment()
-        new_env = ObjectEnvironment(obj, outer_environment = old_env)
+        new_env = ObjectEnvironment(expr_obj, outer_environment = old_env)
         new_env.environment_record.provide_this = True
-        ctx._lexical_environment_ = new_env
+        ctx.set_lexical_environment(new_env)
 
-class WITH_END(Opcode):
-    _stack_change = 0
-    def eval(self, ctx):
-        ctx._lexical_environment_ = ctx.lexical_environment().outer_environment
+        try:
+            c = self.body.run(ctx)
+            ctx.stack_append(c)
+        finally:
+            ctx.set_lexical_environment(old_env)
 
 # ------------------ delete -------------------------
 
