@@ -528,7 +528,6 @@ def test_delete(capsys):
     print(x.y);
     """, 'undefined', capsys)
 
-@xfail
 def test_forin(capsys):
     assertp("""
     var x = {a:5};
@@ -537,7 +536,6 @@ def test_forin(capsys):
     }
     """, '5', capsys)
 
-@xfail
 def test_forinvar(capsys):
     assertp("""
     var x = {a:5};
@@ -598,7 +596,6 @@ def test_recursive_call():
     fact(3);
     """, 6)
 
-@xfail
 def test_function_prototype(capsys):
     assertp("""
     function foo() {}; foo.prototype.bar = function() {};
@@ -606,7 +603,10 @@ def test_function_prototype(capsys):
 
 def test_function_this(capsys):
     assertp("""
-    function foo() {print("debug");this.bar = function() {};};
+    function foo() {
+        print("debug");
+        this.bar = function() {};
+    };
     var f = new foo();
     f.bar();
     """, 'debug', capsys)

@@ -92,8 +92,8 @@ class Property(object):
             self.get = getter
         if setter is not None:
             self.setter = setter
-        if writable is not None:
-            self.writable = writable
+        if enumerable is not None:
+            self.enumerable = enumerable
         if configurable is not None:
             self.configurable = configurable
 
@@ -598,12 +598,10 @@ class W_BasicFunction(W_BasicObject):
             obj._prototype_ = W__Object._prototype_
 
 
-        try: #this is a hack to be compatible to spidermonkey
-            self.Call(args, this=obj)
-        except ReturnException, e:
-            result = e.value
-            if isinstance(result, W_BasicObject):
-                return result
+        result = self.Call(args, this=obj)
+        if isinstance(result, W__Object):
+            return result
+
         return obj
 
     def is_callable(self):
@@ -613,6 +611,7 @@ class W_FunctionConstructor(W_BasicFunction):
     def to_string(self):
         return "function Function() { [native code] }"
 
+    # 15.3.2.1
     def Call(self, args = [], this = None, calling_context = None):
         arg_count = len(args)
         p = ''
@@ -710,6 +709,21 @@ class W__Function(W_BasicFunction):
         self._scope_ = scope
         self._params_ = formal_parameter_list
         self._strict_ = strict
+
+        # 13.2 Creating Function Objects
+        # 14.
+        _len = len(formal_parameter_list)
+        # 15.
+        put_property(self, 'length', _w(_len), writable = False, enumerable = False, configurable = False)
+        # 16.
+        proto = W__Object()
+        # 17.
+        put_property(proto, 'constructor', self, writable = True, enumerable = False, configurable = True)
+        # 18.
+        put_property(self, 'prototype', self, writable = True, enumerable = False, configurable = False)
+
+        if strict is True:
+            raise NotImplementedError()
 
     def code(self):
         return self._function_
@@ -1193,12 +1207,23 @@ def newbool(val):
         return w_True
     return w_False
 
-class W_List(object):
+class W_List(W_Root):
     def __init__(self, values):
         self.values = values
 
     def to_list(self):
         return self.values
+
+class W_Iterator(W_Root):
+    def __init__(self, elements_w):
+        self.elements_w = elements_w
+
+    def next(self):
+        if self.elements_w:
+            return self.elements_w.pop()
+
+    def empty(self):
+        return len(self.elements_w) == 0
 
 from pypy.rlib.objectmodel import specialize
 

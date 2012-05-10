@@ -215,17 +215,6 @@ def StrictEC(ctx, x, y):
     return x == y
 
 
-def commonnew(ctx, obj, args):
-    from js.jsobj import W_BasicObject
-    if not isinstance(obj, W_BasicObject):
-        raise ThrowException(W_String('it is not a constructor'))
-    try:
-        res = obj.Construct(args=args)
-        return res
-    except JsTypeError:
-        raise ThrowException(W_String('it is not a constructor'))
-    return res
-
 def uminus(obj, ctx):
     if isinstance(obj, W_IntNumber):
         return W_IntNumber(-obj.ToInteger())

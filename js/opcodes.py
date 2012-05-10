@@ -3,7 +3,7 @@ from js.jsobj import W_IntNumber, W_FloatNumber, W_String,\
      w_True, w_False, w_Null, W_Root, W__Function, _w
 from js.execution import JsTypeError, ReturnException, ThrowException
 from js.baseop import plus, sub, compare, AbstractEC, StrictEC,\
-     compare_e, increment, decrement, commonnew, mult, division, uminus, mod
+     compare_e, increment, decrement, mult, division, uminus, mod
 from pypy.rlib.rarithmetic import intmask
 from pypy.rlib import jit
 
@@ -163,24 +163,15 @@ class LOAD_FUNCTION(Opcode):
     def __init__(self, funcobj):
         self.funcobj = funcobj
 
+    # 13.2 Creating Function Objects
     def eval(self, ctx):
-        #proto = ctx.get_global().Get('Function').Get('prototype')
-        #from js.builtins import get_builtin_prototype
-        #proto = get_builtin_prototype('Function')
-
-        # 13.2 Creating Function Objects
-
+        from js.jsobj import W__Object
         func = self.funcobj
         scope = ctx.lexical_environment()
         params = func.params()
         strict = func.strict
         w_func = W__Function(func, formal_parameter_list = params, scope = scope, strict = strict)
 
-        #w_func = W_CallableObject(ctx, proto, self.funcobj)
-        #w_func.Put('length', W_IntNumber(len(self.funcobj.params)))
-        #w_obj = create_object('Object')
-        #w_obj.Put('constructor', w_func, flags = jsobj.DONT_ENUM)
-        #w_func.Put('prototype', w_obj)
         ctx.stack_append(w_func)
 
     #def __repr__(self):
@@ -595,6 +586,17 @@ class TRYCATCHBLOCK(Opcode):
 
         ctx.stack_append(f)
 
+def commonnew(ctx, obj, args):
+    from js.jsobj import W_BasicObject
+    if not isinstance(obj, W_BasicObject):
+        raise ThrowException(W_String('it is not a constructor'))
+    try:
+        res = obj.Construct(args=args)
+        return res
+    except JsTypeError:
+        raise ThrowException(W_String('it is not a constructor'))
+    return res
+
 class NEW(Opcode):
     _stack_change = 0
     def eval(self, ctx):
@@ -616,22 +618,28 @@ class NEW_NO_ARGS(Opcode):
 class LOAD_ITERATOR(Opcode):
     _stack_change = 0
     def eval(self, ctx):
-        obj = ctx.stack_pop().ToObject()
+        exper_value = ctx.stack_pop()
+        obj = exper_value.ToObject()
         props = []
+
         from js.jsobj import W_BasicObject
         assert isinstance(obj, W_BasicObject)
 
-        for prop in obj._get_property_keys():
-            if not obj._get_property_flags(prop) & jsobj.DONT_ENUM:
-                props.append(obj._get_property_value(prop))
+        for prop in obj._properties_.values():
+            if prop.enumerable is True:
+                props.append(prop.value)
 
-        ctx.stack_append(W_Iterator(props))
+        from js.jsobj import W_Iterator
+        iterator = W_Iterator(props)
+
+        ctx.stack_append(iterator)
 
 class JUMP_IF_ITERATOR_EMPTY(BaseJump):
     def eval(self, ctx):
         pass
 
     def do_jump(self, ctx, pos):
+        from js.jsobj import W_Iterator
         iterator = ctx.stack_top()
         assert isinstance(iterator, W_Iterator)
         if iterator.empty():
@@ -644,9 +652,13 @@ class NEXT_ITERATOR(Opcode):
         self.name = name
 
     def eval(self, ctx):
+        from js.jsobj import W_Iterator
+
         iterator = ctx.stack_top()
         assert isinstance(iterator, W_Iterator)
-        ctx.assign(self.name, iterator.next())
+        next_el = iterator.next()
+        ref = ctx.get_ref(self.name)
+        ref.put_value(next_el)
 
 # ---------------- with support ---------------------
 
