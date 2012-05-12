@@ -6,7 +6,7 @@ js_interactive.py
 
 import sys
 import getopt
-from js.interpreter import load_source, Interpreter, load_file
+from js.interpreter import Interpreter, load_file
 from js.jsparser import parse, ParseError
 from js.jsobj import W_String, w_Undefined, W_Boolean
 from pypy.rlib.streamio import open_file_as_stream
@@ -79,7 +79,7 @@ class JSInterpreter(code.InteractiveConsole):
                     #print repr(res)
                 print res.to_string()
             except JsException, exc:
-                print exc.exception.to_string()
+                self.showtraceback(exc)
         except SystemExit:
             raise
         except JsException, exc:
@@ -89,6 +89,7 @@ class JSInterpreter(code.InteractiveConsole):
                 print
 
     def runsource(self, source, filename="<input>"):
+        from js.astbuilder import parse_to_ast
         """Parse and run source in the interpreter.
 
         One of these cases can happen:
@@ -97,7 +98,7 @@ class JSInterpreter(code.InteractiveConsole):
         3) The input is complete. Executes the source code.
         """
         try:
-            ast = load_source(source, filename)
+            ast = parse_to_ast(str(source))
         except ParseError, exc:
             if exc.source_pos.i == len(source):
                 # Case 2
@@ -113,7 +114,7 @@ class JSInterpreter(code.InteractiveConsole):
 
     def showtraceback(self, exc):
         # XXX format exceptions nicier
-        print exc.exception.to_string()
+        print exc.value.to_string()
 
     def showsyntaxerror(self, filename, exc):
         # XXX format syntax errors nicier

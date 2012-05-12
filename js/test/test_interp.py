@@ -949,3 +949,22 @@ def test_declare_local_var():
 
 def test_empty_function_with_params():
     assertv("x = function(x) { }; x(); false", False)
+
+def test_params_order(capsys):
+    assertp("function f(a, b, c, d) { return print([a, b, c, d]) }; f(1,2,3,4)", "1,2,3,4", capsys);
+    assertp("function f(z, y, x, w) { return print([z, y, x, w]) }; f(1,2,3,4)", "1,2,3,4", capsys);
+    assertp("function f(n, d, e, a) { return print([n, d, e, a]) }; f(1,2,3,4)", "1,2,3,4", capsys);
+
+def test_function_without_implicit_return_value():
+    assertv("""
+    function f(a) {
+        if(a != null)
+            if(true) this.foo(a);
+    }
+    f(null);
+    1;
+    """, 1)
+
+def test_boolean_constructor():
+    assertv("typeof Boolean(true)", 'boolean')
+    assertv("typeof new Boolean(true)", 'object')

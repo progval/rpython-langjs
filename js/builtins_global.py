@@ -120,3 +120,21 @@ def js_eval(ctx):
     ctx = EvalExecutionContext(f, calling_context = calling_context)
     res = f.run(ctx)
     return _w(res)
+
+def js_load(ctx):
+    from js.interpreter import load_file
+    from js.jscode import ast_to_bytecode
+    from js.functions import JsEvalCode
+    from js.execution_context import EvalExecutionContext
+
+    args = ctx.argv()
+    filename = args[0].to_string()
+
+    ast = load_file(filename)
+    symbol_map = ast.symbol_map
+    code = ast_to_bytecode(ast, symbol_map)
+
+    f = JsEvalCode(code)
+    calling_context = ctx._calling_context_
+    ctx = EvalExecutionContext(f, calling_context = calling_context)
+    f.run(ctx)

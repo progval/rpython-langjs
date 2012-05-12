@@ -1,7 +1,12 @@
 from js.jsobj import isnull_or_undefined
 
 def to_string(this, args):
-    return this.to_string()
+    from js.jsobj import W_BasicFunction
+    if not isinstance(this, W_BasicFunction):
+        from js.execution import JsTypeError
+        raise JsTypeError()
+
+    return this._to_string_()
 
 def empty(this, args):
     from js.jsobj import w_Undefined
@@ -9,7 +14,7 @@ def empty(this, args):
 
 # 15.3.4.4 Function.prototype.call
 def call(this, args):
-    pass
+    raise NotImplementedError()
     #if len(args) >= 1:
         #if isnull_or_undefined(args[0]):
             #thisArg = this.ctx.get_global()
@@ -23,7 +28,7 @@ def call(this, args):
 
 # 15.3.4.3 Function.prototype.apply (thisArg, argArray)
 def apply(this, args):
-    pass
+    raise NotImplementedError()
     #try:
         #if isnull_or_undefined(args[0]):
             #thisArg = this.ctx.get_global()

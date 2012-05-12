@@ -45,24 +45,3 @@ import py
 #
 #        ctx = make_global_context()
 #        assert nf.run(ctx, [_w(1), _w(2)]).ToInteger() == 3
-
-class TestJs_Function(object):
-    #def test_run(self):
-        #from js.builtins import load_source
-        #from js.jscode import JsCode
-        #from js.jsexecution_context import make_global_context
-        #from js.jsobj import _w
-
-        #code = """
-        #function f(a, b) {
-            #return a + b;
-        #}
-        #"""
-
-        #bytecode = JsCode()
-        #load_source(code, '').emit(bytecode)
-
-        #f = bytecode.ToJsFunction()
-        #ctx = make_global_context()
-
-        #assert f.run(ctx, [_w(1), _w(2)]).ToInteger() == 3

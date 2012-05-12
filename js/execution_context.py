@@ -177,7 +177,7 @@ class FunctionExecutionContext(ExecutionContext):
 
         if strict:
             self._this_binding_ = this
-        elif isnull_or_undefined(this):
+        elif this is None or isnull_or_undefined(this):
             self._this_binding_ = get_global_object()
         elif this.klass() is not 'Object':
             self._this_binding_ = this.ToObject()

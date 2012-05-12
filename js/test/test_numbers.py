@@ -1,10 +1,10 @@
 
-from js.test.test_interp import assertv
+from js.test.test_interp import assertp
 
-def test_infinity_nan():
-    assertv('1/0', 'Infinity')
-    assertv('0/0', 'NaN')
-    assertv('-1/0', '-Infinity')
+def test_infinity_nan(capsys):
+    assertp('print(1/0)', 'Infinity', capsys)
+    assertp('print(0/0)', 'NaN', capsys)
+    assertp('print(-1/0)', '-Infinity', capsys)
 
-def test_overflow_int_to_float():
-    assertv('1e200', '1e+200')
+def test_overflow_int_to_float(capsys):
+    assertp('print(1e200)', '1e+200', capsys)

@@ -134,7 +134,11 @@ class LOAD_ARRAY(Opcode):
         from js.jsobj import W__Array
         array = W__Array()
         for i in range(self.counter):
-            array.Put(str(self.counter - i - 1), ctx.stack_pop())
+            el = ctx.stack_pop()
+            index = str(self.counter - i - 1)
+            array.put(index, el)
+        length = self.counter
+        array.put('length', _w(length))
         ctx.stack_append(array)
 
     def stack_change(self):
@@ -225,7 +229,7 @@ class IN(BaseBinaryOperation):
 class TYPEOF(BaseUnaryOperation):
     def eval(self, ctx):
         var = ctx.stack_pop()
-        ctx.stack_append(W_String(one.type()))
+        ctx.stack_append(W_String(var.type()))
 
 class TYPEOF_VARIABLE(Opcode):
     def __init__(self, index, name):
@@ -359,9 +363,13 @@ class STORE_MEMBER(Opcode):
     def eval(self, ctx):
         left = ctx.stack_pop()
         member = ctx.stack_pop()
-        value = ctx.stack_pop()
         name = member.to_string()
-        left.ToObject().put(name, value)
+
+        value = ctx.stack_pop()
+
+        l_obj = left.ToObject()
+        l_obj.put(name, value)
+
         ctx.stack_append(value)
 
 class STORE(Opcode):
@@ -589,12 +597,8 @@ class TRYCATCHBLOCK(Opcode):
 def commonnew(ctx, obj, args):
     from js.jsobj import W_BasicObject
     if not isinstance(obj, W_BasicObject):
-        raise ThrowException(W_String('it is not a constructor'))
-    try:
-        res = obj.Construct(args=args)
-        return res
-    except JsTypeError:
-        raise ThrowException(W_String('it is not a constructor'))
+        raise JsTypeError('it is not a constructor')
+    res = obj.Construct(args=args)
     return res
 
 class NEW(Opcode):
@@ -605,13 +609,15 @@ class NEW(Opcode):
         from js.jsobj import W_List
         assert isinstance(y, W_List)
         args = y.to_list()
-        ctx.stack_append(commonnew(ctx, x, args))
+        res = commonnew(ctx, x, args)
+        ctx.stack_append(res)
 
 class NEW_NO_ARGS(Opcode):
     _stack_change = 0
     def eval(self, ctx):
         x = ctx.stack_pop()
-        ctx.stack_append(commonnew(ctx, x, []))
+        res = commonnew(ctx, x, [])
+        ctx.stack_append(res)
 
 # ------------ iterator support ----------------
 

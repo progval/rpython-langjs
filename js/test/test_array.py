@@ -11,3 +11,9 @@ def test_array_pop():
     assertv("var x = [4,3,2,1]; x.pop();", 1)
     assertv("var x = [4,3,2,1]; x.pop(); x.pop(); x.pop(); x.pop();", 4)
     assertv("var x = [4,3,2,1]; x.pop(); x.pop(); x.pop(); x.pop(); x.length", 0)
+
+def test_array_length():
+    assertv("var x = []; x.length;", 0)
+    assertv("var x = [1,2,3]; x.length;", 3);
+    assertv("var x = []; x[0] = 1; x[1] = 2; x[2] = 3; x.length;", 3);
+    assertv("var x = []; x[2] = 3; x.length;", 3);

@@ -45,6 +45,12 @@ class W_Root(object):
     def ToInteger(self):
         return int(self.ToNumber())
 
+    def ToInt32(self):
+        return r_int32(self.ToInteger())
+
+    def ToUInt32(self):
+        return r_uint32(self.ToInteger())
+
     def is_callable(self):
         return False
 
@@ -305,7 +311,7 @@ class W_BasicObject(W_Root):
     def put(self, p, v, throw = False):
         if self.can_put(p) is False:
             if throw is True:
-                raise JsTypeError(self.__class__)
+                raise JsTypeError()
 
         own_desc = self.get_own_property(p)
         if is_data_descriptor(own_desc):
@@ -371,7 +377,9 @@ class W_BasicObject(W_Root):
             return True
 
         if throw is True:
-            raise JsTypeError(self.__class__)
+            raise JsTypeError()
+
+        return False
 
     # 8.12.8
     def default_value(self, hint = 'Number'):
@@ -387,7 +395,8 @@ class W_BasicObject(W_Root):
         if res is not None:
             return res
 
-        raise JsTypeError(self.__class__)
+        import pdb; pdb.set_trace()
+        raise JsTypeError()
 
     def _default_value_string_(self):
         to_string = self.get('toString')
@@ -407,7 +416,7 @@ class W_BasicObject(W_Root):
     def define_own_property(self, p, desc, throw = False):
         def reject():
             if throw:
-                raise JsTypeError(self.__class__)
+                raise JsTypeError()
             else:
                 return False
 
@@ -470,7 +479,7 @@ class W_BasicObject(W_Root):
             else:
                 raise NotImplementedError(self.__class__)
         # 10
-        elif is_data_descriptor(current) and is_data_descriptor(current):
+        elif is_data_descriptor(current) and is_data_descriptor(desc):
             # 10.a
             if current.configurable is False:
                 # 10.a.i
@@ -548,12 +557,7 @@ class W_DateObject(W__PrimitiveObject):
     _class_ = 'Date'
 
 class W__Object(W_BasicObject):
-    def to_string(self):
-        try:
-            res = self.ToPrimitive('String')
-        except JsTypeError:
-            return "[object %s]" % (self.klass() ,)
-        return res.to_string()
+    pass
 
 class W_ObjectConstructor(W_BasicObject):
     def __init__(self):
@@ -584,7 +588,7 @@ class W_BasicFunction(W_BasicObject):
         W_BasicObject.__init__(self)
 
     def Call(self, args = [], this = None, calling_context = None):
-        raise NotImplementedError(self.__class__)
+        raise NotImplementedError("abstract")
 
     # 13.2.2
     def Construct(self, args=[]):
@@ -597,7 +601,6 @@ class W_BasicFunction(W_BasicObject):
             # but I fail to find a case that falls into this
             obj._prototype_ = W__Object._prototype_
 
-
         result = self.Call(args, this=obj)
         if isinstance(result, W__Object):
             return result
@@ -607,8 +610,11 @@ class W_BasicFunction(W_BasicObject):
     def is_callable(self):
         return True
 
+    def _to_string_(self):
+        return 'function() {}'
+
 class W_FunctionConstructor(W_BasicFunction):
-    def to_string(self):
+    def _to_string_(self):
         return "function Function() { [native code] }"
 
     # 15.3.2.1
@@ -667,6 +673,9 @@ class W_NumberConstructor(W_BasicFunction):
     def Construct(self, args=[]):
         return self.Call(args).ToObject()
 
+    def _to_string_(self):
+        return "function Number() { [native code] }"
+
 # 15.5.2
 class W_StringConstructor(W_BasicFunction):
     def Call(self, args = [], this = None, calling_context = None):
@@ -677,6 +686,9 @@ class W_StringConstructor(W_BasicFunction):
 
     def Construct(self, args=[]):
         return self.Call(args).ToObject()
+
+    def _to_string_(self):
+        return "function String() { [native code] }"
 
 # 15.6.2
 class W_BooleanConstructor(W_BasicFunction):
@@ -689,6 +701,9 @@ class W_BooleanConstructor(W_BasicFunction):
     def Construct(self, args=[]):
         return self.Call(args).ToObject()
 
+    def _to_string_(self):
+        return "function Boolean() { [native code] }"
+
 # 15.9.2
 class W_DateConstructor(W_BasicFunction):
     def Call(self, args=[], this=None):
@@ -698,6 +713,9 @@ class W_DateConstructor(W_BasicFunction):
     # 15.7.2.1
     def Construct(self, args=[]):
         return self.Call(args).ToObject()
+
+    def _to_string_(self):
+        return "function Date() { [native code] }"
 
 
 class W__Function(W_BasicFunction):
@@ -724,6 +742,9 @@ class W__Function(W_BasicFunction):
 
         if strict is True:
             raise NotImplementedError()
+
+    def _to_string(self):
+        return self._function_.to_string()
 
     def code(self):
         return self._function_
@@ -765,10 +786,6 @@ class W__Function(W_BasicFunction):
 
     def is_strict(self):
         return self._strict_
-
-class W_Eval(W_BasicFunction):
-    def Call(self, args = [], this = None, calling_context = None):
-        raise NotImplementedError()
 
 # 10.6
 class W_Arguments(W_BasicObject):
@@ -874,7 +891,7 @@ class W__Array(W_BasicObject):
 
         old_len_desc = self.get_own_property('length')
         assert old_len_desc is not w_Undefined
-        old_len = old_len_desc.value
+        old_len = old_len_desc.value.ToUInt32()
 
         # 3
         if p == 'length':
@@ -932,7 +949,7 @@ class W__Array(W_BasicObject):
         # 4
         elif is_array_index(p):
             # a
-            index = p.ToUInt32()
+            index = r_uint32(int(p))
             # b
             if index >= old_len and old_len_desc.writable is False:
                 return reject()
@@ -954,7 +971,12 @@ class W__Array(W_BasicObject):
         return W_BasicObject.define_own_property(self, p, desc, throw)
 
 def is_array_index(p):
-    return (isinstance(p, W_Number) or isinstance(p, W_NumericObject)) and str(p.ToUInt32()) == p
+    try:
+        return str(r_uint32(int(p))) == p
+    except ValueError:
+        return False
+
+    #return (isinstance(p, W_Number) or isinstance(p, W_NumericObject)) and str(p.ToUInt32()) == p
 
     #def set_length(self, newlength):
         #if newlength < self.length:
@@ -1083,12 +1105,6 @@ class W_Number(W_Primitive):
         if isnan(num):
             return False
         return bool(num)
-
-    def ToInt32(self):
-        return r_int32(self.ToInteger())
-
-    def ToUInt32(self):
-        return r_uint32(self.ToInteger())
 
     def __eq__(self, other):
         if isinstance(other, W_Number):

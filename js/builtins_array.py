@@ -3,17 +3,17 @@ from js.jsobj import isnull_or_undefined, _w, w_Undefined
 # 15.4.4.7
 def push(this, args):
     o = this.ToObject()
-    lenVal = o.Get('length')
-    n = lenVal.ToUInt32()
+    len_val = o.get('length')
+    n = len_val.ToUInt32()
 
     for item in args:
         e = item
-        o.Put(str(n), e)
+        o.put(str(n), e, True)
         n = n + 1
 
-    o.set_length(n)
+    o.put('length', _w(n), True)
 
-    return o
+    return n
 
 # 15.4.4.2
 def to_string(this, args):
@@ -60,24 +60,24 @@ def join(this, args):
 # 15.4.4.6
 def pop(this, args):
     o = this.ToObject()
-    lenVal = o.Get('length')
+    lenVal = o.get('length')
     l = lenVal.ToUInt32()
 
     if l == 0:
-        o.Put('length', _w(0))
+        o.put('length', _w(0))
         return w_Undefined
     else:
         indx = l - 1
         indxs = str(indx)
-        element = o.Get(indxs)
-        o.Delete(indxs)
-        o.Put('length', _w(indx))
+        element = o.get(indxs)
+        o.delete(indxs, True)
+        o.put('length', _w(indx))
         return element
 
 # 15.4.4.8
 def reverse(this, args):
     o = this.ToObject()
-    length = o.Get('length').ToUInt32()
+    length = o.ret('length').ToUInt32()
 
     import math
     middle = math.floor(length/2)
@@ -87,20 +87,20 @@ def reverse(this, args):
         upper = length - lower - 1
         lowerP = str(lower)
         upperP = str(upper)
-        lowerValue = o.Get(lowerP)
-        upperValue = o.Get(upperP)
+        lowerValue = o.ret(lowerP)
+        upperValue = o.ret(upperP)
         lowerExists = o.HasProperty(lowerP)
         upperExists = o.HasProperty(upperP)
 
         if lowerExists is True and upperExists is True:
-            o.Put(lowerP, upperValue)
-            o.Put(upperP, lowerValue)
+            o.put(lowerP, upperValue)
+            o.put(upperP, lowerValue)
         elif lowerExists is False and upperExists is True:
-            o.Put(lowerP, upperValue)
-            o.Delete(upperP)
+            o.put(lowerP, upperValue)
+            o.delete(upperP)
         elif lowerExists is True and upperExists is False:
-            o.Delete(lowerP)
-            o.Put(upperP, lowerValue)
+            o.delete(lowerP)
+            o.put(upperP, lowerValue)
 
         lower = lower + 1
 

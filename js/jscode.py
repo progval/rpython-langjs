@@ -41,10 +41,10 @@ class JsCode(object):
         self._symbols = symbol_map
 
     def variables(self):
-        return self._symbols.variables.keys()
+        return self._symbols.variables
 
     def functions(self):
-        return self._symbols.functions.keys()
+        return self._symbols.functions
 
     def index_for_symbol(self, symbol):
         return self._symbols.get_index(symbol)
@@ -56,7 +56,7 @@ class JsCode(object):
         return self._symbols.get_symbol(index)
 
     def params(self):
-        return self._symbols.parameters.keys()
+        return self._symbols.parameters
 
     @jit.elidable
     def estimated_stack_size(self):
@@ -161,14 +161,13 @@ class JsCode(object):
 
     def to_function_opcodes(self):
         self.unlabel()
-        self.unpop_or_undefined()
+        #self.unpop_or_undefined()
+        self.emit('LOAD_UNDEFINED')
         return self.opcodes
 
     def to_global_opcodes(self):
-        #import pdb; pdb.set_trace()
         self.unlabel()
         self.unpop_or_undefined()
-        #self.unpop()
         return self.opcodes
 
     def to_executable_opcodes(self):

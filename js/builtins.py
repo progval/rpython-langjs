@@ -1,7 +1,5 @@
 from js.jsobj import w_Undefined, W_IntNumber, w_Null, W_Boolean,\
-     W_FloatNumber, W_String, newbool,\
-     isnull_or_undefined, W_Number,\
-     DONT_DELETE, DONT_ENUM, READ_ONLY, INTERNAL, _w
+     W_FloatNumber, W_String, newbool, isnull_or_undefined, W_Number, _w
 from js.execution import ThrowException, JsTypeError
 
 from js.jsparser import parse, ParseError
@@ -13,166 +11,8 @@ from pypy.rlib.listsort import TimSort
 from pypy.rlib.rarithmetic import r_uint
 from pypy.rlib.rfloat import NAN, INFINITY
 from pypy.rlib.objectmodel import we_are_translated
-from pypy.rlib.streamio import open_file_as_stream
 
 from pypy.rlib import jit
-
-@jit.dont_look_inside
-def eval_source(script_source, sourcename):
-    temp_tree = parse(script_source)
-    builder = make_eval_ast_builder()
-    return builder.dispatch(temp_tree)
-
-@jit.dont_look_inside
-def load_source(script_source, sourcename):
-    temp_tree = parse(script_source)
-    builder = make_ast_builder()
-    return builder.dispatch(temp_tree)
-
-def load_file(filename):
-    f = open_file_as_stream(filename)
-    t = load_source(f.readall(), filename)
-    f.close()
-    return t
-
-def make_loadjs(interp):
-    def f(this, args):
-        filename = str(args[0].ToString())
-        t = load_file(filename)
-        interp.run(t)
-        return w_Undefined
-    return f
-
-# 15.1.2.1
-from js.jsobj import W_BasicFunction
-class W__Eval(W_BasicFunction):
-    def ToString(self):
-        return "function eval() { [native code] }"
-
-    def Call(self, args=[], this=None):
-        if len(args) == 0:
-            return w_Undefined
-
-        arg0 = args[0]
-        if  not isinstance(arg0, W_String):
-            return arg0
-
-        src = arg0.ToString()
-        try:
-            node = eval_source(src, 'evalcode')
-        except ParseError, e:
-            raise ThrowException(W_String('SyntaxError: '+str(e)))
-
-        bytecode = JsCode()
-        node.emit(bytecode)
-        func = bytecode.make_js_function()
-        return func.run(self._context_)
-
-#class W_HasOwnProperty(W_NewBuiltin):
-    #def Call(self, args=[], this=None):
-        #if len(args) >= 1:
-            #propname = args[0].ToString()
-            #if propname in self._get_property_keys():
-                #return newbool(True)
-        #return newbool(False)
-
-#class W_IsPrototypeOf(W_NewBuiltin):
-    #def Call(self, args=[], this=None):
-        #w_obj = args[0]
-        #if len(args) >= 1 and isinstance(w_obj, W_PrimitiveObject):
-            #O = this
-            #assert isinstance(w_obj, W_PrimitiveObject)
-            #V = w_obj.Prototype
-            #while V is not None:
-                #if O == V:
-                    #return newbool(True)
-                #assert isinstance(V, W_PrimitiveObject)
-                #V = V.Prototype
-        #return newbool(False)
-
-#class W_PropertyIsEnumerable(W_NewBuiltin):
-    #def Call(self, args=[], this=None):
-        #if len(args) >= 1:
-            #propname = args[0].ToString()
-            #if self._has_property(propname) and not self._get_property_flags(propname) & DONT_ENUM:
-                #return newbool(True)
-        #return newbool(False)
-
-#class W_Function(W_NewBuiltin):
-    #def __init__(self, ctx, Prototype=None, Class='function', Value=w_Undefined):
-        #W_NewBuiltin.__init__(self, Prototype, Class, Value)
-        #self.ctx = ctx
-
-    #def Call(self, args=[], this=None):
-        #tam = len(args)
-        #if tam >= 1:
-            #fbody  = args[tam-1].ToString()
-            #argslist = []
-            #for i in range(tam-1):
-                #argslist.append(args[i].ToString())
-            #fargs = ','.join(argslist)
-            #functioncode = "function (%s) {%s}"%(fargs, fbody)
-        #else:
-            #functioncode = "function () {}"
-        ##remove program and sourcelements node
-        #funcnode = parse(functioncode).children[0].children[0]
-        #builder = make_ast_builder()
-        #ast = builder.dispatch(funcnode)
-        #bytecode = JsCode()
-        #ast.emit(bytecode)
-        #func = bytecode.make_js_function()
-        #return func.run(self.ctx)
-
-    #def Construct(self, args=[]):
-        #return self.Call(args, this=None)
-
-#functionstring= 'function (arguments go here!) {\n'+ \
-                #'    [lots of stuff :)]\n'+ \
-                #'}'
-#class W_FToString(W_NewBuiltin):
-    #def Call(self, args=[], this=None):
-        #from js.jsobj import W__Function
-        #if isinstance(this, W_PrimitiveObject):
-            #if this.Class == 'Function':
-                #return W_String(functionstring)
-        #if isinstance(this, W__Function):
-            #return W_String(functionstring)
-
-        #raise JsTypeError('this is not a function object')
-
-#class W_ValueToString(W_NewBuiltin):
-    #"this is the toString function for objects with Value"
-    #mytype = ''
-    #def Call(self, args=[], this=None):
-        #assert isinstance(this, W_PrimitiveObject)
-        #if this.Value.type() != self.mytype:
-            #raise JsTypeError('Wrong type')
-        #return W_String(this.Value.ToString())
-
-#class W_NumberValueToString(W_ValueToString):
-    #mytype = 'number'
-
-#class W_BooleanValueToString(W_ValueToString):
-    #mytype = 'boolean'
-
-#class W_StringValueToString(W_ValueToString):
-    #mytype = 'string'
-
-#class W_NativeObject(W_Object):
-    #def __init__(self, Class, Prototype, Value=w_Undefined):
-        #W_Object.__init__(self, Prototype, Class, Value)
-
-#@specialize.memo()
-#def get_value_of(type):
-    #class W_ValueValueOf(W_NewBuiltin):
-        #"this is the valueOf function for objects with Value"
-        #def Call(self, args=[], this=None):
-            #assert isinstance(this, W_PrimitiveObject)
-            #if type != this.Class:
-                #raise JsTypeError('%s.prototype.valueOf called with incompatible type' % self.type())
-            #return this.Value
-    #return W_ValueValueOf
-
 
 class Sorter(TimSort):
     def __init__(self, list, listlength=None, compare_fn=None):
@@ -184,83 +24,6 @@ class Sorter(TimSort):
             result = self.compare_fn.Call([a, b]).ToInt32()
             return result == -1
         return a.ToString() < b.ToString()
-
-#class W_ObjectObject(W_NativeObject):
-    #def __init__(self, Class, Prototype, Value=w_Undefined):
-        #W_NativeObject.__init__(self, Class, Prototype, Value)
-
-    #def Call(self, args=[], this=None):
-        #if len(args) >= 1 and not isnull_or_undefined(args[0]):
-            #return args[0].ToObject()
-        #else:
-            #return self.Construct()
-
-    #def Construct(self, args=[]):
-        #if (len(args) >= 1 and not args[0] is w_Undefined and not args[0] is w_Null):
-            ## XXX later we could separate builtins and normal objects
-            #return args[0].ToObject()
-        #return create_object('Object')
-
-#class W_BooleanObject(W_NativeObject):
-    #def Call(self, args=[], this=None):
-        #if len(args) >= 1 and not isnull_or_undefined(args[0]):
-            #return newbool(args[0].ToBoolean())
-        #else:
-            #return newbool(False)
-
-    #def Construct(self, args=[]):
-        #if len(args) >= 1 and not isnull_or_undefined(args[0]):
-            #Value = newbool(args[0].ToBoolean())
-            #return create_object('Boolean', Value = Value)
-        #return create_object('Boolean', Value = newbool(False))
-
-#class W_NumberObject(W_NativeObject):
-    #def Call(self, args=[], this=None):
-        #if len(args) >= 1 and not isnull_or_undefined(args[0]):
-            #return W_FloatNumber(args[0].ToNumber())
-        #elif len(args) >= 1 and args[0] is w_Undefined:
-            #return W_FloatNumber(NAN)
-        #else:
-            #return W_FloatNumber(0.0)
-
-    #def ToNumber(self):
-        #return 0.0
-
-    #def Construct(self, args=[]):
-        #if len(args) >= 1 and not isnull_or_undefined(args[0]):
-            #Value = W_FloatNumber(args[0].ToNumber())
-            #return create_object('Number', Value = Value)
-        #return create_object('Number', Value = W_FloatNumber(0.0))
-
-#class W_StringObject(W_NativeObject):
-    #length = 1
-    #def Call(self, args=[], this=None):
-        #if len(args) >= 1:
-            #return W_String(args[0].ToString())
-        #else:
-            #return W_String('')
-
-    #def Construct(self, args=[]):
-        #if len(args) >= 1:
-            #Value = W_String(args[0].ToString())
-        #else:
-            #Value = W_String('')
-        #return Value.ToObject()
-
-#class W_ArrayObject(W_NativeObject):
-    #def __init__(self, Class, Prototype):
-        #W_NativeObject.__init__(self, Class, Prototype, None )
-
-    #def Call(self, args=[], this=None):
-        #if len(args) == 1 and isinstance(args[0], W_Number):
-            #array = create_array()
-            #array.Put('length', args[0])
-        #else:
-            #array = create_array(args)
-        #return array
-
-    #def Construct(self, args=[]):
-        #return self.Call(args)
 
 def new_native_function(function, name = None):
     from js.functions import JsNativeFunction
@@ -276,24 +39,25 @@ def native_function(func):
         return _w(func(*args))
     return f
 
+def put_native_function(obj, name, func, writable = False, configurable = False, enumerable = False):
+    jsfunc = new_native_function(func, name)
+    put_property(obj, name, jsfunc, writable = writable, configurable = configurable, enumerable = enumerable)
+
+def put_intimate_function(obj, name, func, writable = False, configurable = False, enumerable = False):
+    from js.functions import JsIntimateFunction
+    from js.jsobj import W__Function
+
+    scope = None
+    jsfunc = JsIntimateFunction(native_function(func), name)
+    w_func = W__Function(jsfunc)
+    put_property(obj, name, w_func, writable = writable, configurable = configurable, enumerable = enumerable)
+
+# 15
+def put_property(obj, name, value, writable = True, configurable = False, enumerable = True):
+    from js.jsobj import put_property as _put_property
+    _put_property(obj, name, value, writable, configurable, enumerable)
+
 def setup_builtins(global_object):
-    def put_native_function(obj, name, func, writable = False, configurable = False, enumerable = False):
-        jsfunc = new_native_function(func, name)
-        put_property(obj, name, jsfunc, writable = writable, configurable = configurable, enumerable = enumerable)
-
-    def put_intimate_function(obj, name, func, writable = False, configurable = False, enumerable = False):
-        from js.functions import JsIntimateFunction
-        from js.jsobj import W__Function
-
-        scope = None
-        jsfunc = JsIntimateFunction(native_function(func), name)
-        w_func = W__Function(jsfunc)
-        put_property(obj, name, w_func, writable = writable, configurable = configurable, enumerable = enumerable)
-
-    # 15
-    def put_property(obj, name, value, writable = True, configurable = False, enumerable = True):
-        from js.jsobj import put_property as _put_property
-        _put_property(obj, name, value, writable, configurable, enumerable)
 
     # Forward declaration
     # 15.2.3
@@ -321,9 +85,10 @@ def setup_builtins(global_object):
     w_FunctionPrototype._prototype_ = w_ObjectPrototype
 
     # initial prototype
-    from js.jsobj import W__Object, W__Function
+    from js.jsobj import W__Object, W__Function, W_BasicFunction
     W__Object._prototype_ = w_ObjectPrototype
     W__Function._prototype_ = w_FunctionPrototype
+    W_BasicFunction._prototype_ = w_FunctionPrototype
 
     # 15.2 Object Objects
     # 15.2.3 Properties of the Object Constructor
@@ -379,6 +144,7 @@ def setup_builtins(global_object):
     from js.jsobj import W_BooleanObject
     w_BooleanPrototype = W_BooleanObject(False)
     w_BooleanPrototype._prototype_ = W__Object._prototype_
+    put_property(w_BooleanPrototype, '__proto__', w_BooleanPrototype._prototype_, writable = False, enumerable = False, configurable = False)
 
     # 15.6.3.1
     put_property(w_Boolean, 'prototype', w_BooleanPrototype, writable = False, enumerable = False, configurable = False)
@@ -616,4 +382,4 @@ def setup_builtins(global_object):
         put_native_function(global_object, 'pypy_repr', global_builtins.pypy_repr)
         put_native_function(global_object, 'inspect', global_builtins.inspect)
 
-    #put_native_function(global_object, 'load', make_loadjs(interp))
+    put_intimate_function(global_object, 'load', global_builtins.js_load)

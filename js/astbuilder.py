@@ -8,98 +8,12 @@ from js.object_map import ROOT_MAP
 def _get_root_map():
     return ROOT_MAP
 
-#class Scope(object):
-#    _immutable_fields_ = ['local_variables']
-#    def __init__(self):
-#        self.local_variables = ROOT_MAP
-#        self.declared_variables = []
-#
-#    def __repr__(self):
-#        return '%s: %s; %s' % (object.__repr__(self), repr(self.local_variables), repr(self.declared_variables))
-#
-#    def add_local(self, identifier):
-#        if not self.is_local(identifier):
-#            self.local_variables = self.local_variables.add(identifier)
-#
-#    def declare_local(self, identifier):
-#        if not self.is_local(identifier):
-#            self.add_local(identifier)
-#            if not identifier in self.declared_variables:
-#                self.declared_variables.append(identifier)
-#
-#    def is_local(self, identifier):
-#        return self.local_variables.lookup(identifier) != self.local_variables.NOT_FOUND
-#
-#    def get_local(self, identifier):
-#        idx = self.local_variables.lookup(identifier)
-#        if idx == self.local_variables.NOT_FOUND:
-#            raise ValueError
-#        return idx
-
-#class GlobalScope(Scope):
-#    def add_local(self, identifier):
-#        pass
-#
-#    def declare_local(self, identifier):
-#        if not identifier in self.declared_variables:
-#            self.declared_variables.append(identifier)
-#
-#    def is_local(self, identifier):
-#        return False
-#
-#    def get_local(self, identifier):
-#        raise ValueError
-#
-#class EvalScope(GlobalScope):
-#    def declare_local(self, identifier):
-#        pass
-
-#class Scopes(object):
-#    def __init__(self):
-#        self._scopes = []
-#        self._scopes.append(GlobalScope())
-#
-#    def current_scope(self):
-#        if not self._scopes:
-#            return None
-#        else:
-#            return self._scopes[-1]
-#
-#    def new_scope(self):
-#        self._scopes.append(Scope())
-#
-#    def end_scope(self):
-#        self._scopes.pop()
-#
-#    def declarations(self):
-#        if self.scope_present():
-#            return self.current_scope().declared_variables
-#        else:
-#            return []
-#
-#    def is_local(self, identifier):
-#        return self.scope_present() == True and self.current_scope().is_local(identifier) == True
-#
-#    def scope_present(self):
-#        return self.current_scope() is not None
-#
-#    def add_local(self, identifier):
-#        if self.scope_present():
-#            self.current_scope().add_local(identifier)
-#
-#    def declare_local(self, identifier):
-#        if self.scope_present():
-#            self.current_scope().declare_local(identifier)
-#
-#    def get_local(self, identifier):
-#        return self.current_scope().get_local(identifier)
-
 class SymbolMap(object):
     def __init__(self):
-        self.functions = {}
-        self.variables = {}
         self.symbols = {}
-        self.parameters = {}
+        self.functions = []
+        self.variables = []
+        self.parameters = []
         self.next_index = 0
 
     def add_symbol(self, identifyer):
@@ -113,21 +27,21 @@ class SymbolMap(object):
         idx = self.add_symbol(identifyer)
 
         if identifyer not in self.variables:
-            self.variables[identifyer] = idx
+            self.variables.append(identifyer)
         return idx
 
     def add_function(self, identifyer):
         idx = self.add_symbol(identifyer)
 
         if identifyer not in self.functions:
-            self.functions[identifyer] = idx
+            self.functions.append(identifyer)
         return idx
 
     def add_parameter(self, identifyer):
         idx = self.add_symbol(identifyer)
 
         if identifyer not in self.parameters:
-            self.parameters[identifyer] = idx
+            self.parameters.append(identifyer)
         return idx
 
     def get_index(self, identifyer):
@@ -232,10 +146,10 @@ class ASTBuilder(RPythonVisitor):
         #print 'closing scope, returning to %d' % (self.depth, )
 
     def current_scope_variables(self):
-        return self.current_scope().variables.keys()
+        return self.current_scope().variables
 
     def current_scope_parameters(self):
-        return self.current_scope().parameters.keys()
+        return self.current_scope().parameters
 
     def current_scope(self):
         try:

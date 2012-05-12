@@ -26,8 +26,8 @@ class StackMixin(object):
         return self.stack[i]
 
     def append(self, element):
-        from js.jsobj import W___Root
-        assert isinstance(element, W___Root)
+        from js.jsobj import W_Root
+        assert isinstance(element, W_Root)
         i = self.stack_pointer
         assert i >= 0
         self.stack[i] = element

@@ -1,17 +1,25 @@
-from js.astbuilder import make_ast_builder, make_eval_ast_builder
 from js.jscode import JsCode
 
 from pypy.rlib.objectmodel import we_are_translated
+from pypy.rlib.streamio import open_file_as_stream
 
 import js.builtins
 
-TEST = False
-
-def load_source(script_source, sourcename):
-    return js.builtins.load_source(script_source, sourcename)
-
 def load_file(filename):
-    return js.builtins.load_file(filename)
+    from js.astbuilder import parse_to_ast
+
+    f = open_file_as_stream(filename)
+    src = f.readall()
+    ast = parse_to_ast(src)
+    f.close()
+    return ast
+
+def add_interpreter_builtins(global_object):
+    from js.builtins import new_native_function, native_function, put_native_function
+    def trace(this, args):
+        import pdb; pdb.set_trace()
+
+    put_native_function(global_object, 'trace', trace)
 
 class Interpreter(object):
     """Creates a js interpreter"""
@@ -20,6 +28,7 @@ class Interpreter(object):
         self.global_object = W_BasicObject()
         from js.builtins import setup_builtins
         setup_builtins(self.global_object)
+        add_interpreter_builtins(self.global_object)
 
     def run_ast(self, ast):
         symbol_map = ast.symbol_map
