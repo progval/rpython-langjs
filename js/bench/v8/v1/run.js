@@ -28,8 +28,8 @@
 
 load('base.js');
 load('looping.js');
-//load('richards.js');
-//load('deltablue.js');
+load('richards.js');
+load('deltablue.js');
 //load('crypto.js');
 //load('raytrace.js');
 //load('earley-boyer.js');

@@ -352,11 +352,11 @@ class NE(BaseBinaryComparison):
 
 class IS(BaseBinaryComparison):
     def decision(self, ctx, op1, op2):
-        return newbool(StrictEC(ctx, op1, op2))
+        return newbool(StrictEC(op1, op2))
 
 class ISNOT(BaseBinaryComparison):
     def decision(self, ctx, op1, op2):
-        return newbool(not StrictEC(ctx, op1, op2))
+        return newbool(not StrictEC(op1, op2))
 
 class STORE_MEMBER(Opcode):
     _stack_change = 0
@@ -520,10 +520,12 @@ def common_call(ctx, r1, args, this, name):
     # TODO
     from js.jsobj import W_BasicFunction, W_BasicObject
     if not (isinstance(r1, W_BasicFunction) or isinstance(r1, W_BasicObject)):
+        #import pdb; pdb.set_trace()
         raise ThrowException(W_String("%s is not a callable (%s)"%(r1.to_string(), name.to_string())))
     #jit.promote(r1)
     #try:
-    res = r1.Call(args = args.to_list(), this = this, calling_context = ctx)
+    argv = args.to_list()
+    res = r1.Call(args = argv, this = this, calling_context = ctx)
     #except JsTypeError:
         #raise ThrowException(W_String("%s is not a function (%s)"%(r1.to_string(), name.to_string())))
     return res
@@ -534,7 +536,8 @@ class CALL(Opcode):
         r1 = ctx.stack_pop()
         args = ctx.stack_pop()
         this = ctx.this_binding()
-        ctx.stack_append(common_call(ctx, r1, args, this, r1))
+        res = common_call(ctx, r1, args, this, r1)
+        ctx.stack_append(res)
 
 class CALL_METHOD(Opcode):
     _stack_change = -2
@@ -544,7 +547,8 @@ class CALL_METHOD(Opcode):
         args = ctx.stack_pop()
         name = method.to_string()
         r1 = what.get(name)
-        ctx.stack_append(common_call(ctx, r1, args, what, method))
+        res = common_call(ctx, r1, args, what, method)
+        ctx.stack_append(res)
 
 class DUP(Opcode):
     def eval(self, ctx):
@@ -596,6 +600,7 @@ class TRYCATCHBLOCK(Opcode):
 
 def commonnew(ctx, obj, args):
     from js.jsobj import W_BasicObject
+
     if not isinstance(obj, W_BasicObject):
         raise JsTypeError('it is not a constructor')
     res = obj.Construct(args=args)
@@ -604,9 +609,10 @@ def commonnew(ctx, obj, args):
 class NEW(Opcode):
     _stack_change = 0
     def eval(self, ctx):
+        from js.jsobj import W_List
+
         y = ctx.stack_pop()
         x = ctx.stack_pop()
-        from js.jsobj import W_List
         assert isinstance(y, W_List)
         args = y.to_list()
         res = commonnew(ctx, x, args)

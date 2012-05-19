@@ -48,7 +48,7 @@ class JSTestFile(pytest.File):
             try:
                 return js_eval(ctx)
             except JsException:
-                return "error"
+                return _w("error")
 
         global_object = interp.global_object
         del(global_object._properties_['eval'])

@@ -1,7 +1,7 @@
 # encoding: utf-8
 from pypy.rpython.lltypesystem import rffi
 from pypy.rlib.rarithmetic import r_uint, intmask, ovfcheck_float_to_int
-from pypy.rlib.rfloat import isnan, isinf, NAN, formatd
+from pypy.rlib.rfloat import isnan, isinf, NAN, formatd, INFINITY
 from js.execution import JsTypeError, JsRangeError, ReturnException
 
 from pypy.rlib.jit import hint
@@ -43,16 +43,49 @@ class W_Root(object):
         return 0.0
 
     def ToInteger(self):
-        return int(self.ToNumber())
+        num = self.ToNumber()
+        if num == NAN:
+            return 0
+        if num == INFINITY or num == -INFINITY:
+            return num
+
+        return int(num)
 
     def ToInt32(self):
-        return r_int32(self.ToInteger())
+        num = self.ToInteger()
+        if num == NAN or num == INFINITY or num == -INFINITY:
+            return 0
+
+        return r_int32(num)
 
     def ToUInt32(self):
-        return r_uint32(self.ToInteger())
+        num = self.ToInteger()
+        if num == NAN or num == INFINITY or num == -INFINITY:
+            return 0
+        return r_uint32(num)
+
+    def ToInt16(self):
+        def sign(i):
+            if i > 0:
+                return 1
+            if i < 0:
+                return -1
+            return 0
+
+        num = self.ToInteger()
+        if num == NAN or num == INFINITY or num == -INFINITY:
+            return 0
+
+        import math
+        pos_int = sign(num) * math.floor(abs(num))
+        int_16_bit = pos_int % math.pow(2, 16)
+        return int(int_16_bit)
 
     def is_callable(self):
         return False
+
+    def check_object_coercible(self):
+        pass
 
 class W_Primitive(W_Root):
     pass
@@ -68,6 +101,9 @@ class W_Undefined(W_Primitive):
     def to_string(self):
         return self._type_
 
+    def check_object_coercible(self):
+        raise JsTypeError()
+
 class W_Null(W_Primitive):
     _type_ = 'null'
 
@@ -76,6 +112,9 @@ class W_Null(W_Primitive):
 
     def to_string(self):
         return self._type_
+
+    def check_object_coercible(self):
+        raise JsTypeError()
 
 w_Undefined = W_Undefined()
 w_Null = W_Null()
@@ -237,12 +276,15 @@ class W_BasicObject(W_Root):
     #_immutable_fields_ = ['_class_', '_prototype_', '_primitive_value_']
     _type_ = 'object'
     _class_ = 'Object'
-    _prototype_ = w_Undefined
+    _prototype_ = w_Null
     _extensible_ = True
 
     def __init__(self):
         W_Root.__init__(self)
         self._properties_ = {}
+
+        desc = PropertyDescriptor(value = self._prototype_, writable = False, enumerable = False, configurable = False)
+        W_BasicObject.define_own_property(self, '__proto__', desc)
 
     def __repr__(self):
         return "%s: %s" % (object.__repr__(self), self.klass())
@@ -302,7 +344,7 @@ class W_BasicObject(W_Root):
             return prop
         proto = self.prototype()
 
-        if proto is w_Undefined:
+        if proto is w_Null:
             return w_Undefined
 
         return proto.get_property(p)
@@ -312,15 +354,17 @@ class W_BasicObject(W_Root):
         if self.can_put(p) is False:
             if throw is True:
                 raise JsTypeError()
+            else:
+                return
 
         own_desc = self.get_own_property(p)
-        if is_data_descriptor(own_desc):
+        if is_data_descriptor(own_desc) is True:
             value_desc = PropertyDescriptor(value = v)
             self.define_own_property(p, value_desc, throw)
             return
 
         desc = self.get_property(p)
-        if is_accessor_descriptor(desc):
+        if is_accessor_descriptor(desc) is True:
             setter = desc.setter
             assert setter is not None
             # setter.call(this = self, v)
@@ -333,7 +377,7 @@ class W_BasicObject(W_Root):
     def can_put(self, p):
         desc = self.get_own_property(p)
         if desc is not w_Undefined:
-            if is_accessor_descriptor(desc):
+            if is_accessor_descriptor(desc) is True:
                 if desc.setter is w_Undefined:
                     return False
                 else:
@@ -349,7 +393,7 @@ class W_BasicObject(W_Root):
         if inherited is w_Undefined:
             return self.extensible()
 
-        if is_accessor_descriptor(inherited):
+        if is_accessor_descriptor(inherited) is True:
             if inherited.setter is w_Undefined:
                 return False
             else:
@@ -395,7 +439,6 @@ class W_BasicObject(W_Root):
         if res is not None:
             return res
 
-        import pdb; pdb.set_trace()
         raise JsTypeError()
 
     def _default_value_string_(self):
@@ -559,6 +602,9 @@ class W_DateObject(W__PrimitiveObject):
 class W__Object(W_BasicObject):
     pass
 
+class W_GlobalObject(W__Object):
+    _class_ = 'global'
+
 class W_ObjectConstructor(W_BasicObject):
     def __init__(self):
         W_BasicObject.__init__(self)
@@ -583,9 +629,6 @@ class W_BasicFunction(W_BasicObject):
     _class_ = 'Function'
     _type_ = 'function'
     #_immutable_fields_ = ['_context_']
-
-    def __init__(self):
-        W_BasicObject.__init__(self)
 
     def Call(self, args = [], this = None, calling_context = None):
         raise NotImplementedError("abstract")
@@ -624,7 +667,7 @@ class W_FunctionConstructor(W_BasicFunction):
         if arg_count == 0:
             body = ''
         elif arg_count == 1:
-            body = args[0]
+            body = args[0].to_string()
         else:
             first_arg = args[0]
             p = first_arg.to_string()
@@ -633,9 +676,8 @@ class W_FunctionConstructor(W_BasicFunction):
                 next_arg = args[k-1]
                 p = "%s, %s" % (p, next_arg.to_string())
                 k = k + 1
-            body = args[k-1]
+            body = args[k-1].to_string()
 
-        body = body.to_string()
         src = "function (%s) { %s }" % (p, body)
 
         from js.astbuilder import parse_to_ast
@@ -734,14 +776,18 @@ class W__Function(W_BasicFunction):
         # 15.
         put_property(self, 'length', _w(_len), writable = False, enumerable = False, configurable = False)
         # 16.
-        proto = W__Object()
+        proto_obj = W__Object()
         # 17.
-        put_property(proto, 'constructor', self, writable = True, enumerable = False, configurable = True)
+        put_property(proto_obj, 'constructor', self, writable = True, enumerable = False, configurable = True)
         # 18.
-        put_property(self, 'prototype', self, writable = True, enumerable = False, configurable = False)
+        put_property(self, 'prototype', proto_obj, writable = True, enumerable = False, configurable = False)
 
         if strict is True:
             raise NotImplementedError()
+        else:
+            put_property(self, 'caller', w_Null, writable = True, enumerable = False, configurable = False)
+            put_property(self, 'arguments', w_Null, writable = True, enumerable = False, configurable = False)
+
 
     def _to_string(self):
         return self._function_.to_string()
@@ -777,9 +823,6 @@ class W__Function(W_BasicFunction):
         if p is 'caller' and isinstance(v, W__Function) and v.is_strict():
             raise JsTypeError()
         return v
-
-    def to_string(self):
-        return self._function_.to_string()
 
     def scope(self):
         return self._scope_
@@ -856,7 +899,7 @@ def make_arg_setter(name, env):
     code = '%s = %s;' % (name, param)
     pass
 
-class W_ArrayConstructor(W_BasicObject):
+class W_ArrayConstructor(W_BasicFunction):
     def is_callable(self):
         return True
 
@@ -866,7 +909,7 @@ class W_ArrayConstructor(W_BasicObject):
         else:
             array = W__Array()
             for index, obj in enumerate(args):
-                array.Put(str(index), obj)
+                array.put(str(index), obj)
         return array
 
     def Construct(self, args=[]):
@@ -885,7 +928,7 @@ class W__Array(W_BasicObject):
     def define_own_property(self, p, desc, throw = False):
         def reject():
             if throw:
-                raise JsTypeError(self.__class__)
+                raise JsTypeError()
             else:
                 return False
 
@@ -1053,7 +1096,7 @@ class W_String(W_Primitive):
     _type_ = 'string'
 
     def __init__(self, strval):
-        assert isinstance(strval, str)
+        assert isinstance(strval, str) or isinstance(strval, unicode)
         W_Primitive.__init__(self)
         self._strval_ = strval
 
@@ -1253,7 +1296,7 @@ def _w(value):
         return W_IntNumber(value)
     elif isinstance(value, float):
         return W_FloatNumber(value)
-    elif isinstance(value, str):
+    elif isinstance(value, str) or isinstance(value, unicode):
         return W_String(value)
     elif value is None:
         return w_Null

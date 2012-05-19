@@ -72,11 +72,7 @@ class JSInterpreter(code.InteractiveConsole):
         from js.execution import JsException
         try:
             res = self.interpreter.run_ast(ast)
-            #if DEBUG:
-                #print self.interpreter._code
             try:
-                #if DEBUG:
-                    #print repr(res)
                 print res.to_string()
             except JsException, exc:
                 self.showtraceback(exc)
@@ -105,7 +101,7 @@ class JSInterpreter(code.InteractiveConsole):
                 return True # True means that more input is needed
             else:
                 # Case 1
-                self.showsyntaxerror(filename, exc)
+                self.showsyntaxerror(filename, exc, source)
                 return False
 
         # Case 3
@@ -116,12 +112,16 @@ class JSInterpreter(code.InteractiveConsole):
         # XXX format exceptions nicier
         print exc.value.to_string()
 
-    def showsyntaxerror(self, filename, exc):
+    def showsyntaxerror(self, filename, exc, source):
         # XXX format syntax errors nicier
-        print ' '*4 + \
-              ' '*exc.source_pos.columnno + \
-              '^'
-        print 'Syntax Error:', exc.errorinformation.failure_reasons
+        marker_indent = ' ' * exc.source_pos.columnno
+        error = exc.errorinformation.failure_reasons
+        error_lineno = exc.source_pos.lineno
+        error_line = (source.splitlines())[error_lineno]
+        print 'Syntax Error in: %s:%d' % (filename, error_lineno)
+        print '%s' % (error_line)
+        print '%s^' %(marker_indent)
+        print 'Error: %s' %(error)
 
     def interact(self, banner=None):
         if banner is None:

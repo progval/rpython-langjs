@@ -189,7 +189,7 @@ def AbstractEC(ctx, x, y):
         r = x.ToNumber() == y.ToNumber()
     return r
 
-def StrictEC(ctx, x, y):
+def StrictEC(x, y):
     """
     Implements the Strict Equality Comparison x === y
     trying to be fully to the spec

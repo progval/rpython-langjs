@@ -1,4 +1,5 @@
 from js.opcodes import BaseJump
+from js.jsobj import _w
 
 class JsBaseFunction(object):
     eval_code = False
@@ -57,7 +58,8 @@ class JsNativeFunction(JsBaseFunction):
     def run(self, ctx):
         args = ctx.argv()
         this = ctx.this_binding()
-        return self._function_(this, args)
+        res = self._function_(this, args)
+        return _w(res)
 
     def to_string(self):
         name = self.name()

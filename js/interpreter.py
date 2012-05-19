@@ -14,21 +14,33 @@ def load_file(filename):
     f.close()
     return ast
 
-def add_interpreter_builtins(global_object):
-    from js.builtins import new_native_function, native_function, put_native_function
-    def trace(this, args):
-        import pdb; pdb.set_trace()
-
-    put_native_function(global_object, 'trace', trace)
-
 class Interpreter(object):
     """Creates a js interpreter"""
     def __init__(self):
-        from js.jsobj import W_BasicObject
-        self.global_object = W_BasicObject()
+        from js.jsobj import W_GlobalObject
+        self.global_object = W_GlobalObject()
         from js.builtins import setup_builtins
         setup_builtins(self.global_object)
-        add_interpreter_builtins(self.global_object)
+        self.setup_interpreter_builtins()
+
+    def setup_interpreter_builtins(self):
+        global_object = self.global_object
+        from js.builtins import put_native_function
+        def js_trace(this, args):
+            import pdb; pdb.set_trace()
+        put_native_function(global_object, 'trace', js_trace)
+
+        interp = self
+        def js_load(this, args):
+            filename = args[0].to_string()
+            interp.js_load(filename)
+
+        put_native_function(global_object, 'load', js_load)
+
+
+    def js_load(self, filename):
+        ast = load_file(filename)
+        return self.run_ast(ast)
 
     def run_ast(self, ast):
         symbol_map = ast.symbol_map

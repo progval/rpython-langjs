@@ -1,45 +1,61 @@
 from js.jsobj import isnull_or_undefined
+from js.execution import JsTypeError
+from js.jsobj import w_Undefined, _w, isnull_or_undefined
 
 def to_string(this, args):
     from js.jsobj import W_BasicFunction
     if not isinstance(this, W_BasicFunction):
-        from js.execution import JsTypeError
         raise JsTypeError()
 
     return this._to_string_()
 
 def empty(this, args):
-    from js.jsobj import w_Undefined
     return w_Undefined
 
 # 15.3.4.4 Function.prototype.call
-def call(this, args):
-    raise NotImplementedError()
-    #if len(args) >= 1:
-        #if isnull_or_undefined(args[0]):
-            #thisArg = this.ctx.get_global()
-        #else:
-            #thisArg = args[0]
-        #callargs = args[1:]
-    #else:
-        #thisArg = this.ctx.get_global()
-        #callargs = []
-    #return this.Call(callargs, this = thisArg)
+def call(ctx):
+    func = ctx.this_binding()
+    args = ctx.argv()
+
+    if not func.is_callable():
+        raise JsTypeError()
+
+    this_arg = get_arg(args, 0)
+    arg_list = args[1:]
+
+    res = func.Call(args = arg_list, this = this_arg, calling_context = ctx)
+    return _w(res)
 
 # 15.3.4.3 Function.prototype.apply (thisArg, argArray)
-def apply(this, args):
-    raise NotImplementedError()
-    #try:
-        #if isnull_or_undefined(args[0]):
-            #thisArg = this.ctx.get_global()
-        #else:
-            #thisArg = args[0].ToObject()
-    #except IndexError:
-        #thisArg = this.ctx.get_global()
+def apply(ctx):
+    func = ctx.this_binding()
+    args = ctx.argv()
 
-    #try:
-        #arrayArgs = args[1]
-        #callargs = arrayArgs.tolist()
-    #except IndexError:
-        #callargs = []
-    #return this.Call(callargs, this=thisArg)
+    this_arg = get_arg(args, 0)
+    arg_array = get_arg(args, 1)
+
+    if isnull_or_undefined(arg_array):
+        res = func.Call(args = [], this = this_arg, calling_context = ctx)
+        return _w(res)
+
+    from js.jsobj import W_BasicObject
+    if not isinstance(arg_array, W_BasicObject):
+        raise JsTypeError()
+
+    length = arg_array.get('length')
+    n = length.ToUInt32()
+    arg_list = []
+    index = 0
+    while index < n:
+        index_name = str(index)
+        next_arg = arg_array.get(index_name)
+        arg_list.append(next_arg)
+        index += 1
+
+    res = func.Call(args = arg_list, this = this_arg, calling_context = ctx)
+    return _w(res)
+
+def get_arg(args, index):
+    if len(args) > index:
+        return args[index]
+    return w_Undefined

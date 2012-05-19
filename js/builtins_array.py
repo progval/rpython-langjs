@@ -1,5 +1,35 @@
 from js.jsobj import isnull_or_undefined, _w, w_Undefined
 
+def setup(global_object):
+    from js.builtins import put_property, put_native_function
+    from js.jsobj import W_ArrayConstructor, W__Array, W__Object
+    w_Array = W_ArrayConstructor()
+    put_property(global_object, 'Array', w_Array)
+
+    # 15.4.4
+    w_ArrayPrototype = W__Array()
+
+    w_ArrayPrototype._prototype_ = W__Object._prototype_
+    #put_property(w_ArrayPrototype, '__proto__', w_ArrayPrototype._prototype_, writable = False, enumerable = False, configurable = False)
+
+    # 15.4.3.1
+    W__Array._prototype_ = w_ArrayPrototype
+    put_property(w_Array, 'prototype', w_ArrayPrototype, writable = False, enumerable = False, configurable = False)
+
+    # 15.4.4.1
+    put_property(w_ArrayPrototype, 'constructor', w_Array)
+
+    # 15.4.4.2
+    put_native_function(w_ArrayPrototype, 'toString', to_string)
+    # 15.4.4.5
+    put_native_function(w_ArrayPrototype, 'join', join)
+    # 15.4.4.6
+    put_native_function(w_ArrayPrototype, 'pop', pop)
+    # 15.4.4.7
+    put_native_function(w_ArrayPrototype, 'push', push)
+    # 15.4.4.8
+    put_native_function(w_ArrayPrototype, 'reverse', reverse)
+
 # 15.4.4.7
 def push(this, args):
     o = this.ToObject()
