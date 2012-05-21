@@ -298,11 +298,10 @@ class MOD(BaseBinaryOperation):
 
 class UPLUS(BaseUnaryOperation):
     def eval(self, ctx):
-        if isinstance(ctx.stack_top(), W_IntNumber):
-            return
-        if isinstance(ctx.stack_top(), W_FloatNumber):
-            return
-        ctx.stack_append(W_FloatNumber(ctx.stack_pop().ToNumber()))
+        expr = ctx.stack_pop()
+        num = expr.ToNumber()
+        res = _w(num)
+        ctx.stack_append(res)
 
 class UMINUS(BaseUnaryOperation):
     def eval(self, ctx):

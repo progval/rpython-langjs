@@ -1,7 +1,51 @@
 import math
-from js.jsobj import W_IntNumber
+from js.jsobj import _w
 
 from pypy.rlib.rfloat import NAN, INFINITY, isnan, isinf
+from js.builtins import get_arg
+
+def setup(global_object):
+    from js.builtins import put_native_function, put_property
+    from js.jsobj import W_Math
+    # 15.8
+    w_Math = W_Math()
+    put_property(global_object, 'Math', w_Math)
+
+    put_native_function(w_Math, 'abs', js_abs)
+    put_native_function(w_Math, 'floor', floor)
+    put_native_function(w_Math, 'round', js_round)
+    put_native_function(w_Math, 'random', random)
+    put_native_function(w_Math, 'min', js_min)
+    put_native_function(w_Math, 'max', js_max)
+    put_native_function(w_Math, 'pow', pow)
+    put_native_function(w_Math, 'sqrt', sqrt)
+    put_native_function(w_Math, 'log', log)
+
+    # 15.8.1
+
+    # 15.8.1.1
+    put_property(w_Math, 'E', _w(E), writable = False, enumerable = False, configurable = False)
+
+    # 15.8.1.2
+    put_property(w_Math, 'LN10', _w(LN10), writable = False, enumerable = False, configurable = False)
+
+    # 15.8.1.3
+    put_property(w_Math, 'LN2', _w(LN2), writable = False, enumerable = False, configurable = False)
+
+    # 15.8.1.4
+    put_property(w_Math, 'LOG2E', _w(LOG2E), writable = False, enumerable = False, configurable = False)
+
+    # 15.8.1.5
+    put_property(w_Math, 'LOG10E', _w(LOG10E), writable = False, enumerable = False, configurable = False)
+
+    # 15.8.1.6
+    put_property(w_Math, 'PI', _w(PI), writable = False, enumerable = False, configurable = False)
+
+    # 15.8.1.7
+    put_property(w_Math, 'SQRT1_2', _w(SQRT1_2), writable = False, enumerable = False, configurable = False)
+
+    # 15.8.1.8
+    put_property(w_Math, 'SQRT2', _w(SQRT2), writable = False, enumerable = False, configurable = False)
 
 # 15.8.2.9
 def floor(this, args):
@@ -17,22 +61,71 @@ def floor(this, args):
     return pos
 
 # 15.8.2.1
-py_abs = abs
-def abs(this, args):
+def js_abs(this, args):
     val = args[0]
-    #if isinstance(val, W_IntNumber):
-        #if val.ToInteger() > 0:
-            #return val # fast path
-        #return -val.ToInteger()
-    return py_abs(val.ToNumber())
+    return abs(val.ToNumber())
 
 # 15.8.2.15
-def round(this, args):
+def js_round(this, args):
     return floor(this, args)
+
+def isodd(i):
+    isinstance(i, int) and i % 2 == 1
 
 # 15.8.2.13
 def pow(this, args):
-    return math.pow(args[0].ToNumber(), args[1].ToNumber())
+    w_x = get_arg(args, 0)
+    w_y = get_arg(args, 1)
+    x = w_x.ToNumber()
+    y = w_y.ToNumber()
+
+    if isnan(y):
+        return NAN
+    if y == 0:
+        return 1
+    if isnan(x):
+        return NAN
+    if abs(x) > 1 and y == INFINITY:
+        return INFINITY
+    if abs(x) > 1 and y == -INFINITY:
+        return 0
+    if abs(x) == 1 and isinf(y):
+        return NAN
+    if abs(x) < 1 and y == INFINITY:
+        return 0
+    if abs(x) < 1 and y == -INFINITY:
+        return INFINITY
+    if x == INFINITY and y > 0:
+        return INFINITY
+    if x == INFINITY and y < 0:
+        return 0
+    if x == -INFINITY and y > 0 and isodd(y):
+        return -INFINITY
+    if x == -INFINITY and y > 0 and not isodd(y):
+        return INFINITY
+    if x == -INFINITY and y < 0 and isodd(y):
+        return -0
+    if x == -INFINITY and y < 0 and not isodd(y):
+        return 0
+    if x == 0 and y > 0:
+        return 0
+    if x == 0 and y < 0:
+        return INFINITY
+    if x == -0 and y > 0 and isodd(y):
+        return -0
+    if x == -0 and y > 0 and not isodd(y):
+        return +0
+    if x == -0 and y < 0 and isodd(y):
+        return -INFINITY
+    if x == -0 and y < 0 and not isodd(y):
+        return INFINITY
+    if x < 0 and not isinstance(y, int):
+        return NAN
+
+    try:
+        return math.pow(x, y)
+    except OverflowError:
+        return INFINITY
 
 # 15.8.2.17
 def sqrt(this, args):
@@ -43,18 +136,16 @@ def log(this, args):
     return math.log(args[0].ToNumber())
 
 # 15.8.2.11
-py_min = min
-def min(this, args):
+def js_min(this, args):
     a = args[0].ToNumber()
     b = args[1].ToNumber()
-    return py_min(a, b)
+    return min(a, b)
 
 # 15.8.2.12
-py_max = max
-def max(this, args):
+def js_max(this, args):
     a = args[0].ToNumber()
     b = args[1].ToNumber()
-    return py_max(a, b)
+    return max(a, b)
 
 import time
 from pypy.rlib import rrandom

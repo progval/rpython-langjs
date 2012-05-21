@@ -1158,6 +1158,8 @@ class W_String(W_Primitive):
     def ToNumber(self):
         if not self._strval_:
             return 0.0
+        if self._strval_.isspace():
+            return 0.0
         try:
             return float(self._strval_)
         except ValueError:

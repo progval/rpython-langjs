@@ -132,49 +132,8 @@ def setup_builtins(global_object):
     js.builtins_array.setup(global_object)
 
     #Math
-    from js.jsobj import W_Math
-    # 15.8
-    w_Math = W_Math()
-    put_property(global_object, 'Math', w_Math)
-
-    #w_math.Put('__proto__',  w_ObjPrototype)
-
-    import js.builtins_math as math_builtins
-    put_native_function(w_Math, 'abs', math_builtins.abs)
-    put_native_function(w_Math, 'floor', math_builtins.floor)
-    put_native_function(w_Math, 'round', math_builtins.round)
-    put_native_function(w_Math, 'random', math_builtins.random)
-    put_native_function(w_Math, 'min', math_builtins.min)
-    put_native_function(w_Math, 'max', math_builtins.max)
-    put_native_function(w_Math, 'pow', math_builtins.pow)
-    put_native_function(w_Math, 'sqrt', math_builtins.sqrt)
-    put_native_function(w_Math, 'log', math_builtins.log)
-
-    # 15.8.1
-
-    # 15.8.1.1
-    put_property(w_Math, 'E', _w(math_builtins.E), writable = False, enumerable = False, configurable = False)
-
-    # 15.8.1.2
-    put_property(w_Math, 'LN10', _w(math_builtins.LN10), writable = False, enumerable = False, configurable = False)
-
-    # 15.8.1.3
-    put_property(w_Math, 'LN2', _w(math_builtins.LN2), writable = False, enumerable = False, configurable = False)
-
-    # 15.8.1.4
-    put_property(w_Math, 'LOG2E', _w(math_builtins.LOG2E), writable = False, enumerable = False, configurable = False)
-
-    # 15.8.1.5
-    put_property(w_Math, 'LOG10E', _w(math_builtins.LOG10E), writable = False, enumerable = False, configurable = False)
-
-    # 15.8.1.6
-    put_property(w_Math, 'PI', _w(math_builtins.PI), writable = False, enumerable = False, configurable = False)
-
-    # 15.8.1.7
-    put_property(w_Math, 'SQRT1_2', _w(math_builtins.SQRT1_2), writable = False, enumerable = False, configurable = False)
-
-    # 15.8.1.8
-    put_property(w_Math, 'SQRT2', _w(math_builtins.SQRT2), writable = False, enumerable = False, configurable = False)
+    import js.builtins_math
+    js.builtins_math.setup(global_object)
 
     import js.builtins_date
     js.builtins_date.setup(global_object)
