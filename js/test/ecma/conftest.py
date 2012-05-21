@@ -10,7 +10,7 @@ from pypy.rlib.parsing.parsing import ParseError
 
 
 exclusionlist = ['shell.js', 'browser.js']
-skip = ['15.4.5.1-1', '10.2.2-2', '15.1.2.1-2', '15.5.4.11-2', '15.5.4.11-5']
+skip = ['15.4.5.1-1', '10.2.2-2', '15.1.2.1-2', '15.5.4.11-2', '15.5.4.11-5', '7.2-1']
 
 def pytest_ignore_collect(path, config):
     if path.basename in exclusionlist:

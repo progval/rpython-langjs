@@ -253,7 +253,12 @@ def js_eval(ctx):
     try:
         ast = parse_to_ast(src)
     except ParseError, e:
-        raise JsSyntaxError()
+        error = e.errorinformation.failure_reasons
+        error_lineno = e.source_pos.lineno
+        error_pos = e.source_pos.columnno
+        error_src = src.encode('unicode_escape')
+        error_msg = 'Syntax Error in: "%s":%d,%d' %(error_src, error_lineno, error_pos)
+        raise JsSyntaxError(error_msg)
 
     symbol_map = ast.symbol_map
     code = ast_to_bytecode(ast, symbol_map)
