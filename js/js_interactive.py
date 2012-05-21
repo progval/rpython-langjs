@@ -110,7 +110,7 @@ class JSInterpreter(code.InteractiveConsole):
 
     def showtraceback(self, exc):
         # XXX format exceptions nicier
-        print exc.value.to_string()
+        print exc._msg()
 
     def showsyntaxerror(self, filename, exc, source):
         # XXX format syntax errors nicier

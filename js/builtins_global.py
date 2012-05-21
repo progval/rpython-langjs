@@ -241,6 +241,7 @@ def js_eval(ctx):
     from js.functions import JsEvalCode
     from js.execution_context import EvalExecutionContext
     from pypy.rlib.parsing.parsing import ParseError
+    from pypy.rlib.parsing.deterministic import LexerError
     from js.astbuilder import FakeParseError
     from js.execution import JsSyntaxError
 
@@ -257,13 +258,14 @@ def js_eval(ctx):
         error = e.errorinformation.failure_reasons
         error_lineno = e.source_pos.lineno
         error_pos = e.source_pos.columnno
-        error_src = src.encode('unicode_escape')
-        error_msg = 'Syntax Error in: "%s":%d,%d' %(error_src, error_lineno, error_pos)
-        raise JsSyntaxError(error_msg)
+        raise JsSyntaxError(msg = error, src = src, line = error_lineno, column = error_pos)
     except FakeParseError, e:
-        error_msg = 'Syntax Error: %s' % (e.msg)
-        raise JsSyntaxError(error_msg)
-
+        raise JsSyntaxError(msg = e.msg, src = src)
+    except LexerError, e:
+        error_lineno = e.source_pos.lineno
+        error_pos = e.source_pos.columnno
+        error_msg = 'LexerError'
+        raise JsSyntaxError(msg = error_msg, src = src, line = error_lineno, column = error_pos)
 
     symbol_map = ast.symbol_map
     code = ast_to_bytecode(ast, symbol_map)
