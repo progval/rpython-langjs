@@ -229,6 +229,8 @@ def substring(this, args):
     tmp2 = min(max(end, 0), size)
     start = min(tmp1, tmp2)
     end = max(tmp1, tmp2)
+    start = int(start)
+    end = int(end)
     return string[start:end]
 
 # 15.5.4.16

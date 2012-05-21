@@ -280,9 +280,17 @@ class RSH(BaseBinaryBitwiseOp):
 
 class LSH(BaseBinaryBitwiseOp):
     def eval(self, ctx):
-        op2 = ctx.stack_pop().ToUInt32()
-        op1 = ctx.stack_pop().ToInt32()
-        ctx.stack_append(W_IntNumber(op1 << intmask(op2 & 0x1F)))
+        from js.jsobj import r_int32
+        rval = ctx.stack_pop()
+        lval = ctx.stack_pop()
+
+        lnum = lval.ToInt32()
+        rnum = rval.ToUInt32()
+
+        shift_count = intmask(rnum & 0x1F)
+        res = r_int32(lnum << shift_count)
+
+        ctx.stack_append(_w(res))
 
 class MUL(BaseBinaryOperation):
     def operation(self, ctx, op1, op2):
