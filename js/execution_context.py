@@ -189,3 +189,35 @@ class FunctionExecutionContext(ExecutionContext):
 
     def argv(self):
         return self._argument_values_
+
+class WithExecutionContext(ExecutionContext):
+    def __init__(self, code, expr_obj, calling_context):
+        ExecutionContext.__init__(self)
+        self._code_ = code
+        self._strict_ = code.strict
+        self._calling_context_ = calling_context
+        self._expr_obj_ = expr_obj
+
+        from js.lexical_environment import ObjectEnvironment
+        parent_environment = calling_context.lexical_environment()
+        local_env = ObjectEnvironment(expr_obj, outer_environment = parent_environment)
+        local_env.environment_record.provide_this = True
+
+        self._lexical_environment_ = local_env
+        self._variable_environment_ = local_env
+        self._this_binding_ = local_env.environment_record.implicit_this_value()
+
+        self.declaration_binding_initialization()
+
+    def stack_append(self, value):
+        self._calling_context_.stack_append(value)
+
+    def stack_pop(self):
+        return self._calling_context_.stack_pop()
+
+    def stack_top(self):
+        return self._calling_context_.stack_top()
+
+    def stack_pop_n(self, n):
+        return self._calling_context_.stack_pop_n(n)
+

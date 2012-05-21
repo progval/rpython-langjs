@@ -76,6 +76,7 @@ def to_string(this, args):
     elif isinstance(this, W_NumericObject):
         num = this.PrimitiveValue()
     else:
+        import pdb; pdb.set_trace()
         raise JsTypeError()
 
     # TODO radix, see 15.7.4.2

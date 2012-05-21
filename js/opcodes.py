@@ -674,21 +674,15 @@ class WITH(Opcode):
         self.body = body
 
     def eval(self, ctx):
-        from lexical_environment import ObjectEnvironment
+        from execution_context import WithExecutionContext
         # 12.10
         expr = self.expr.run(ctx)
         expr_obj = expr.ToObject()
 
-        old_env = ctx.lexical_environment()
-        new_env = ObjectEnvironment(expr_obj, outer_environment = old_env)
-        new_env.environment_record.provide_this = True
-        ctx.set_lexical_environment(new_env)
+        with_ctx = WithExecutionContext(self.body, expr_obj, ctx)
 
-        try:
-            c = self.body.run(ctx)
-            ctx.stack_append(c)
-        finally:
-            ctx.set_lexical_environment(old_env)
+        c = self.body.run(with_ctx)
+        ctx.stack_append(c)
 
 # ------------------ delete -------------------------
 
