@@ -8,7 +8,7 @@ import js.builtins
 def load_file(filename):
     from js.astbuilder import parse_to_ast
 
-    f = open_file_as_stream(filename)
+    f = open_file_as_stream(str(filename))
     src = f.readall()
     ast = parse_to_ast(src)
     f.close()

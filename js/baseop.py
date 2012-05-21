@@ -7,6 +7,7 @@ from js.execution import ThrowException, JsTypeError
 
 from pypy.rlib.rarithmetic import r_uint, intmask, ovfcheck
 from pypy.rlib.rfloat import  INFINITY, NAN, isnan, isinf
+from js.builtins_number import w_NAN
 
 import math
 
@@ -66,10 +67,23 @@ def mult(ctx, nleft, nright):
     fright = nright.ToNumber()
     return W_FloatNumber(fleft * fright)
 
-def mod(ctx, nleft, nright): # XXX this one is really not following spec
-    fleft = nleft.ToNumber()
-    fright = nright.ToNumber()
-    return W_FloatNumber(math.fmod(fleft, fright))
+def mod(ctx, w_left, w_right):
+    left = w_left.ToNumber()
+    right = w_right.ToNumber()
+
+    if isnan(left) or isnan(right):
+        return w_NAN
+
+    if isinf(left) or right == 0:
+        return w_NAN
+
+    if isinf(right):
+        return w_left
+
+    if left == 0:
+        return w_left
+
+    return W_FloatNumber(math.fmod(left, right))
 
 def division(ctx, nleft, nright):
     # XXX optimise for ints and floats

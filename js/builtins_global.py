@@ -250,7 +250,6 @@ def js_eval(ctx):
         return x
 
     src = x.to_string()
-    src = src.encode('utf-8')
     try:
         ast = parse_to_ast(src)
     except ParseError, e:

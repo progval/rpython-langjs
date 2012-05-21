@@ -145,7 +145,7 @@ class JsGlobalCode(JsExecutableCode):
 
 class JsEvalCode(JsExecutableCode):
     def _opcodes_from_code_(self):
-        return self._js_code_.to_global_opcodes()
+        return self._js_code_.to_eval_opcodes()
 
     def is_eval_code(self):
         return True

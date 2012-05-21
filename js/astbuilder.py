@@ -683,6 +683,6 @@ def parse_tree_to_ast(parse_tree):
 
 def parse_to_ast(code):
     from js.jsparser import parse, ParseError
-    parse_tree = parse(code)
+    parse_tree = parse(code.encode('utf-8'))
     ast = parse_tree_to_ast(parse_tree)
     return ast

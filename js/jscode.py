@@ -165,6 +165,11 @@ class JsCode(object):
         self.emit('LOAD_UNDEFINED')
         return self.opcodes
 
+    def to_eval_opcodes(self):
+        self.unlabel()
+        self.unpop_or_undefined()
+        return self.opcodes
+
     def to_global_opcodes(self):
         self.unlabel()
         self.unpop_or_undefined()

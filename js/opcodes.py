@@ -631,9 +631,9 @@ class LOAD_ITERATOR(Opcode):
         from js.jsobj import W_BasicObject
         assert isinstance(obj, W_BasicObject)
 
-        for prop in obj._properties_.values():
+        for key, prop in obj._properties_.items():
             if prop.enumerable is True:
-                props.append(prop.value)
+                props.append(_w(key))
 
         from js.jsobj import W_Iterator
         iterator = W_Iterator(props)
