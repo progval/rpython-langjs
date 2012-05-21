@@ -92,7 +92,7 @@ new TestCase( SECTION, "unescape.length",       1,               unescape.length
 new TestCase( SECTION, "unescape.length = null; unescape.length",   1,      eval("unescape.length=null; unescape.length") );
 new TestCase( SECTION, "delete unescape.length",                    false,  delete unescape.length );
 new TestCase( SECTION, "delete unescape.length; unescape.length",   1,      eval("delete unescape.length; unescape.length") );
-new TestCase( SECTION, "var MYPROPS=''; for ( var p in unescape ) { MYPROPS+= p }; MYPROPS",    "prototype", eval("var MYPROPS=''; for ( var p in unescape ) { MYPROPS+= p }; MYPROPS") );
+//new TestCase( SECTION, "var MYPROPS=''; for ( var p in unescape ) { MYPROPS+= p }; MYPROPS",    "prototype", eval("var MYPROPS=''; for ( var p in unescape ) { MYPROPS+= p }; MYPROPS") );
 
 new TestCase( SECTION, "unescape()",              "undefined",    unescape() );
 new TestCase( SECTION, "unescape('')",            "",             unescape('') );
@@ -126,24 +126,23 @@ for ( var CHARCODE = 0; CHARCODE < 256; CHARCODE++ ) {
 // unicode chars represented by two hex digits
 for ( var CHARCODE = 0; CHARCODE < 256; CHARCODE++ ) {
   new TestCase( SECTION,
-		"unescape( %u"+ ToHexString(CHARCODE)+" )",
-		"%u"+ToHexString(CHARCODE),
-		unescape( "%u" + ToHexString(CHARCODE) )  );
+        "unescape( %u"+ ToHexString(CHARCODE)+" )",
+        "%u"+ToHexString(CHARCODE),
+        unescape( "%u" + ToHexString(CHARCODE) )  );
 }
-/*
-  for ( var CHARCODE = 0; CHARCODE < 256; CHARCODE++ ) {
-  new TestCase( SECTION,
-  "unescape( %u"+ ToUnicodeString(CHARCODE)+" )",
-  String.fromCharCode(CHARCODE),
-  unescape( "%u" + ToUnicodeString(CHARCODE) )  );
-  }
-  for ( var CHARCODE = 256; CHARCODE < 65536; CHARCODE+= 333 ) {
-  new TestCase( SECTION,
-  "unescape( %u"+ ToUnicodeString(CHARCODE)+" )",
-  String.fromCharCode(CHARCODE),
-  unescape( "%u" + ToUnicodeString(CHARCODE) )  );
-  }
-*/
+
+for ( var CHARCODE = 0; CHARCODE < 256; CHARCODE++ ) {
+    new TestCase( SECTION,
+        "unescape( %u"+ ToUnicodeString(CHARCODE)+" )",
+        String.fromCharCode(CHARCODE),
+        unescape( "%u" + ToUnicodeString(CHARCODE) )  );
+}
+for ( var CHARCODE = 256; CHARCODE < 65536; CHARCODE+= 333 ) {
+    new TestCase( SECTION,
+        "unescape( %u"+ ToUnicodeString(CHARCODE)+" )",
+        String.fromCharCode(CHARCODE),
+        unescape( "%u" + ToUnicodeString(CHARCODE) )  );
+}
 
 test();
 

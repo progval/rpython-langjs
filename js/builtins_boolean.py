@@ -18,8 +18,8 @@ def setup(global_object):
 
     from js.jsobj import W__Object
     w_BooleanPrototype._prototype_ = W__Object._prototype_
-    del(w_BooleanPrototype._properties_['__proto__'])
-    put_property(w_BooleanPrototype, '__proto__', w_BooleanPrototype._prototype_, writable = False, enumerable = False, configurable = False)
+    #del(w_BooleanPrototype._properties_['__proto__'])
+    #put_property(w_BooleanPrototype, '__proto__', w_BooleanPrototype._prototype_, writable = False, enumerable = False, configurable = False)
 
     # 15.6.3.1
     put_property(w_Boolean, 'prototype', w_BooleanPrototype, writable = False, enumerable = False, configurable = False)

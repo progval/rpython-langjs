@@ -9,22 +9,8 @@ from js.jscode import JsCode
 from pypy.rlib.objectmodel import specialize
 from pypy.rlib.listsort import TimSort
 from pypy.rlib.rarithmetic import r_uint
-from pypy.rlib.objectmodel import we_are_translated
 
 from pypy.rlib import jit
-from js.builtins_number import w_NAN
-from js.builtins_number import w_POSITIVE_INFINITY
-
-class Sorter(TimSort):
-    def __init__(self, list, listlength=None, compare_fn=None):
-        TimSort.__init__(self, list, listlength)
-        self.compare_fn = compare_fn
-
-    def lt(self, a, b):
-        if self.compare_fn:
-            result = self.compare_fn.Call([a, b]).ToInt32()
-            return result == -1
-        return a.ToString() < b.ToString()
 
 def new_native_function(function, name = None, params = []):
     from js.functions import JsNativeFunction
@@ -40,13 +26,13 @@ def put_native_function(obj, name, func, writable = True, configurable = True, e
     put_property(obj, name, jsfunc, writable = writable, configurable = configurable, enumerable = enumerable)
 
 # 15
-def put_intimate_function(obj, name, func, writable = True, configurable = True, enumerable = False):
+def put_intimate_function(obj, name, func, writable = True, configurable = True, enumerable = False, params = []):
     from js.functions import JsIntimateFunction
     from js.jsobj import W__Function
 
     scope = None
     jsfunc = JsIntimateFunction(func, name)
-    w_func = W__Function(jsfunc)
+    w_func = W__Function(jsfunc, formal_parameter_list = params)
     put_property(obj, name, w_func, writable = writable, configurable = configurable, enumerable = enumerable)
 
 # 15
@@ -90,9 +76,9 @@ def setup_builtins(global_object):
 
     # 15.2 Object Objects
     # 15.2.3 Properties of the Object Constructor
-    w_Object._prototype_ = w_FunctionPrototype
-    del(w_Object._properties_['__proto__'])
-    put_property(w_Object, '__proto__', w_Object._prototype_)
+    #w_Object._prototype_ = w_FunctionPrototype
+    #del(w_Object._properties_['__proto__'])
+    #put_property(w_Object, '__proto__', w_Object._prototype_)
 
     put_property(w_Object, 'length', _w(1))
 
@@ -193,46 +179,10 @@ def setup_builtins(global_object):
     import js.builtins_date
     js.builtins_date.setup(global_object)
 
-    # 15.1.1.1
-    put_property(global_object, 'NaN', w_NAN, writable = False, enumerable = False, configurable = False)
+    import js.builtins_global
+    js.builtins_global.setup(global_object)
 
-    # 15.1.1.2
-    put_property(global_object, 'Infinity', w_POSITIVE_INFINITY, writable = False, enumerable = False, configurable = False)
-
-    # 15.1.1.3
-    put_property(global_object, 'undefined', w_Undefined, writable = False, enumerable = False, configurable = False)
-
-    import js.builtins_global as global_builtins
-
-    # 15.1.2.1
-    #put_property(global_object, 'eval', W__Eval())
-    put_intimate_function(global_object, 'eval', global_builtins.js_eval)
-
-    # 15.1.2.2
-    put_native_function(global_object, 'parseInt', global_builtins.parse_int)
-
-    # 15.1.2.3
-    put_native_function(global_object, 'parseFloat', global_builtins.parse_float)
-
-    # 15.1.2.4
-    put_native_function(global_object, 'isNaN', global_builtins.is_nan)
-
-    # 15.1.2.5
-    put_native_function(global_object, 'isFinite', global_builtins.is_finite)
-
-    put_native_function(global_object, 'alert', global_builtins.alert)
-
-    put_native_function(global_object, 'print', global_builtins.printjs)
-
-    put_native_function(global_object, 'unescape', global_builtins.unescape)
-
-    put_native_function(global_object, 'version', global_builtins.version)
-
-    #put_property(global_object, 'this', global_object)
-
-    ## debugging
-    if not we_are_translated():
-        put_native_function(global_object, 'pypy_repr', global_builtins.pypy_repr)
-        put_native_function(global_object, 'inspect', global_builtins.inspect)
-
-    #put_intimate_function(global_object, 'load', global_builtins.js_load)
+def get_arg(args, index, default = w_Undefined):
+    if len(args) > index:
+        return args[index]
+    return default

@@ -22,7 +22,7 @@ codes = [
     "\b",
     '"',
     '\\',
-    'u']
+    '\u']
 
 escapedict = dict(zip(codes, escapes))
 unescapedict = dict(zip(escapes, codes))

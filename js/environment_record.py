@@ -27,12 +27,19 @@ class DeclarativeEnvironmentRecord(EnvironmentRecord):
         EnvironmentRecord.__init__(self)
         self.bindings = {}
         self.mutable_bindings = {}
+        self.deletable_bindings = {}
 
     def _is_mutable_binding(self, identifier):
         return self.mutable_bindings.get(identifier, False) == True
 
     def _set_mutable_binding(self, identifier):
         self.mutable_bindings[identifier] = True
+
+    def _is_deletable_binding(self, identifier):
+        return self.deletable_bindings.get(identifier, False) == True
+
+    def _set_deletable_binding(self, identifier):
+        self.deletable_bindings[identifier] = True
 
     # 10.2.1.1.1
     def has_binding(self, identifier):
@@ -43,6 +50,8 @@ class DeclarativeEnvironmentRecord(EnvironmentRecord):
         assert not self.has_binding(identifier)
         self.bindings[identifier] = w_Undefined
         self._set_mutable_binding(identifier)
+        if deletable:
+            self._set_deletable_binding(identifier)
 
     # 10.2.1.1.3
     def set_mutable_binding(self, identifier, value, strict=False):
@@ -65,8 +74,11 @@ class DeclarativeEnvironmentRecord(EnvironmentRecord):
     def delete_binding(self, identifier):
         if not self.has_binding(identifier):
             return True
-        if self.mutable_bindings[identifier] is False:
+        if self._is_mutable_binding(identifier) is False:
             return False
+        if self._is_deletable_binding(identifier) is False:
+            return False
+        del(self.delete_binding[identifier])
         del(self.mutable_bindings[identifier])
         del(self.bindings[identifier])
         return False

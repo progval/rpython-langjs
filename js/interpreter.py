@@ -33,7 +33,7 @@ class Interpreter(object):
         interp = self
         def js_load(this, args):
             filename = args[0].to_string()
-            interp.js_load(filename)
+            interp.js_load(str(filename))
 
         put_native_function(global_object, 'load', js_load)
 

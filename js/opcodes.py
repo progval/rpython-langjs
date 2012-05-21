@@ -5,7 +5,6 @@ from js.execution import JsTypeError, ReturnException, ThrowException
 from js.baseop import plus, sub, compare, AbstractEC, StrictEC,\
      compare_e, increment, decrement, mult, division, uminus, mod
 from pypy.rlib.rarithmetic import intmask
-from pypy.rlib import jit
 
 from js.jsobj import put_property
 
@@ -186,7 +185,6 @@ class LOAD_OBJECT(Opcode):
     def __init__(self, counter):
         self.counter = counter
 
-    @jit.unroll_safe
     def eval(self, ctx):
         w_obj = W__Object()
         for _ in range(self.counter):
@@ -518,16 +516,12 @@ class POP(Opcode):
 
 def common_call(ctx, r1, args, this, name):
     # TODO
-    from js.jsobj import W_BasicFunction, W_BasicObject
-    if not (isinstance(r1, W_BasicFunction) or isinstance(r1, W_BasicObject)):
-        #import pdb; pdb.set_trace()
-        raise ThrowException(W_String("%s is not a callable (%s)"%(r1.to_string(), name.to_string())))
-    #jit.promote(r1)
-    #try:
+    from js.jsobj import W_BasicFunction
+    if not (isinstance(r1, W_BasicFunction)):
+        err = ("%s is not a callable (%s)"%(r1.to_string(), name.to_string()))
+        raise JsTypeError(err)
     argv = args.to_list()
     res = r1.Call(args = argv, this = this, calling_context = ctx)
-    #except JsTypeError:
-        #raise ThrowException(W_String("%s is not a function (%s)"%(r1.to_string(), name.to_string())))
     return res
 
 class CALL(Opcode):
@@ -599,10 +593,10 @@ class TRYCATCHBLOCK(Opcode):
         ctx.stack_append(f)
 
 def commonnew(ctx, obj, args):
-    from js.jsobj import W_BasicObject
+    from js.jsobj import W_BasicFunction
 
-    if not isinstance(obj, W_BasicObject):
-        raise JsTypeError('it is not a constructor')
+    if not isinstance(obj, W_BasicFunction):
+        raise JsTypeError('not a constructor')
     res = obj.Construct(args=args)
     return res
 

@@ -48,6 +48,7 @@ class ExecutionContext(object):
     def set_lexical_environment(self, lex_env):
         self._lexical_environment_ = lex_env
 
+    # 10.5
     def declaration_binding_initialization(self):
         env = self._variable_environment_.environment_record
         strict = self._strict_
@@ -92,7 +93,7 @@ class ExecutionContext(object):
         if code.is_function_code() and arguments_already_declared is False:
             from js.jsobj import W_Arguments
             # TODO get calling W_Function
-            func = None
+            func = self._w_func_
             arguments = self._argument_values_
             names = self._formal_parameters_
             args_obj = W_Arguments(func, names, arguments, env, strict)

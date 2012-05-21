@@ -636,33 +636,14 @@ class String(Expression):
         bytecode.emit('LOAD_STRINGCONSTANT', self.strval)
 
     def string_unquote(self, string):
-        # XXX I don't think this works, it's very unlikely IMHO
-        #     test it
-        temp = []
-        stop = len(string)-1
-        # XXX proper error
-        assert stop >= 0
-        last = ""
-
-        #removing the begining quotes (" or \')
-        if string.startswith('"'):
-            singlequote = False
+        s = string.decode('unicode_escape')
+        if s.startswith('"'):
+            assert s.endswith('"')
         else:
-            singlequote = True
-
-        internalstring = string[1:stop]
-
-        for c in internalstring:
-            if last == "\\":
-                # Lookup escape sequence. Ignore the backslash for
-                # unknown escape sequences (like SM)
-                unescapeseq = unescapedict.get(last+c, c)
-                temp.append(unescapeseq)
-                c = ' ' # Could be anything
-            elif c != "\\":
-                temp.append(c)
-            last = c
-        return ''.join(temp)
+            assert s.startswith("'")
+            assert s.endswith("'")
+        s = s[1:-1]
+        return s
 
 class ObjectInit(ListOp):
     def emit(self, bytecode):

@@ -26,22 +26,19 @@ class SymbolMap(object):
     def add_variable(self, identifyer):
         idx = self.add_symbol(identifyer)
 
-        if identifyer not in self.variables:
-            self.variables.append(identifyer)
+        self.variables.append(identifyer)
         return idx
 
     def add_function(self, identifyer):
         idx = self.add_symbol(identifyer)
 
-        if identifyer not in self.functions:
-            self.functions.append(identifyer)
+        self.functions.append(identifyer)
         return idx
 
     def add_parameter(self, identifyer):
         idx = self.add_symbol(identifyer)
 
-        if identifyer not in self.parameters:
-            self.parameters.append(identifyer)
+        self.parameters.append(identifyer)
         return idx
 
     def get_index(self, identifyer):

@@ -1,6 +1,7 @@
 from js.jsobj import isnull_or_undefined
 from js.execution import JsTypeError
 from js.jsobj import w_Undefined, _w, isnull_or_undefined
+from js.builtins import get_arg
 
 def to_string(this, args):
     from js.jsobj import W_BasicFunction
@@ -54,8 +55,3 @@ def apply(ctx):
 
     res = func.Call(args = arg_list, this = this_arg, calling_context = ctx)
     return _w(res)
-
-def get_arg(args, index):
-    if len(args) > index:
-        return args[index]
-    return w_Undefined

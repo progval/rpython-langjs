@@ -1,6 +1,7 @@
 from js.jsobj import _w, w_Undefined, W_String, W_StringObject
 from pypy.rlib.rfloat import NAN, INFINITY, isnan
 from js.execution import ThrowException, JsTypeError
+from js.builtins import get_arg
 
 def setup(global_object):
     from js.builtins import put_native_function, put_property
@@ -69,7 +70,7 @@ def from_char_code(this, args):
     for arg in args:
         i = arg.ToInt16()
         temp.append(unichr(i))
-    return ''.join(temp)
+    return u''.join(temp)
 
 # 15.5.4.2
 def to_string(this, args):
@@ -109,7 +110,7 @@ def char_at(this, args):
 
     size = len(string)
     if position < 0 or position >= size:
-        return ''
+        return u''
 
     return string[position]
 
@@ -135,7 +136,7 @@ def char_code_at(this, args):
 def concat(this, args):
     string = this.to_string()
     others = [obj.to_string() for obj in args]
-    string += ''.join(others)
+    string += u''.join(others)
     return string
 
 # 15.5.4.7
@@ -156,67 +157,42 @@ def index_of(this, args):
 
 # 15.5.4.8
 def last_index_of(this, args):
-    search_element = w_Undefined
-    from_index = w_Undefined
+    search_string = get_arg(args,0)
+    position = get_arg(args, 1)
 
-    if len(args) > 0:
-        search_element = args[0]
-    if len(args) > 1:
-        from_index = args[1]
+    s = this.to_string()
+    search_str = search_string.to_string()
+    num_pos = position.ToNumber()
 
+    from pypy.rlib.rfloat import NAN, INFINITY, isnan, isinf
 
-    obj = this.ToObject()
-    len_value = obj.get('length')
-    length = len_value.ToUInt32()
-
-    import pdb; pdb.set_trace()
-    if length == 0:
-        return -1
-
-    # 5
-    if from_index is not w_Undefined:
-        n = from_index.ToInteger()
+    if isnan(num_pos):
+        pos = INFINITY
+    elif isinf(num_pos):
+        pos = num_pos
     else:
-        n = length - 1
+        pos = int(num_pos)
 
-    # 6
-    if n >= 0:
-        k = min(n, length-1)
-    else:
-        k = length - abs(n)
+    length = len(s)
+    start = min(max(pos, 0), length)
+    search_len = len(search_str)
 
-    while k >= 0:
-        k_str = str(k)
-        k_present = obj.has_property(k_str)
-        if k_present:
-            element_k = obj.get(k_str)
-            from js.baseop import StrictEC
-            same = StrictEC(search_element, element_k)
-            if same:
-                return k
-        k -= 1
+    if isinf(start):
+        return s.rfind(search_str)
 
-    return -1
+    return s.rfind(search_str, 0, start + search_len)
 
 # 15.5.4.14
 def split(this, args):
-    from js.jsobj import W__Array
+    from js.jsobj import W__Array, w_Null
+    from js.jsobj import put_property
+
     this.check_object_coercible()
 
-    separator = w_Undefined
-    limit = w_Undefined
-
-    if len(args) > 0:
-        separator = args[0]
-    if len(args) > 1:
-        limit = args[1]
+    separator = get_arg(args, 0, None)
+    limit = get_arg(args, 1)
 
     string = this.to_string()
-    a = W__Array()
-    length_a = 0
-    length_s = len(string)
-    p = 0
-    r = separator.to_string()
 
     if limit is w_Undefined:
         import math
@@ -224,86 +200,18 @@ def split(this, args):
     else:
         lim = limit.ToUInt32()
 
-    if lim == 0:
-        return a
+    if lim == 0 or separator is None:
+        return [string]
 
-    from js.jsobj import put_property
-    # 10
-    if separator is w_Undefined:
-        put_property(a, '0', _w(string), writable = True, enumerable = True, configurable = True)
-        return a
+    r = separator.to_string()
 
-    # 11
-    if length_s == 0:
-        z = split_match(string, 0, r)
-        if not z.is_failure():
-            return a
-        put_property(a, '0', _w(string), writable = True, enumerable = True, configurable = True)
-        return a
+    if r == '':
+        return list(string)
+    else:
+        splitted = string.split(r, lim)
+        return splitted
 
-    # 12
-    q = p
-
-    # 13
-    while q != length_s:
-        z = split_match(string, q, r)
-        if z.is_failure():
-            q = q + 1
-        else:
-            # ii
-            e = z.end_index
-            cap = z.captures
-            # ii
-            if e == p:
-                q = q + 1
-            # iii
-            else:
-                t = string[p:q]
-                put_property(a, str(length_a), _w(t), writable = True, enumerable = True, configurable = True)
-                length_a += 1
-                if length_a == lim:
-                    return a
-                p = e
-                i = 0
-                # 7
-                while(i != len(cap)):
-                    i = i + 1
-                    put_property(a, str(length_a), _w(cap[i]), writable = True, enumerable = True, configurable = True)
-                    length_a += 1
-                    if length_a == lim:
-                        return a
-                # 8
-                q = p
-    # 14
-    t = string[p:length_s]
-    put_property(a, str(length_a), _w(t), writable = True, enumerable = True, configurable = True)
     return a
-
-def split_match(s, q, r):
-    assert isinstance(r, str)
-    len_r = len(r)
-    len_s = len(s)
-    if q + len_r > len_s :
-        return MatchResultFailure()
-
-    for i in xrange(len_r):
-        if s[q+i] != r[i]:
-            return MatchResultFailure()
-    cap = []
-    return MatchResultState(q + len_r, cap)
-
-class MatchResult(object):
-    def is_failure(self):
-        return False
-
-class MatchResultFailure(MatchResult):
-    def is_failure(self):
-        return True
-
-class MatchResultState(MatchResult):
-    def __init__(self, end_index, captures):
-        self.end_index = end_index
-        self.captures = captures
 
 # 15.5.4.15
 def substring(this, args):
@@ -333,12 +241,3 @@ def to_upper_case(this, args):
     string = this.to_string()
     return string.upper()
 
-def _create_array(elements=[]):
-    from js.jsobj import W__Array
-    array = W__Array()
-    i = 0
-    while i < len(elements):
-        array.put(str(i), elements[i])
-        i += 1
-
-    return array
