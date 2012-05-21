@@ -1,6 +1,6 @@
 # tokens
 # 
-IGNORE: "([ \f\t\n]*)|(//[^\n]*\n)|(/\*([^\*]|\*[^/])*\*?\*/)";
+IGNORE: "([ \f\t\n\v]*)|(//[^\n]*\n)|(/\*([^\*]|\*[^/])*\*?\*/)";
 
 program : sourceelements EOF
         ;

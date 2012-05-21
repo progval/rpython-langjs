@@ -643,6 +643,7 @@ class String(Expression):
             assert s.startswith("'")
             assert s.endswith("'")
         s = s[1:-1]
+        s = s.replace('\\ ', ' ')
         return s
 
 class ObjectInit(ListOp):
