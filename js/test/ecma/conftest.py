@@ -21,6 +21,7 @@ skip = [\
     '7.4.3-15-n',
     '7.4.3-4-n',
     '7.4.3-7-n',
+    '7.4.3-9-n',
     ]
 
 def pytest_ignore_collect(path, config):
