@@ -21,6 +21,7 @@ def setup(global_object):
     put_native_function(w_Math, 'sqrt', js_sqrt, params = ['x'])
     put_native_function(w_Math, 'log', js_log, params = ['x'])
     put_native_function(w_Math, 'sin', js_sin, params = ['x'])
+    put_native_function(w_Math, 'tan', js_tan, params = ['x'])
 
     # 15.8.1
 
@@ -208,6 +209,19 @@ def js_sin(this, args):
         return NAN
 
     return math.sin(x)
+
+# 15.8.2.18
+def js_tan(this, args):
+    arg0 = get_arg(args, 0)
+    x = arg0.ToNumber()
+
+    if isnan(x) or isinf(x):
+        return NAN
+
+    if x < 0:
+        return NAN
+
+    return math.tan(x)
 
 import time
 from pypy.rlib import rrandom
