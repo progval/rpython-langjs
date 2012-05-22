@@ -20,6 +20,7 @@ def setup(global_object):
     put_native_function(w_Math, 'pow', js_pow, params = ['x', 'y'])
     put_native_function(w_Math, 'sqrt', sqrt)
     put_native_function(w_Math, 'log', js_log, params = ['x'])
+    put_native_function(w_Math, 'sin', js_sin, params = ['x'])
 
     # 15.8.1
 
@@ -182,6 +183,19 @@ def js_max(this, args):
         return -INFINITY
 
     return max(values)
+
+# 15.8.2.17
+def js_sin(this, args):
+    arg0 = get_arg(args, 0)
+    x = arg0.ToNumber()
+
+    if isnan(x) or isinf(x):
+        return NAN
+
+    if x < 0:
+        return NAN
+
+    return math.sin(x)
 
 import time
 from pypy.rlib import rrandom
