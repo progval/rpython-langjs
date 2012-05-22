@@ -24,6 +24,7 @@ def setup(global_object):
     put_native_function(w_Math, 'tan', js_tan, params = ['x'])
     put_native_function(w_Math, 'acos', js_acos, params = ['x'])
     put_native_function(w_Math, 'asin', js_asin, params = ['x'])
+    put_native_function(w_Math, 'atan', js_atan, params = ['x'])
 
 
     # 15.8.1
@@ -251,6 +252,22 @@ def js_asin(this, args):
         return NAN
 
     return math.asin(x)
+
+# 15.8.2.4
+def js_atan(this, args):
+    arg0 = get_arg(args, 0)
+    x = arg0.ToNumber()
+
+    if isnan(x):
+        return NAN
+
+    if x == INFINITY:
+        return math.pi/2
+
+    if x == -INFINITY:
+        return -math.pi/2
+
+    return math.atan(x)
 
 import time
 from pypy.rlib import rrandom
