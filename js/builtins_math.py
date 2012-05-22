@@ -16,7 +16,7 @@ def setup(global_object):
     put_native_function(w_Math, 'round', js_round)
     put_native_function(w_Math, 'random', random)
     put_native_function(w_Math, 'min', js_min)
-    put_native_function(w_Math, 'max', js_max)
+    put_native_function(w_Math, 'max', js_max, params = ['value1', 'value2'])
     put_native_function(w_Math, 'pow', js_pow)
     put_native_function(w_Math, 'sqrt', sqrt)
     put_native_function(w_Math, 'log', js_log, params = ['x'])
@@ -163,9 +163,17 @@ def js_min(this, args):
 
 # 15.8.2.12
 def js_max(this, args):
-    a = args[0].ToNumber()
-    b = args[1].ToNumber()
-    return max(a, b)
+    values = []
+    for arg in args:
+        value = arg.ToNumber()
+        if isnan(value):
+            return NAN
+        values.append(value)
+
+    if not values:
+        return -INFINITY
+
+    return max(values)
 
 import time
 from pypy.rlib import rrandom
