@@ -28,7 +28,7 @@ def setup(global_object):
     put_native_function(w_Math, 'atan2', js_atan2, params = ['y', 'x'])
     put_native_function(w_Math, 'ceil', js_ceil, params = ['x'])
     put_native_function(w_Math, 'cos', js_cos, params = ['x'])
-
+    put_native_function(w_Math, 'exp', js_exp, params = ['x'])
 
     # 15.8.1
 
@@ -309,6 +309,22 @@ def js_cos(this, args):
         return NAN
 
     return math.cos(x)
+
+# 15.8.2.8
+def js_exp(this, args):
+    arg0 = get_arg(args, 0)
+    x = arg0.ToNumber()
+
+    if isnan(x):
+        return NAN
+
+    if x == INFINITY:
+        return INFINITY
+
+    if x == -INFINITY:
+        return 0
+
+    return math.exp(x)
 
 import time
 from pypy.rlib import rrandom
