@@ -23,6 +23,7 @@ def setup(global_object):
     put_native_function(w_Math, 'sin', js_sin, params = ['x'])
     put_native_function(w_Math, 'tan', js_tan, params = ['x'])
     put_native_function(w_Math, 'acos', js_acos, params = ['x'])
+    put_native_function(w_Math, 'asin', js_asin, params = ['x'])
 
 
     # 15.8.1
@@ -237,6 +238,19 @@ def js_acos(this, args):
         return NAN
 
     return math.acos(x)
+
+# 15.8.2.3
+def js_asin(this, args):
+    arg0 = get_arg(args, 0)
+    x = arg0.ToNumber()
+
+    if isnan(x) or isinf(x):
+        return NAN
+
+    if x > 1 or x < -1:
+        return NAN
+
+    return math.asin(x)
 
 import time
 from pypy.rlib import rrandom

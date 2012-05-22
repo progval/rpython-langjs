@@ -128,10 +128,10 @@ new TestCase( SECTION,
 	      -0,
 	      Math.asin(-0)           );
 
-new TestCase( SECTION,
-	      "Infinity/Math.asin(-0)",
-	      -Infinity,
-	      Infinity/Math.asin(-0) );
+//new TestCase( SECTION,
+//	      "Infinity/Math.asin(-0)",
+//	      -Infinity,
+//	      Infinity/Math.asin(-0) );
 
 new TestCase( SECTION,
 	      "Math.asin(1)",
