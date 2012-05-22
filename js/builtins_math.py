@@ -18,7 +18,7 @@ def setup(global_object):
     put_native_function(w_Math, 'min', js_min, params = ['value1', 'value2'])
     put_native_function(w_Math, 'max', js_max, params = ['value1', 'value2'])
     put_native_function(w_Math, 'pow', js_pow, params = ['x', 'y'])
-    put_native_function(w_Math, 'sqrt', sqrt)
+    put_native_function(w_Math, 'sqrt', js_sqrt, params = ['x'])
     put_native_function(w_Math, 'log', js_log, params = ['x'])
     put_native_function(w_Math, 'sin', js_sin, params = ['x'])
 
@@ -134,8 +134,20 @@ def js_pow(this, args):
         return INFINITY
 
 # 15.8.2.17
-def sqrt(this, args):
-    return math.sqrt(args[0].ToNumber())
+def js_sqrt(this, args):
+    arg0 = get_arg(args, 0)
+    x = arg0.ToNumber()
+
+    if isnan(x):
+        return NAN
+
+    if x < 0:
+        return NAN
+
+    if isinf(x):
+        return INFINITY
+
+    return math.sqrt(x)
 
 # 15.8.2.10
 def js_log(this, args):
