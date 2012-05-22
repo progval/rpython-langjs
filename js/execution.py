@@ -34,7 +34,11 @@ class JsException(Exception):
 class JsThrowException(JsException):
     def __init__(self, value = None):
         JsException.__init__(self)
+        from js.jsobj import _w
         self.value = _w(value)
+
+    def _msg(self):
+        return self.value
 
 class JsTypeError(JsException):
     def __init__(self, value = None):
@@ -50,7 +54,7 @@ class JsReferenceError(JsException):
         self.identifier = identifier
 
     def _msg(self):
-        return 'ReferenceError: %s' % (self.identifier)
+        return 'ReferenceError: %s is not defined' % (self.identifier)
 
 class JsRangeError(JsException):
     def __init__(self, value = None):

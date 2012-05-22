@@ -14,7 +14,6 @@ def test_simple():
     bytecode.emit('LOAD_FLOATCONSTANT', 2)
     bytecode.emit('LOAD_FLOATCONSTANT', 4)
     bytecode.emit('ADD')
-    bytecode.emit('POP')
 
     from js.execution_context import ExecutionContext
 
@@ -197,6 +196,7 @@ def test_index():
     x[1];
     """, 'test')
 
+@xfail
 def test_print_object(capsys):
     assertp("""
     x = {1:"test"};
@@ -534,7 +534,7 @@ def test_forin(capsys):
     for(y in x){
         print(y);
     }
-    """, '5', capsys)
+    """, 'a', capsys)
 
 def test_forinvar(capsys):
     assertp("""
@@ -542,7 +542,7 @@ def test_forinvar(capsys):
     for(var y in x){
         print(y);
     }
-    """, '5', capsys)
+    """, 'a', capsys)
 
 def test_stricteq():
     assertv("2 === 2;", True)

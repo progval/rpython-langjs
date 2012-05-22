@@ -161,23 +161,24 @@ class JsCode(object):
 
     def to_function_opcodes(self):
         self.unlabel()
-        #self.unpop_or_undefined()
-        self.emit('LOAD_UNDEFINED')
+        #self.unpop()
+        #self.unpop#_or_undefined()
+        #self.emit('LOAD_UNDEFINED')
         return self.opcodes
 
     def to_eval_opcodes(self):
         self.unlabel()
-        self.unpop_or_undefined()
+        #self.unpop#_or_undefined()
         return self.opcodes
 
     def to_global_opcodes(self):
         self.unlabel()
-        self.unpop_or_undefined()
+        #self.unpop#_or_undefined()
         return self.opcodes
 
     def to_executable_opcodes(self):
         self.unlabel()
-        self.unpop()
+        #self.unpop#_or_undefined()
         return self.opcodes
 
     def remove_labels(self):

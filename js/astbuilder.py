@@ -355,15 +355,18 @@ class ASTBuilder(RPythonVisitor):
         pos = self.get_pos(node)
         self.funclists.append({})
         nodes=[]
+
+        def isnotempty(node):
+            return node is not None and not isinstance(node, operations.Empty)
+
         for child in node.children:
-            node = self.dispatch(child)
-            if node is not None:
-                nodes.append(node)
-        # XXX is this still needed or can it be dropped?
-        #var_decl = self.scopes.declarations()
+            n = self.dispatch(child)
+            if isnotempty(n):
+                nodes.append(n)
+
         var_decl = self.current_scope_variables()
         func_decl = self.funclists.pop()
-        #func_decl = self.scopes.functions.keys()
+
         return operations.SourceElements(pos, var_decl, func_decl, nodes, self.sourcename)
 
     def functioncommon(self, node, declaration=True):
@@ -583,14 +586,17 @@ class ASTBuilder(RPythonVisitor):
         right = self.dispatch(node.children[2])
         body= self.dispatch(node.children[3])
         assert isinstance(left, Identifier)
-        return operations.ForIn(pos, left.name, right, body)
+        name = left.name
+        return operations.ForIn(pos, name, right, body)
 
     def visit_invarfor(self, node):
         pos = self.get_pos(node)
         left = self.dispatch(node.children[1])
         right = self.dispatch(node.children[2])
         body= self.dispatch(node.children[3])
-        return operations.ForVarIn(pos, left, right, body)
+        assert isinstance(left, operations.VariableDeclaration)# or isinstance(left, operations.LocalVariableDeclaration)
+        name = left.identifier
+        return operations.ForIn(pos, name, right, body)
 
     def get_next_expr(self, node, i):
         if isinstance(node.children[i], Symbol) and \

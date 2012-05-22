@@ -90,14 +90,18 @@ class JsExecutableCode(JsBaseFunction):
         return self.opcodes[pc]
 
     def run(self, ctx):
+        if len(self.opcodes) == 0:
+            from js.jsobj import w_Undefined
+            return w_Undefined
+
         pc = 0
         while True:
             if pc >= len(self.opcodes):
                 break
             opcode = self._get_opcode(pc)
             result = opcode.eval(ctx)
+            #print("%3d %25s %s" % (pc, str(opcode), str([str(s) for s in ctx._stack_])))
             assert result is None
-            #print('pc:%d, opcode:%s, stack:%s'%(pc, repr(opcode), str(ctx._stack_)))
 
             from js.opcodes import RETURN
             if isinstance(opcode, BaseJump):

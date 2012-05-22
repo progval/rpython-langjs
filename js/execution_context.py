@@ -190,16 +190,32 @@ class FunctionExecutionContext(ExecutionContext):
     def argv(self):
         return self._argument_values_
 
-class WithExecutionContext(ExecutionContext):
-    def __init__(self, code, expr_obj, calling_context):
+class SubExecutionContext(ExecutionContext):
+    def __init__(self, parent):
         ExecutionContext.__init__(self)
+        self._parent_context_ = parent
+
+    def stack_append(self, value):
+        self._parent_context_.stack_append(value)
+
+    def stack_pop(self):
+        return self._parent_context_.stack_pop()
+
+    def stack_top(self):
+        return self._parent_context_.stack_top()
+
+    def stack_pop_n(self, n):
+        return self._parent_context_.stack_pop_n(n)
+
+class WithExecutionContext(SubExecutionContext):
+    def __init__(self, code, expr_obj, parent_context):
+        SubExecutionContext.__init__(self, parent_context)
         self._code_ = code
         self._strict_ = code.strict
-        self._calling_context_ = calling_context
         self._expr_obj_ = expr_obj
 
         from js.lexical_environment import ObjectEnvironment
-        parent_environment = calling_context.lexical_environment()
+        parent_environment = parent_context.lexical_environment()
         local_env = ObjectEnvironment(expr_obj, outer_environment = parent_environment)
         local_env.environment_record.provide_this = True
 
@@ -209,15 +225,22 @@ class WithExecutionContext(ExecutionContext):
 
         self.declaration_binding_initialization()
 
-    def stack_append(self, value):
-        self._calling_context_.stack_append(value)
+class CatchExecutionContext(SubExecutionContext):
+    def __init__(self, code, catchparam, exception_value, parent_context):
+        SubExecutionContext.__init__(self, parent_context)
+        self._code_ = code
+        self._strict_ = code.strict
 
-    def stack_pop(self):
-        return self._calling_context_.stack_pop()
+        parent_env = parent_context.lexical_environment()
 
-    def stack_top(self):
-        return self._calling_context_.stack_top()
+        from js.lexical_environment import DeclarativeEnvironment
+        local_env = DeclarativeEnvironment(parent_env)
+        local_env_rec = local_env.environment_record
+        local_env_rec.create_mutuable_binding(catchparam, True)
+        local_env_rec.set_mutable_binding(catchparam, exception_value, False)
 
-    def stack_pop_n(self, n):
-        return self._calling_context_.stack_pop_n(n)
+        self._lexical_environment_ = local_env
+        self._variable_environment_ = local_env
+        self._this_binding_ = parent_context.this_binding()
 
+        self.declaration_binding_initialization()

@@ -298,7 +298,7 @@ class W_BasicObject(W_Root):
         desc = proto_desc
         W_BasicObject.define_own_property(self, '__proto__', desc)
 
-    def __repr__(self):
+    def __str__(self):
         return "%s: %s" % (object.__repr__(self), self.klass())
 
 
@@ -1109,7 +1109,7 @@ class W_Boolean(W_Primitive):
         W_Primitive.__init__(self)
         self._boolval_ = bool(boolval)
 
-    def __repr__(self):
+    def __str__(self):
         return 'W_Bool(%s)' % (str(self._boolval_), )
 
     def ToObject(self):
@@ -1140,8 +1140,8 @@ class W_String(W_Primitive):
         other_string = other.to_string()
         return self.to_string() == other_string
 
-    def __repr__(self):
-        return 'W_String(%s)' % (repr(self._strval_),)
+    def __str__(self):
+        return 'W_String("%s")' % (repr(self._strval_),)
 
     def ToObject(self):
         return W_StringObject(self)
@@ -1206,7 +1206,7 @@ class W_IntNumber(W_Number):
         W_Number.__init__(self)
         self._intval_ = intmask(intval)
 
-    def __repr__(self):
+    def __str__(self):
         return 'W_IntNumber(%s)' % (self._intval_,)
 
     def ToInteger(self):
@@ -1234,7 +1234,7 @@ class W_FloatNumber(W_Number):
         W_Number.__init__(self)
         self._floatval_ = float(floatval)
 
-    def __repr__(self):
+    def __str__(self):
         return 'W_FloatNumber(%s)' % (self._floatval_,)
 
     def to_string(self):
@@ -1301,6 +1301,9 @@ class W_Iterator(W_Root):
 
     def empty(self):
         return len(self.elements_w) == 0
+
+    def to_string(self):
+        return '<Iterator>'
 
 def _w(value):
     if isinstance(value, W_Root):

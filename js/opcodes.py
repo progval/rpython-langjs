@@ -66,8 +66,8 @@ class LOAD_INTCONSTANT(Opcode):
     def eval(self, ctx):
         ctx.stack_append(self.w_intvalue)
 
-    #def __repr__(self):
-        #return 'LOAD_INTCONSTANT %s' % (self.w_intvalue.ToInteger(),)
+    def __str__(self):
+        return 'LOAD_INTCONSTANT %s' % (self.w_intvalue.ToInteger(),)
 
 class LOAD_BOOLCONSTANT(Opcode):
     def __init__(self, value):
@@ -76,6 +76,11 @@ class LOAD_BOOLCONSTANT(Opcode):
     def eval(self, ctx):
         ctx.stack_append(newbool(self.boolval))
 
+    def __str__(self):
+        if self.boolval:
+            return 'LOAD_BOOLCONSTANT true'
+        return 'LOAD_BOOLCONSTANT false'
+
 class LOAD_FLOATCONSTANT(Opcode):
     def __init__(self, value):
         self.w_floatvalue = W_FloatNumber(float(value))
@@ -83,8 +88,8 @@ class LOAD_FLOATCONSTANT(Opcode):
     def eval(self, ctx):
         ctx.stack_append(self.w_floatvalue)
 
-    #def __repr__(self):
-        #return 'LOAD_FLOATCONSTANT %s' % (self.w_floatvalue.ToNumber(),)
+    def __str__(self):
+        return 'LOAD_FLOATCONSTANT %s' % (self.w_floatvalue.ToNumber(),)
 
 class LOAD_STRINGCONSTANT(Opcode):
     _immutable_fields_ = ['w_stringvalue']
@@ -94,8 +99,8 @@ class LOAD_STRINGCONSTANT(Opcode):
     def eval(self, ctx):
         ctx.stack_append(self.w_stringvalue)
 
-    #def __repr__(self):
-        #return 'LOAD_STRINGCONSTANT "%s"' % (self.w_stringvalue.to_string(),)
+    def __str__(self):
+        return 'LOAD_STRINGCONSTANT "%s"' % (self.w_stringvalue.to_string())
 
 class LOAD_UNDEFINED(Opcode):
     def eval(self, ctx):
@@ -118,6 +123,9 @@ class LOAD_VARIABLE(Opcode):
         ref = ctx.get_ref(self.identifier)
         value = ref.get_value()
         ctx.stack_append(value)
+
+    def __str__(self):
+        return 'LOAD_VARIABLE "%s"' %(self.identifier)
 
 class LOAD_THIS(Opcode):
     # 11.1.1
@@ -242,6 +250,9 @@ class TYPEOF_VARIABLE(Opcode):
             var = ref.get_value()
             var_type = var.type()
         ctx.stack_append(W_String(var_type))
+
+    def __str__(self):
+        return 'TYPEOF_VARIABLE %s' % (self.name)
 
 class ADD(BaseBinaryOperation):
     def operation(self, ctx, left, right):
@@ -390,12 +401,17 @@ class STORE(Opcode):
         ref = ctx.get_ref(self.identifier)
         ref.put_value(value)
 
+    def __str__(self):
+        return 'STORE "%s"' %(self.identifier)
+
 
 class LABEL(Opcode):
     _stack_change = 0
     def __init__(self, num):
         self.num = num
 
+    def __str__(self):
+        return 'LABEL %d' %( self.num)
     #def __repr__(self):
         #return 'LABEL %d' % (self.num,)
 
@@ -419,6 +435,9 @@ class JUMP(BaseJump):
     def do_jump(self, ctx, pos):
         return self.where
 
+    def __str__(self):
+        return 'JUMP %d' % (self.where)
+
 class BaseIfJump(BaseJump):
     def eval(self, ctx):
         value = ctx.stack_pop()
@@ -435,6 +454,9 @@ class JUMP_IF_FALSE(BaseIfJump):
             return pos + 1
         return self.where
 
+    def __str__(self):
+        return 'JUMP_IF_FALSE %d' % (self.where)
+
 class JUMP_IF_FALSE_NOPOP(BaseIfNopopJump):
     def do_jump(self, ctx, pos):
         if self.decision:
@@ -442,11 +464,17 @@ class JUMP_IF_FALSE_NOPOP(BaseIfNopopJump):
             return pos + 1
         return self.where
 
+    def __str__(self):
+        return 'JUMP_IF_FALSE_NOPOP %d' % (self.where)
+
 class JUMP_IF_TRUE(BaseIfJump):
     def do_jump(self, ctx, pos):
         if self.decision:
             return self.where
         return pos + 1
+
+    def __str__(self):
+        return 'JUMP_IF_TRUE %d' % (self.where)
 
 class JUMP_IF_TRUE_NOPOP(BaseIfNopopJump):
     def do_jump(self, ctx, pos):
@@ -454,6 +482,9 @@ class JUMP_IF_TRUE_NOPOP(BaseIfNopopJump):
             return self.where
         ctx.stack_pop()
         return pos + 1
+
+    def __str__(self):
+        return 'JUMP_IF_TRUE_NOPOP %d' % (self.where)
 
 class DECLARE_FUNCTION(Opcode):
     _stack_change = 0
@@ -576,17 +607,10 @@ class TRYCATCHBLOCK(Opcode):
             b = self.tryexec.run(ctx)
         except JsException, e:
             if self.catchexec is not None:
-                old_env = ctx.lexical_environment()
-
-                from js.lexical_environment import DeclarativeEnvironment
-                catch_env = DeclarativeEnvironment(old_env)
-                catch_env_rec = catch_env.environment_record
-                catch_env_rec.create_mutuable_binding(self.catchparam, True)
-                b = e.value
-                catch_env_rec.set_mutable_binding(self.catchparam, b, False)
-                ctx.set_lexical_environment(catch_env)
-                c = self.catchexec.run(ctx)
-                ctx.set_lexical_environment(old_env)
+                from js.execution_context import CatchExecutionContext
+                b = e.msg()
+                catch_ctx = CatchExecutionContext(self.catchexec, self.catchparam, b, ctx)
+                c = self.catchexec.run(catch_ctx)
         else:
             c = b
 
@@ -659,6 +683,9 @@ class JUMP_IF_ITERATOR_EMPTY(BaseJump):
             return self.where
         return pos + 1
 
+    def __str__(self):
+        return 'JUMP_IF_ITERATOR_EMPTY %d' %(self.where)
+
 class NEXT_ITERATOR(Opcode):
     _stack_change = 0
     def __init__(self, name):
@@ -676,14 +703,13 @@ class NEXT_ITERATOR(Opcode):
 # ---------------- with support ---------------------
 
 class WITH(Opcode):
-    def __init__(self, expr, body):
-        self.expr = expr
+    def __init__(self, body):
         self.body = body
 
     def eval(self, ctx):
         from execution_context import WithExecutionContext
         # 12.10
-        expr = self.expr.run(ctx)
+        expr = ctx.stack_pop()
         expr_obj = expr.ToObject()
 
         with_ctx = WithExecutionContext(self.body, expr_obj, ctx)

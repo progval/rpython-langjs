@@ -224,7 +224,7 @@ def unescape(this, args):
 
 def pypy_repr(this, args):
     o = args[0]
-    return repr(o)
+    return str(o)
 
 def inspect(this, args):
     pass
@@ -269,6 +269,7 @@ def js_eval(ctx):
 
     symbol_map = ast.symbol_map
     code = ast_to_bytecode(ast, symbol_map)
+    code.unpop()
 
     f = JsEvalCode(code)
     calling_context = ctx._calling_context_

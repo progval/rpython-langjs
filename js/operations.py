@@ -59,7 +59,6 @@ class ExprStatement(Node):
 
     def emit(self, bytecode):
         self.expr.emit(bytecode)
-        bytecode.emit('POP')
 
 class Expression(Statement):
     pass
@@ -121,17 +120,19 @@ class Array(ListOp):
 
 
 OPERANDS = {
-    '+='  : 'ADD',
-    '-='  : 'SUB',
-    '*='  : 'MUL',
-    '/='  : 'DIV',
-    '++'  : 'INCR',
-    '--'  : 'DECR',
-    '%='  : 'MOD',
-    '&='  : 'BITAND',
-    '|='  : 'BITOR',
-    '^='  : 'BITXOR',
-    '>>=' : 'RSH'
+    '+='   : 'ADD',
+    '-='   : 'SUB',
+    '*='   : 'MUL',
+    '/='   : 'DIV',
+    '++'   : 'INCR',
+    '--'   : 'DECR',
+    '%='   : 'MOD',
+    '&='   : 'BITAND',
+    '|='   : 'BITOR',
+    '^='   : 'BITXOR',
+    '>>='  : 'RSH',
+    '<<='  : 'LSH',
+    '>>>=' : 'URSH'
     }
 
 OPERATIONS = unrolling_iterable(OPERANDS.items())
@@ -227,7 +228,12 @@ class Block(Statement):
         self.nodes = nodes
 
     def emit(self, bytecode):
-        for node in self.nodes:
+        if len(self.nodes) > 1:
+            for node in self.nodes[:-1]:
+                node.emit(bytecode)
+                bytecode.emit('POP')
+        if len(self.nodes) > 0:
+            node = self.nodes[-1]
             node.emit(bytecode)
 
 BitwiseAnd = create_binary_op('BITAND')
@@ -244,11 +250,13 @@ class Unconditional(Statement):
 class Break(Unconditional):
     def emit(self, bytecode):
         assert self.target is None
+        bytecode.emit('LOAD_UNDEFINED')
         bytecode.emit_break()
 
 class Continue(Unconditional):
     def emit(self, bytecode):
         assert self.target is None
+        bytecode.emit('LOAD_UNDEFINED')
         bytecode.emit_continue()
 
 class Call(Expression):
@@ -322,6 +330,7 @@ class FunctionStatement(Statement):
     def emit(self, bytecode):
         from jscode import ast_to_bytecode
         body_code = ast_to_bytecode(self.body_ast, self.symbol_map)
+        body_code.emit('LOAD_UNDEFINED')
 
         from js.functions import JsFunction
         name = self.name
@@ -333,7 +342,6 @@ class FunctionStatement(Statement):
         bytecode.emit('LOAD_FUNCTION', jsfunc)
         if index is not None:
             bytecode.emit('STORE', index, name)
-            bytecode.emit('POP')
 
 class Identifier(Expression):
     def __init__(self, pos, name, index):
@@ -364,17 +372,19 @@ class If(Statement):
 
     def emit(self, bytecode):
         self.condition.emit(bytecode)
-        one = bytecode.prealocate_label()
-        bytecode.emit('JUMP_IF_FALSE', one)
+        endif = bytecode.prealocate_label()
+        endthen = bytecode.prealocate_label()
+        bytecode.emit('JUMP_IF_FALSE', endthen)
         self.thenPart.emit(bytecode)
+        bytecode.emit('JUMP', endif)
+        bytecode.emit('LABEL', endthen)
+
         if self.elsePart is not None:
-            two = bytecode.prealocate_label()
-            bytecode.emit('JUMP', two)
-            bytecode.emit('LABEL', one)
             self.elsePart.emit(bytecode)
-            bytecode.emit('LABEL', two)
         else:
-            bytecode.emit('LABEL', one)
+            bytecode.emit('LOAD_UNDEFINED')
+
+        bytecode.emit('LABEL', endif)
 
 class Switch(Statement):
     def __init__(self, pos, expression, clauses, default_clause):
@@ -390,7 +400,6 @@ class Switch(Statement):
             clause_code = bytecode.prealocate_label()
             next_clause = bytecode.prealocate_label()
             for expression in clause.expressions:
-
                 expression.emit(bytecode)
                 self.expression.emit(bytecode)
                 bytecode.emit('EQ')
@@ -403,7 +412,6 @@ class Switch(Statement):
             bytecode.emit('LABEL', next_clause)
         self.default_clause.emit(bytecode)
         bytecode.emit('LABEL', end_of_switch)
-        bytecode.emit('POP')
 
 class CaseBlock(Statement):
     def __init__(self, pos, clauses, default_clause):
@@ -429,7 +437,6 @@ class StatementList(Statement):
 
     def emit(self, bytecode):
         self.block.emit(bytecode)
-        bytecode.unpop_or_undefined()
 
 class DefaultClause(Statement):
     def __init__(self, pos, block):
@@ -664,13 +671,23 @@ class SourceElements(Statement):
         self.sourcename = sourcename
 
     def emit(self, bytecode):
-        #for varname in self.var_decl:
-            #bytecode.emit('DECLARE_VAR', varname)
-        for funcname, funccode in self.func_decl.items():
-            funccode.emit(bytecode)
+        functions = self.func_decl.values()
+        nodes = self.nodes
 
-        for node in self.nodes:
+        for funccode in functions:
+            funccode.emit(bytecode)
+            bytecode.emit('POP')
+
+        if len(nodes) > 1:
+            for node in nodes[:-1]:
+                node.emit(bytecode)
+                bytecode.emit('POP')
+
+        if len(nodes) > 0:
+            node = nodes[-1]
             node.emit(bytecode)
+        else:
+            bytecode.emit('LOAD_UNDEFINED')
 
 class Program(Statement):
     def __init__(self, pos, body, symbol_map):
@@ -747,6 +764,9 @@ class VariableDeclaration(Expression):
         if self.expr is not None:
             self.expr.emit(bytecode)
             bytecode.emit('STORE', self.index, self.identifier)
+        else:
+            # variable declaration actualy does nothing
+            bytecode.emit('LOAD_UNDEFINED')
 
     def __str__(self):
         return "VariableDeclaration %s:%s" % (self.identifier, self.expr)
@@ -803,10 +823,17 @@ class VariableDeclList(Statement):
         self.nodes = nodes
 
     def emit(self, bytecode):
-        for node in self.nodes:
-            node.emit(bytecode)
-            if (isinstance(node, VariableDeclaration) or isinstance(node, LocalVariableDeclaration)) and node.expr is not None:
+        nodes = self.nodes
+        if len(nodes) > 1:
+            for node in nodes[:-1]:
+                node.emit(bytecode)
                 bytecode.emit('POP')
+
+        if len(nodes) > 0:
+            node = nodes[-1]
+            node.emit(bytecode)
+        else:
+            bytecode.emit('LOAD_UNDEFINED')
 
 class Variable(Statement):
     def __init__(self, pos, body):
@@ -835,7 +862,8 @@ class Void(Expression):
 
 class EmptyExpression(Expression):
     def emit(self, bytecode):
-        bytecode.unpop_or_undefined()
+        #bytecode.unpop_or_undefined()
+        bytecode.emit('LOAD_UNDEFINED')
 
 class With(Statement):
     def __init__(self, pos, expr, body):
@@ -847,15 +875,13 @@ class With(Statement):
         from js.jscode import JsCode
         from js.functions import JsExecutableCode
 
-        expr_code = JsCode()
-        self.expr.emit(expr_code)
-        expr_exec = JsExecutableCode(expr_code)
+        self.expr.emit(bytecode)
 
         body_code = JsCode()
         self.body.emit(body_code)
         body_exec = JsExecutableCode(body_code)
 
-        bytecode.emit('WITH', expr_exec, body_exec)
+        bytecode.emit('WITH', body_exec)
 
 class WhileBase(Statement):
     def __init__(self, pos, condition, body):
@@ -864,69 +890,52 @@ class WhileBase(Statement):
         self.body = body
 
 class Do(WhileBase):
-    opcode = 'DO'
-
     def emit(self, bytecode):
         startlabel = bytecode.emit_startloop_label()
         end = bytecode.prealocate_endloop_label()
         self.body.emit(bytecode)
         self.condition.emit(bytecode)
-        bytecode.emit('JUMP_IF_TRUE', startlabel)
+        bytecode.emit('JUMP_IF_FALSE', end)
+        bytecode.emit('POP')
+        bytecode.emit('JUMP', startlabel)
         bytecode.emit_endloop_label(end)
 
 class While(WhileBase):
     def emit(self, bytecode):
+        bytecode.emit('LOAD_UNDEFINED')
         startlabel = bytecode.emit_startloop_label()
         bytecode.continue_at_label(startlabel)
         self.condition.emit(bytecode)
         endlabel = bytecode.prealocate_endloop_label()
         bytecode.emit('JUMP_IF_FALSE', endlabel)
+        bytecode.emit('POP')
         self.body.emit(bytecode)
         bytecode.emit('JUMP', startlabel)
         bytecode.emit_endloop_label(endlabel)
         bytecode.done_continue()
 
-class ForVarIn(Statement):
-    def __init__(self, pos, vardecl, lobject, body):
-        self.pos = pos
-        assert isinstance(vardecl, VariableDeclaration) or isinstance(vardecl, LocalVariableDeclaration)
-        self.iteratorname = vardecl.identifier
-        self.object = lobject
-        self.body = body
-
-
-    def emit(self, bytecode):
-        #bytecode.emit('DECLARE_VAR', self.iteratorname)
-        self.object.emit(bytecode)
-        bytecode.emit('LOAD_ITERATOR')
-        precond = bytecode.emit_startloop_label()
-        finish = bytecode.prealocate_endloop_label()
-        bytecode.emit('JUMP_IF_ITERATOR_EMPTY', finish)
-        bytecode.emit('NEXT_ITERATOR', self.iteratorname)
-        self.body.emit(bytecode)
-        bytecode.emit('JUMP', precond)
-        bytecode.emit_endloop_label(finish)
-        bytecode.emit('POP')
-
 class ForIn(Statement):
     def __init__(self, pos, name, lobject, body):
         self.pos = pos
-        #assert isinstance(iterator, Node)
         self.iteratorname = name
-        self.object = lobject
+        self.w_object = lobject
         self.body = body
 
     def emit(self, bytecode):
-        self.object.emit(bytecode)
+        self.w_object.emit(bytecode)
         bytecode.emit('LOAD_ITERATOR')
         precond = bytecode.emit_startloop_label()
         finish = bytecode.prealocate_endloop_label()
         bytecode.emit('JUMP_IF_ITERATOR_EMPTY', finish)
         bytecode.emit('NEXT_ITERATOR', self.iteratorname)
         self.body.emit(bytecode)
+        # remove last body statement from stack
+        bytecode.emit('POP')
         bytecode.emit('JUMP', precond)
         bytecode.emit_endloop_label(finish)
+        # remove the iterrator from stack
         bytecode.emit('POP')
+        bytecode.emit('LOAD_UNDEFINED')
 
 class For(Statement):
     def __init__(self, pos, setup, condition, update, body):
@@ -940,11 +949,13 @@ class For(Statement):
         self.setup.emit(bytecode)
         if isinstance(self.setup, Expression):
             bytecode.emit('POP')
+        bytecode.emit('LOAD_UNDEFINED')
         precond = bytecode.emit_startloop_label()
         finish = bytecode.prealocate_endloop_label()
         update = bytecode.prealocate_updateloop_label()
         self.condition.emit(bytecode)
         bytecode.emit('JUMP_IF_FALSE', finish)
+        bytecode.emit('POP')
         self.body.emit(bytecode)
         bytecode.emit_updateloop_label(update)
         self.update.emit(bytecode)
