@@ -11,13 +11,13 @@ def setup(global_object):
     w_Math = W_Math()
     put_property(global_object, 'Math', w_Math)
 
-    put_native_function(w_Math, 'abs', js_abs)
+    put_native_function(w_Math, 'abs', js_abs, params = ['x'])
     put_native_function(w_Math, 'floor', floor)
     put_native_function(w_Math, 'round', js_round)
     put_native_function(w_Math, 'random', random)
     put_native_function(w_Math, 'min', js_min)
     put_native_function(w_Math, 'max', js_max)
-    put_native_function(w_Math, 'pow', pow)
+    put_native_function(w_Math, 'pow', js_pow)
     put_native_function(w_Math, 'sqrt', sqrt)
     put_native_function(w_Math, 'log', log)
 
@@ -62,8 +62,13 @@ def floor(this, args):
 
 # 15.8.2.1
 def js_abs(this, args):
-    val = args[0]
-    return abs(val.ToNumber())
+    arg0 = get_arg(args, 0)
+    x = arg0.ToNumber()
+
+    if isnan(x):
+        return NAN
+
+    return abs(x)
 
 # 15.8.2.15
 def js_round(this, args):
@@ -73,7 +78,7 @@ def isodd(i):
     isinstance(i, int) and i % 2 == 1
 
 # 15.8.2.13
-def pow(this, args):
+def js_pow(this, args):
     w_x = get_arg(args, 0)
     w_y = get_arg(args, 1)
     x = w_x.ToNumber()
