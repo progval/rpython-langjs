@@ -45,7 +45,7 @@
 */
 
 var SECTION="7.8.2";
-var VERSION="ECMA_1"
+var VERSION="ECMA_1";
 startTest();
 writeHeaderToLog(SECTION+" "+"Examples of Semicolon Insertion");
 
