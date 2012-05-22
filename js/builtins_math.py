@@ -26,6 +26,7 @@ def setup(global_object):
     put_native_function(w_Math, 'asin', js_asin, params = ['x'])
     put_native_function(w_Math, 'atan', js_atan, params = ['x'])
     put_native_function(w_Math, 'atan2', js_atan2, params = ['y', 'x'])
+    put_native_function(w_Math, 'ceil', js_ceil, params = ['x'])
 
 
     # 15.8.1
@@ -281,6 +282,22 @@ def js_atan2(this, args):
         return NAN
 
     return math.atan2(y, x)
+
+# 15.8.2.6
+def js_ceil(this, args):
+    arg0 = get_arg(args, 0)
+    x = arg0.ToNumber()
+
+    if isnan(x):
+        return NAN
+
+    if x == INFINITY:
+        return INFINITY
+
+    if x == -INFINITY:
+        return -INFINITY
+
+    return math.ceil(x)
 
 import time
 from pypy.rlib import rrandom
