@@ -23,7 +23,6 @@ class W_Root(object):
         return self
 
     def ToObject(self):
-        import pdb; pdb.set_trace()
         raise JsTypeError()
 
     def ToNumber(self):
