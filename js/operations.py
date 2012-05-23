@@ -952,6 +952,14 @@ class ForIn(Statement):
             bytecode.emit('STORE_MEMBER')
             bytecode.emit('POP')
 
+        elif isinstance(left_expr, Member):
+            left_expr.expr.emit(bytecode)
+            left_expr.left.emit(bytecode)
+            bytecode.emit('STORE_MEMBER')
+            bytecode.emit('POP')
+        else:
+            raise Exception('unsupported')
+
         body.emit(bytecode)
         # remove last body statement from stack
         bytecode.emit('POP')
