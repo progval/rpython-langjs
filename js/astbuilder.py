@@ -585,18 +585,14 @@ class ASTBuilder(RPythonVisitor):
         left = self.dispatch(node.children[1])
         right = self.dispatch(node.children[2])
         body= self.dispatch(node.children[3])
-        assert isinstance(left, Identifier)
-        name = left.name
-        return operations.ForIn(pos, name, right, body)
+        return operations.ForIn(pos, left, right, body)
 
     def visit_invarfor(self, node):
         pos = self.get_pos(node)
         left = self.dispatch(node.children[1])
         right = self.dispatch(node.children[2])
         body= self.dispatch(node.children[3])
-        assert isinstance(left, operations.VariableDeclaration)# or isinstance(left, operations.LocalVariableDeclaration)
-        name = left.identifier
-        return operations.ForIn(pos, name, right, body)
+        return operations.ForIn(pos, left, right, body)
 
     def get_next_expr(self, node, i):
         if isinstance(node.children[i], Symbol) and \

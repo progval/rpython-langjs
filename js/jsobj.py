@@ -1140,7 +1140,7 @@ class W_String(W_Primitive):
         return self.to_string() == other_string
 
     def __str__(self):
-        return 'W_String("%s")' % (repr(self._strval_),)
+        return 'W_String("%s")' % (str(self._strval_),)
 
     def ToObject(self):
         return W_StringObject(self)

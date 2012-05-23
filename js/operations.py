@@ -915,20 +915,44 @@ class While(WhileBase):
         bytecode.done_continue()
 
 class ForIn(Statement):
-    def __init__(self, pos, name, lobject, body):
+    def __init__(self, pos, left_expr, lobject, body):
         self.pos = pos
-        self.iteratorname = name
+        self.left_expr = left_expr
         self.w_object = lobject
         self.body = body
 
     def emit(self, bytecode):
-        self.w_object.emit(bytecode)
+        w_object = self.w_object
+        left_expr = self.left_expr
+        body = self.body
+
+        w_object.emit(bytecode)
         bytecode.emit('LOAD_ITERATOR')
         precond = bytecode.emit_startloop_label()
         finish = bytecode.prealocate_endloop_label()
         bytecode.emit('JUMP_IF_ITERATOR_EMPTY', finish)
-        bytecode.emit('NEXT_ITERATOR', self.iteratorname)
-        self.body.emit(bytecode)
+
+        # put next iterator value on stack
+        bytecode.emit('NEXT_ITERATOR')
+
+        # store iterrator value into approperiate place
+        if isinstance(left_expr, Identifier):
+            name = left_expr.name
+            index = left_expr.index
+            bytecode.emit('STORE', index, name)
+            bytecode.emit('POP')
+        elif isinstance(left_expr, VariableDeclaration):
+            name = left_expr.identifier
+            index = left_expr.index
+            bytecode.emit('STORE', index, name)
+            bytecode.emit('POP')
+        elif isinstance(left_expr, MemberDot):
+            bytecode.emit('LOAD_STRINGCONSTANT', left_expr.name)
+            left_expr.left.emit(bytecode)
+            bytecode.emit('STORE_MEMBER')
+            bytecode.emit('POP')
+
+        body.emit(bytecode)
         # remove last body statement from stack
         bytecode.emit('POP')
         bytecode.emit('JUMP', precond)

@@ -140,19 +140,16 @@ class LOAD_ARRAY(Opcode):
     def eval(self, ctx):
         from js.jsobj import W__Array
         array = W__Array()
-        for i in range(self.counter):
-            el = ctx.stack_pop()
-            index = str(self.counter - i - 1)
-            array.put(index, el)
-        length = self.counter
-        array.put('length', _w(length))
+        list_w = ctx.stack_pop_n(self.counter) # [:] # pop_n returns a non-resizable list
+        for index, el in enumerate(list_w):
+            array.put(str(index), el)
         ctx.stack_append(array)
 
     def stack_change(self):
         return -1 * self.counter + 1
 
-    #def __repr__(self):
-        #return 'LOAD_ARRAY %d' % (self.counter,)
+    def __str__(self):
+        return 'LOAD_ARRAY %d' % (self.counter,)
 
 class LOAD_LIST(Opcode):
     _immutable_fields_ = ['counter']
@@ -167,8 +164,8 @@ class LOAD_LIST(Opcode):
     def stack_change(self):
         return -1 * self.counter + 1
 
-    #def __repr__(self):
-        #return 'LOAD_LIST %d' % (self.counter,)
+    def __str__(self):
+        return 'LOAD_LIST %d' % (self.counter,)
 
 class LOAD_FUNCTION(Opcode):
     def __init__(self, funcobj):
@@ -211,6 +208,9 @@ class LOAD_MEMBER(Opcode):
         name = ctx.stack_pop().to_string()
         value = w_obj.get(name)
         ctx.stack_append(value)
+
+    def __str__(self):
+        return 'LOAD_MEMBER'
 
 class COMMA(BaseUnaryOperation):
     def eval(self, ctx):
@@ -662,10 +662,13 @@ class LOAD_ITERATOR(Opcode):
         from js.jsobj import W_BasicObject
         assert isinstance(obj, W_BasicObject)
 
-        for key, prop in obj._properties_.items():
+        properties = obj._properties_.items()
+        properties.sort()
+        for key, prop in properties:
             if prop.enumerable is True:
                 props.append(_w(key))
 
+        props.reverse()
         from js.jsobj import W_Iterator
         iterator = W_Iterator(props)
 
@@ -688,8 +691,6 @@ class JUMP_IF_ITERATOR_EMPTY(BaseJump):
 
 class NEXT_ITERATOR(Opcode):
     _stack_change = 0
-    def __init__(self, name):
-        self.name = name
 
     def eval(self, ctx):
         from js.jsobj import W_Iterator
@@ -697,8 +698,10 @@ class NEXT_ITERATOR(Opcode):
         iterator = ctx.stack_top()
         assert isinstance(iterator, W_Iterator)
         next_el = iterator.next()
-        ref = ctx.get_ref(self.name)
-        ref.put_value(next_el)
+        ctx.stack_append(next_el)
+
+        #ref = ctx.get_ref(self.name)
+        #ref.put_value(next_el)
 
 # ---------------- with support ---------------------
 
