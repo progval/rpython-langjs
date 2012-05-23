@@ -958,7 +958,7 @@ class ForIn(Statement):
             bytecode.emit('STORE_MEMBER')
             bytecode.emit('POP')
         else:
-            raise Exception('unsupported')
+            raise JsTypeError('unsupported')
 
         body.emit(bytecode)
         # remove last body statement from stack
