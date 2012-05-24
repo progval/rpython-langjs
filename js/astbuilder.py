@@ -289,10 +289,14 @@ class ASTBuilder(RPythonVisitor):
     visit_objectliteral = listop
 
     def visit_block(self, node):
+        def isnotempty(node):
+            return node is not None and not isinstance(node, operations.Empty)
+
         op = node.children[0]
         pos = self.get_pos(op)
         l = [self.dispatch(child) for child in node.children[1:]]
-        return operations.Block(pos, l)
+        nodes = [node for node in l if isnotempty(node)]
+        return operations.Block(pos, nodes)
 
     def visit_arguments(self, node):
         pos = self.get_pos(node)

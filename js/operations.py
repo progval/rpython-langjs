@@ -235,6 +235,8 @@ class Block(Statement):
         if len(self.nodes) > 0:
             node = self.nodes[-1]
             node.emit(bytecode)
+        else:
+            bytecode.emit('LOAD_UNDEFINED')
 
 BitwiseAnd = create_binary_op('BITAND')
 BitwiseXor = create_binary_op('BITXOR')
