@@ -90,6 +90,7 @@ class JsExecutableCode(JsBaseFunction):
         return self.opcodes[pc]
 
     def run(self, ctx):
+        from js.globals import DEBUG
         if len(self.opcodes) == 0:
             from js.jsobj import w_Undefined
             return w_Undefined
@@ -100,7 +101,8 @@ class JsExecutableCode(JsBaseFunction):
                 break
             opcode = self._get_opcode(pc)
             result = opcode.eval(ctx)
-            #print("%3d %25s %s" % (pc, str(opcode), str([str(s) for s in ctx._stack_])))
+            if DEBUG:
+                print(u'%3d %25s %s' % (pc, str(opcode), unicode([unicode(s) for s in ctx._stack_])))
             assert result is None
 
             from js.opcodes import RETURN

@@ -32,10 +32,8 @@ try:
 except ImportError:
     pass
 
-DEBUG = False
-
 def debugjs(this, args):
-    global DEBUG
+    from js.globals import DEBUG
     DEBUG = not DEBUG
     return W_Boolean(DEBUG)
 
@@ -128,7 +126,9 @@ class JSInterpreter(code.InteractiveConsole):
             banner = 'PyPy JavaScript Interpreter'
         code.InteractiveConsole.interact(self, banner)
 
-def main(inspect=False, files=[]):
+def main(inspect = False, debug = False, files=[]):
+    import js.globals
+    js.globals.DEBUG = debug
     jsi = JSInterpreter()
     for filename in files:
         jsi.runcodefromfile(filename)
@@ -143,11 +143,15 @@ if __name__ == '__main__':
                     action='store_true', default=False,
                     help='inspect interactively after running script')
 
+    parser.add_option('-d', dest='debug',
+                    action='store_true', default=False,
+                    help='debug')
+
     # ... (add other options)
     opts, args = parser.parse_args()
 
     if args:
-        main(inspect=opts.inspect, files=args)
+        main(inspect=opts.inspect, debug = opts.debug, files=args)
     else:
-        main(inspect=opts.inspect)
+        main(inspect=opts.inspect, debug = opts.debug)
     sys.exit(0)

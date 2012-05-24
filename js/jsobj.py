@@ -1140,7 +1140,7 @@ class W_String(W_Primitive):
         return self.to_string() == other_string
 
     def __str__(self):
-        return 'W_String("%s")' % (str(self._strval_),)
+        return u'W_String("%s")' % (unicode(self._strval_),)
 
     def ToObject(self):
         return W_StringObject(self)
@@ -1289,6 +1289,9 @@ class W_List(W_Root):
 
     def to_list(self):
         return self.values
+
+    def __str__(self):
+        return 'W_List(%s)' % ( str([str(v) for v in self.values]) )
 
 class W_Iterator(W_Root):
     def __init__(self, elements_w):
