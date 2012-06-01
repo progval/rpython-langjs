@@ -78,10 +78,10 @@ var TITLE   = "Function Calls";
 
 writeHeaderToLog( SECTION + " "+ TITLE);
 
-new TestCase( SECTION,
-	      "3.valueOf()",
-	      3,
-	      eval("3.valueOf()") );
+//new TestCase( SECTION,
+//	      "3.valueOf()",
+//	      3,
+//	      eval("3.valueOf()") );
 
 new TestCase( SECTION,
 	      "(3).valueOf()",
