@@ -98,15 +98,15 @@ for ( var i = 0, RESULT; i < PROPERTY.length; i++ ) {
   DESCRIPTION = PROPERTY[i].object + ".valueOf()";
   EXPECTED = "error";
 
-  new TestCase( SECTION,
-                PROPERTY[i].object + ".valueOf()",
-                PROPERTY[i].value,
-                eval( PROPERTY[i].object+ ".valueOf()" ) );
-
-  new TestCase( SECTION,
-                PROPERTY[i].object + ".toString()",
-                PROPERTY[i].string,
-                eval(PROPERTY[i].object+ ".toString()") );
+//  new TestCase( SECTION,
+//                PROPERTY[i].object + ".valueOf()",
+//                PROPERTY[i].value,
+//                eval( PROPERTY[i].object+ ".valueOf()" ) );
+//
+//  new TestCase( SECTION,
+//                PROPERTY[i].object + ".toString()",
+//                PROPERTY[i].string,
+//                eval(PROPERTY[i].object+ ".toString()") );
 
 }
 
