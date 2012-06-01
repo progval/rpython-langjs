@@ -581,10 +581,13 @@ class W_BasicObject(W_Root):
 class W__PrimitiveObject(W_BasicObject):
     def __init__(self, primitive_value):
         W_BasicObject.__init__(self)
-        self._primitive_value_ = _w(primitive_value)
+        self.set_primitive_value(primitive_value)
 
     def PrimitiveValue(self):
         return self._primitive_value_
+
+    def set_primitive_value(self, value):
+        self._primitive_value_ = _w(value)
 
 class W_BooleanObject(W__PrimitiveObject):
     _class_ = 'Boolean'
@@ -619,14 +622,14 @@ class W_StringObject(W__PrimitiveObject):
         d = PropertyDescriptor(value = _w(result_string), enumerable = True, writable = False, configurable = False)
         return d
 
-class W_DateObject(W__PrimitiveObject):
-    _class_ = 'Date'
-
 class W__Object(W_BasicObject):
     pass
 
 class W_GlobalObject(W__Object):
     _class_ = 'global'
+
+class W_DateObject(W__PrimitiveObject):
+    _class_ = 'Date'
 
 class W_BasicFunction(W_BasicObject):
     _class_ = 'Function'
@@ -775,7 +778,8 @@ class W_BooleanConstructor(W_BasicFunction):
 class W_DateConstructor(W_BasicFunction):
     def Call(self, args=[], this=None):
         import time
-        return W_DateObject(_w(int(time.time()*1000)))
+        now = _w(int(time.time() * 1000))
+        return W_DateObject(now)
 
     # 15.7.2.1
     def Construct(self, args=[]):
