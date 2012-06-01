@@ -7,7 +7,7 @@ from js.execution import ThrowException, JsTypeError
 
 from pypy.rlib.rarithmetic import r_uint, intmask, ovfcheck
 from pypy.rlib.rfloat import  INFINITY, NAN, isnan, isinf
-from js.builtins_number import w_NAN
+from js.builtins_number import w_NAN, w_POSITIVE_INFINITY, w_NEGATIVE_INFINITY
 
 import math
 
@@ -85,19 +85,32 @@ def mod(ctx, w_left, w_right):
 
     return W_FloatNumber(math.fmod(left, right))
 
+# 11.5.2
 def division(ctx, nleft, nright):
-    # XXX optimise for ints and floats
     fleft = nleft.ToNumber()
     fright = nright.ToNumber()
+    if isnan(fleft) or isnan(fright):
+        return w_NAN
+
+    if isinf(fleft) and isinf(fright):
+        return w_NAN
+
+    if isinf(fleft) and fright == 0:
+        return fleft
+
+    if isinf(fright):
+        return 0
+
+    if fleft == 0 and fright == 0:
+        return w_NAN
+
+    if fleft == 0:
+        return 0
+
     if fright == 0:
-        if fleft < 0:
-            val = -INFINITY
-        elif fleft == 0:
-            val = NAN
-        else:
-            val = INFINITY
-    else:
-        val = fleft / fright
+        return w_POSITIVE_INFINITY
+
+    val = fleft / fright
     return W_FloatNumber(val)
 
 def compare(ctx, x, y):
