@@ -11,23 +11,26 @@ from js.builtins_number import w_NAN, w_POSITIVE_INFINITY, w_NEGATIVE_INFINITY
 
 import math
 
-# 11.6.1
-def plus(ctx, nleft, nright):
-    if isinstance(nleft, W_String) or isinstance(nright, W_String):
-        sleft = nleft.to_string()
-        sright = nright.to_string()
+# 11.6.1, 11.6.3
+def plus(ctx, lval, rval):
+    lprim = lval.ToPrimitive()
+    rprim = rval.ToPrimitive()
+
+    if isinstance(lprim, W_String) or isinstance(rprim, W_String):
+        sleft = lprim.to_string()
+        sright = rprim.to_string()
         return W_String(sleft + sright)
     # hot path
-    if isinstance(nleft, W_IntNumber) and isinstance(nright, W_IntNumber):
-        ileft = nleft.ToInteger()
-        iright = nright.ToInteger()
+    if isinstance(lprim, W_IntNumber) and isinstance(rprim, W_IntNumber):
+        ileft = lprim.ToInteger()
+        iright = rprim.ToInteger()
         try:
             return W_IntNumber(ovfcheck(ileft + iright))
         except OverflowError:
             return W_FloatNumber(float(ileft) + float(iright))
     else:
-        fleft = nleft.ToNumber()
-        fright = nright.ToNumber()
+        fleft = lprim.ToNumber()
+        fright = rprim.ToNumber()
         return W_FloatNumber(fleft + fright)
 
 def increment(ctx, nleft, constval=1):

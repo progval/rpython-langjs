@@ -592,6 +592,9 @@ class W__PrimitiveObject(W_BasicObject):
 class W_BooleanObject(W__PrimitiveObject):
     _class_ = 'Boolean'
 
+    def __str__(self):
+        return u'W_BooleanObject(%s)' % (str(self._primitive_value_))
+
 class W_NumericObject(W__PrimitiveObject):
     _class_ = 'Number'
 
