@@ -269,7 +269,6 @@ def js_eval(ctx):
 
     symbol_map = ast.symbol_map
     code = ast_to_bytecode(ast, symbol_map)
-    code.unpop()
 
     f = JsEvalCode(code)
     calling_context = ctx._calling_context_

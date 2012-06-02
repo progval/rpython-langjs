@@ -59,4 +59,4 @@ def value_of(this, args):
     else:
         raise JsTypeError()
 
-    return this.ToBoolean()
+    return b

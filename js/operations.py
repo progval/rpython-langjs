@@ -150,6 +150,8 @@ class BaseAssignment(Expression):
         if self.has_operation():
             self.left.emit(bytecode)
             if self.post_operation():
+                # Force ToNumber
+                bytecode.emit('UPLUS')
                 bytecode.emit('DUP')
             self.right.emit(bytecode)
             self.emit_operation(bytecode)
