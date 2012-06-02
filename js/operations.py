@@ -932,8 +932,11 @@ class ForIn(Statement):
 
         w_object.emit(bytecode)
         bytecode.emit('LOAD_ITERATOR')
+        # load the "last" iterations result
+        bytecode.emit('LOAD_UNDEFINED')
         precond = bytecode.emit_startloop_label()
         finish = bytecode.prealocate_endloop_label()
+
         bytecode.emit('JUMP_IF_ITERATOR_EMPTY', finish)
 
         # put next iterator value on stack
@@ -965,13 +968,8 @@ class ForIn(Statement):
             raise JsTypeError('unsupported')
 
         body.emit(bytecode)
-        # remove last body statement from stack
-        bytecode.emit('POP')
         bytecode.emit('JUMP', precond)
         bytecode.emit_endloop_label(finish)
-        # remove the iterrator from stack
-        bytecode.emit('POP')
-        bytecode.emit('LOAD_UNDEFINED')
 
 class For(Statement):
     def __init__(self, pos, setup, condition, update, body):

@@ -680,9 +680,14 @@ class JUMP_IF_ITERATOR_EMPTY(BaseJump):
 
     def do_jump(self, ctx, pos):
         from js.jsobj import W_Iterator
+        last_block_value = ctx.stack_pop()
         iterator = ctx.stack_top()
         assert isinstance(iterator, W_Iterator)
         if iterator.empty():
+            # discard the iterator
+            ctx.stack_pop()
+            # put the last block value on the stack
+            ctx.stack_append(last_block_value)
             return self.where
         return pos + 1
 
