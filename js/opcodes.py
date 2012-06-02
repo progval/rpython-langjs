@@ -333,13 +333,15 @@ class NOT(BaseUnaryOperation):
 class INCR(BaseUnaryOperation):
     def eval(self, ctx):
         value = ctx.stack_pop()
-        newvalue = increment(ctx, value)
+        num = _w(value.ToNumber())
+        newvalue = increment(ctx, num)
         ctx.stack_append(newvalue)
 
 class DECR(BaseUnaryOperation):
     def eval(self, ctx):
         value = ctx.stack_pop()
-        newvalue = decrement(ctx, value)
+        num = _w(value.ToNumber())
+        newvalue = decrement(ctx, num)
         ctx.stack_append(newvalue)
 
 class GT(BaseBinaryComparison):

@@ -2,7 +2,7 @@
 """ Base operations implementations
 """
 
-from js.jsobj import W_String, W_IntNumber, W_FloatNumber
+from js.jsobj import W_String, W_IntNumber, W_FloatNumber, _w
 from js.execution import ThrowException, JsTypeError
 
 from pypy.rlib.rarithmetic import r_uint, intmask, ovfcheck
@@ -11,6 +11,7 @@ from js.builtins_number import w_NAN, w_POSITIVE_INFINITY, w_NEGATIVE_INFINITY
 
 import math
 
+# 11.6.1
 def plus(ctx, nleft, nright):
     if isinstance(nleft, W_String) or isinstance(nright, W_String):
         sleft = nleft.to_string()
