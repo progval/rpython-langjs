@@ -97,16 +97,16 @@ def division(ctx, nleft, nright):
         return w_NAN
 
     if isinf(fleft) and fright == 0:
-        return fleft
+        return nleft
 
     if isinf(fright):
-        return 0
+        return _w(0)
 
     if fleft == 0 and fright == 0:
         return w_NAN
 
     if fleft == 0:
-        return 0
+        return _w(0)
 
     if fright == 0:
         return w_POSITIVE_INFINITY
