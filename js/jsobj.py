@@ -634,6 +634,11 @@ class W_GlobalObject(W__Object):
 class W_DateObject(W__PrimitiveObject):
     _class_ = 'Date'
 
+    def default_value(self, hint = 'String'):
+        if hint is None:
+            hint = 'String'
+        return W_BasicObject.default_value(self, hint)
+
 class W_BasicFunction(W_BasicObject):
     _class_ = 'Function'
     _type_ = 'function'
