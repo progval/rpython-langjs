@@ -91,7 +91,7 @@ class W_Undefined(W_Primitive):
         raise JsTypeError()
 
 class W_Null(W_Primitive):
-    _type_ = 'null'
+    _type_ = 'object'
 
     def ToBoolean(self):
         return False
