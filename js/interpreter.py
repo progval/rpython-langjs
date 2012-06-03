@@ -68,7 +68,8 @@ class Interpreter(object):
         from js.execution_context import GlobalExecutionContext
         ctx = GlobalExecutionContext(c, self.global_object)
 
-        return c.run(ctx)
+        result = c.run(ctx)
+        return result.value
 
         #"""run the interpreter"""
         #bytecode = JsCode()

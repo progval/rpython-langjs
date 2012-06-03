@@ -274,7 +274,7 @@ def js_eval(ctx):
     calling_context = ctx._calling_context_
     ctx = EvalExecutionContext(f, calling_context = calling_context)
     res = f.run(ctx)
-    return _w(res)
+    return res
 
 def js_load(ctx):
     from js.interpreter import load_file

@@ -1,4 +1,3 @@
-from js.opcodes import BaseJump
 from js.jsobj import _w
 
 class JsBaseFunction(object):
@@ -56,10 +55,12 @@ class JsNativeFunction(JsBaseFunction):
         return self._name_
 
     def run(self, ctx):
+        from js.completion import ReturnCompletion
         args = ctx.argv()
         this = ctx.this_binding()
         res = self._function_(this, args)
-        return _w(res)
+        compl = ReturnCompletion(value = _w(res))
+        return compl
 
     def to_string(self):
         name = self.name()
@@ -85,40 +86,9 @@ class JsExecutableCode(JsBaseFunction):
     #def estimated_stack_size(self):
         #return self.stack_size
 
-    def _get_opcode(self, pc):
-        assert pc >= 0
-        return self.opcodes[pc]
-
     def run(self, ctx):
-        from js.globals import DEBUG
-        if len(self.opcodes) == 0:
-            from js.jsobj import w_Undefined
-            return w_Undefined
-
-        if DEBUG:
-            print('start running %s' % (str(self)))
-
-        pc = 0
-        while True:
-            if pc >= len(self.opcodes):
-                break
-            opcode = self._get_opcode(pc)
-            result = opcode.eval(ctx)
-            if DEBUG:
-                print(u'%3d %25s %s' % (pc, str(opcode), unicode([unicode(s) for s in ctx._stack_])))
-            assert result is None
-
-            from js.opcodes import RETURN
-            if isinstance(opcode, BaseJump):
-                new_pc = opcode.do_jump(ctx, pc)
-                pc = new_pc
-                continue
-            elif isinstance(opcode, RETURN):
-                break
-            else:
-                pc += 1
-
-        return ctx.stack_top()
+        result = self._js_code_.run(ctx)
+        return result
 
     def variables(self):
         return self._js_code_.variables()

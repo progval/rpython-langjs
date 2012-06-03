@@ -851,7 +851,7 @@ class W__Function(W_BasicFunction):
         ctx._calling_context_ = calling_context
 
         res = code.run(ctx)
-        return res
+        return res.value
 
     # 15.3.5.4
     def get(self, p):

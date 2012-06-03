@@ -201,6 +201,49 @@ class JsCode(object):
                 op.where = labels[op.where]
         self.has_labels = False
 
+    def _get_opcode(self, pc):
+        assert pc >= 0
+        return self.opcodes[pc]
+
+    def run(self, ctx):
+        from js.globals import DEBUG
+        from js.completion import ReturnCompletion, NormalCompletion
+        from js.opcodes import RETURN, BaseJump
+        from js.jsobj import w_Undefined
+
+        if len(self.opcodes) == 0:
+            return w_Undefined
+
+        if DEBUG:
+            print('start running %s' % (str(self)))
+
+        pc = 0
+        result = None
+        while True:
+            if pc >= len(self.opcodes):
+                break
+            opcode = self._get_opcode(pc)
+            result = opcode.eval(ctx)
+
+            if DEBUG:
+                print(u'%3d %25s %s %s' % (pc, str(opcode), unicode([unicode(s) for s in ctx._stack_]), str(result)))
+
+            if isinstance(result, ReturnCompletion):
+                break;
+
+            if isinstance(opcode, BaseJump):
+                new_pc = opcode.do_jump(ctx, pc)
+                pc = new_pc
+                continue
+            else:
+                pc += 1
+
+        if result is None:
+            result = NormalCompletion(value = ctx.stack_top())
+
+        return result
+
+
     #def __repr__(self):
         #return "\n".join([repr(i) for i in self.opcodes])
 

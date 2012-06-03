@@ -554,8 +554,9 @@ class DECLARE_VAR(Opcode):
 class RETURN(Opcode):
     _stack_change = 0
     def eval(self, ctx):
-        pass
-        #raise ReturnException(ctx.stack_pop())
+        from js.completion import ReturnCompletion
+        value = ctx.stack_top()
+        return ReturnCompletion(value)
 
 class POP(Opcode):
     _stack_change = -1
@@ -612,6 +613,7 @@ class TRYCATCHBLOCK(Opcode):
         self.finallyexec = finallyfunc
 
     def eval(self, ctx):
+        from js.completion import is_return_completion
         from js.execution import JsException
         try:
             b = self.tryexec.run(ctx)
@@ -631,7 +633,10 @@ class TRYCATCHBLOCK(Opcode):
         else:
             f = c
 
-        ctx.stack_append(f)
+        if is_return_completion(f):
+            return f
+        else:
+            ctx.stack_append(f.value)
 
 def commonnew(ctx, obj, args):
     from js.jsobj import W_BasicFunction

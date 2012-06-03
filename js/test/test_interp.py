@@ -23,8 +23,8 @@ def test_simple():
     from js.execution_context import ExecutionContext
     ctx = ExecutionContext()
     res = f.run(ctx)
-
-    assert res.ToNumber() == 6.0
+    value = res.value
+    assert value.ToNumber() == 6.0
 
 def assertp(code, prints, captured):
     out, err = captured.readouterr()
@@ -968,3 +968,8 @@ def test_function_without_implicit_return_value():
 def test_boolean_constructor():
     assertv("typeof Boolean(true)", 'boolean')
     assertv("typeof new Boolean(true)", 'object')
+
+def test_return_trycatch():
+    assertv("function f() { try { return 1; } catch(e) { return -1; } }; f()", 1)
+    assertv("function f() { try { throw('foo'); return 1; } catch(e) { return -1; } }; f()", -1)
+    assertv("function f() { try { throw('foo'); return 1; } catch(e) { return -1; } finally { return 0; } }; f()", 0)
