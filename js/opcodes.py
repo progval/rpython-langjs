@@ -232,10 +232,18 @@ class IN(BaseBinaryOperation):
         has_name = right.has_property(name)
         return newbool(has_name)
 
+# 11.4.3
+def type_of(var):
+    var_type = var.type()
+    if var_type == 'null':
+        return 'object'
+    return var_type
+
 class TYPEOF(BaseUnaryOperation):
     def eval(self, ctx):
         var = ctx.stack_pop()
-        ctx.stack_append(W_String(var.type()))
+        var_type = type_of(var)
+        ctx.stack_append(_w(var_type))
 
 class TYPEOF_VARIABLE(Opcode):
     def __init__(self, index, name):
@@ -248,7 +256,7 @@ class TYPEOF_VARIABLE(Opcode):
             var_type = 'undefined'
         else:
             var = ref.get_value()
-            var_type = var.type()
+            var_type = type_of(var)
         ctx.stack_append(W_String(var_type))
 
     def __str__(self):

@@ -91,13 +91,13 @@ class W_Undefined(W_Primitive):
         raise JsTypeError()
 
 class W_Null(W_Primitive):
-    _type_ = 'object'
+    _type_ = 'null'
 
     def ToBoolean(self):
         return False
 
     def to_string(self):
-        return self._type_
+        return 'null'
 
     def check_object_coercible(self):
         raise JsTypeError()
