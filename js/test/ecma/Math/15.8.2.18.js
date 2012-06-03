@@ -133,10 +133,10 @@ new TestCase( SECTION,
 	      -1,
 	      Math.tan(7*Math.PI/4));
 
-//new TestCase( SECTION,
-//	      "Infinity/Math.tan(-0)",
-//	      -Infinity,
-//	      Infinity/Math.tan(-0) );
+new TestCase( SECTION,
+	      "Infinity/Math.tan(-0)",
+	      -Infinity,
+	      Infinity/Math.tan(-0) );
 
 /*
   Arctan (x) ~ PI/2 - 1/x   for large x.  For x = 1.6x10^16, 1/x is about the last binary digit of double precision PI/2.

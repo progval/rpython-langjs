@@ -104,10 +104,10 @@ new TestCase( SECTION,
 	      0,
 	      Math.atan2(0,0)          );
 
-//new TestCase( SECTION,
-//	      "Math.atan2(0, -0)",
-//	      Math.PI,
-//	      Math.atan2(0,-0)         );
+new TestCase( SECTION,
+	      "Math.atan2(0, -0)",
+	      Math.PI,
+	      Math.atan2(0,-0)         );
 
 new TestCase( SECTION,
 	      "Math.atan2(0, -1)",
@@ -119,25 +119,25 @@ new TestCase( SECTION,
 	      -0,
 	      Math.atan2(-0, 1)        );
 
-//new TestCase( SECTION,
-//	      "Infinity/Math.atan2(-0, 1)",
-//	      -Infinity,
-//	      Infinity/Math.atan2(-0,1) );
+new TestCase( SECTION,
+	      "Infinity/Math.atan2(-0, 1)",
+	      -Infinity,
+	      Infinity/Math.atan2(-0,1) );
 
 new TestCase( SECTION,
 	      "Math.atan2(-0,	0)",
 	      -0,
 	      Math.atan2(-0,0)         );
 
-//new TestCase( SECTION,
-//	      "Math.atan2(-0,	-0)",
-//	      -Math.PI,
-//	      Math.atan2(-0, -0)       );
+new TestCase( SECTION,
+	      "Math.atan2(-0,	-0)",
+	      -Math.PI,
+	      Math.atan2(-0, -0)       );
 
-//new TestCase( SECTION,
-//	      "Math.atan2(-0,	-1)",
-//	      -Math.PI,
-//	      Math.atan2(-0, -1)       );
+new TestCase( SECTION,
+	      "Math.atan2(-0,	-1)",
+	      -Math.PI,
+	      Math.atan2(-0, -1)       );
 
 new TestCase( SECTION,
 	      "Math.atan2(-1,	0)",
@@ -164,10 +164,10 @@ new TestCase( SECTION,
 	      -0,
 	      Math.atan2(-1,Number.POSITIVE_INFINITY) );
 
-//new TestCase( SECTION,
-//	      "Infinity/Math.atan2(-1, Infinity)",
-//	      -Infinity,
-//	      Infinity/Math.atan2(-1,Infinity) );
+new TestCase( SECTION,
+	      "Infinity/Math.atan2(-1, Infinity)",
+	      -Infinity,
+	      Infinity/Math.atan2(-1,Infinity) );
 
 new TestCase( SECTION,
 	      "Math.atan2(-1,-Infinity)",

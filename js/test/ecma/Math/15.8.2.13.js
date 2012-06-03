@@ -195,15 +195,15 @@ new TestCase( SECTION,
 	      0,
 	      Math.pow(Number.POSITIVE_INFINITY, -1) );
 
-//new TestCase( SECTION,
-//	      "Math.pow(-Infinity, 1)",
-//	      Number.NEGATIVE_INFINITY,
-//	      Math.pow(Number.NEGATIVE_INFINITY, 1) );
+new TestCase( SECTION,
+	      "Math.pow(-Infinity, 1)",
+	      Number.NEGATIVE_INFINITY,
+	      Math.pow(Number.NEGATIVE_INFINITY, 1) );
 
-//new TestCase( SECTION,
-//	      "Math.pow(-Infinity, 333)",
-//	      Number.NEGATIVE_INFINITY,
-//	      Math.pow(Number.NEGATIVE_INFINITY, 333) );
+new TestCase( SECTION,
+	      "Math.pow(-Infinity, 333)",
+	      Number.NEGATIVE_INFINITY,
+	      Math.pow(Number.NEGATIVE_INFINITY, 333) );
 
 new TestCase( SECTION,
 	      "Math.pow(Infinity, 2)",
@@ -230,10 +230,10 @@ new TestCase( SECTION,
 	      -0,
 	      Math.pow(Number.NEGATIVE_INFINITY, -1) );
 
-//new TestCase( SECTION,
-//	      "Infinity/Math.pow(-Infinity, -1)",
-//	      -Infinity,
-//	      Infinity/Math.pow(Number.NEGATIVE_INFINITY, -1) );
+new TestCase( SECTION,
+	      "Infinity/Math.pow(-Infinity, -1)",
+	      -Infinity,
+	      Infinity/Math.pow(Number.NEGATIVE_INFINITY, -1) );
 
 new TestCase( SECTION,
 	      "Math.pow(-Infinity, -3)",
@@ -320,15 +320,15 @@ new TestCase( SECTION,
 	      -0,
 	      Math.pow(-0,3) );
 
-//new TestCase( SECTION,
-//	      "Infinity/Math.pow(-0, 1)",
-//	      -Infinity,
-//	      Infinity/Math.pow(-0, 1) );
+new TestCase( SECTION,
+	      "Infinity/Math.pow(-0, 1)",
+	      -Infinity,
+	      Infinity/Math.pow(-0, 1) );
 
-//new TestCase( SECTION,
-//	      "Infinity/Math.pow(-0, 3)",
-//	      -Infinity,
-//	      Infinity/Math.pow(-0,3) );
+new TestCase( SECTION,
+	      "Infinity/Math.pow(-0, 3)",
+	      -Infinity,
+	      Infinity/Math.pow(-0,3) );
 
 new TestCase( SECTION,
 	      "Math.pow(-0, 2)",
@@ -340,15 +340,15 @@ new TestCase( SECTION,
 	      0,
 	      Math.pow(-0, Number.POSITIVE_INFINITY) );
 
-//new TestCase( SECTION,
-//	      "Math.pow(-0, -1)",
-//              Number.NEGATIVE_INFINITY,
-//	      Math.pow(-0, -1) );
+new TestCase( SECTION,
+	      "Math.pow(-0, -1)",
+              Number.NEGATIVE_INFINITY,
+	      Math.pow(-0, -1) );
 
-//new TestCase( SECTION,
-//	      "Math.pow(-0, -10001)",
-//	      Number.NEGATIVE_INFINITY,
-//	      Math.pow(-0, -10001) );
+new TestCase( SECTION,
+	      "Math.pow(-0, -10001)",
+	      Number.NEGATIVE_INFINITY,
+	      Math.pow(-0, -10001) );
 
 new TestCase( SECTION,
 	      "Math.pow(-0, -2)",

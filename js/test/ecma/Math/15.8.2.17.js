@@ -122,10 +122,10 @@ new TestCase( SECTION,
 	      -0,
 	      Math.sqrt(-0));
 
-//new TestCase( SECTION,
-//	      "Infinity/Math.sqrt(-0)",
-//	      -Infinity,
-//	      Infinity/Math.sqrt(-0) );
+new TestCase( SECTION,
+	      "Infinity/Math.sqrt(-0)",
+	      -Infinity,
+	      Infinity/Math.sqrt(-0) );
 
 new TestCase( SECTION,
 	      "Math.sqrt(Infinity)",

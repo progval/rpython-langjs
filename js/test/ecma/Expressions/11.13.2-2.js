@@ -141,15 +141,15 @@ new TestCase( SECTION,
               Number.POSITIVE_INFINITY,
               eval("VAR1 = 0; VAR2 = Number.POSITIVE_INFINITY; VAR2 /= VAR1; VAR2") );
 
-//new TestCase( SECTION,
-//              "VAR1 = -0; VAR2= Infinity; VAR2 /= VAR1",
-//              Number.NEGATIVE_INFINITY,
-//              eval("VAR1 = -0; VAR2 = Number.POSITIVE_INFINITY; VAR2 /= VAR1; VAR2") );
-//
-//new TestCase( SECTION,
-//              "VAR1 = -0; VAR2= -Infinity; VAR2 /= VAR1",
-//              Number.POSITIVE_INFINITY,
-//              eval("VAR1 = -0; VAR2 = Number.NEGATIVE_INFINITY; VAR2 /= VAR1; VAR2") );
+new TestCase( SECTION,
+              "VAR1 = -0; VAR2= Infinity; VAR2 /= VAR1",
+              Number.NEGATIVE_INFINITY,
+              eval("VAR1 = -0; VAR2 = Number.POSITIVE_INFINITY; VAR2 /= VAR1; VAR2") );
+
+new TestCase( SECTION,
+              "VAR1 = -0; VAR2= -Infinity; VAR2 /= VAR1",
+              Number.POSITIVE_INFINITY,
+              eval("VAR1 = -0; VAR2 = Number.NEGATIVE_INFINITY; VAR2 /= VAR1; VAR2") );
 
 new TestCase( SECTION,
               "VAR1 = 0; VAR2= -Infinity; VAR2 /= VAR1",
@@ -201,15 +201,15 @@ new TestCase( SECTION,
               Number.POSITIVE_INFINITY,
               eval("VAR1 = 1; VAR2 = 0; VAR1 /= VAR2; VAR1") );
 
-//new TestCase( SECTION,
-//              "VAR1 = 1; VAR2= -0; VAR1 /= VAR2",
-//              Number.NEGATIVE_INFINITY,
-//              eval("VAR1 = 1; VAR2 = -0; VAR1 /= VAR2; VAR1") );
+new TestCase( SECTION,
+              "VAR1 = 1; VAR2= -0; VAR1 /= VAR2",
+              Number.NEGATIVE_INFINITY,
+              eval("VAR1 = 1; VAR2 = -0; VAR1 /= VAR2; VAR1") );
 
-//new TestCase( SECTION,
-//              "VAR1 = -1; VAR2= 0; VAR1 /= VAR2",
-//              Number.NEGATIVE_INFINITY,
-//              eval("VAR1 = -1; VAR2 = 0; VAR1 /= VAR2; VAR1") );
+new TestCase( SECTION,
+              "VAR1 = -1; VAR2= 0; VAR1 /= VAR2",
+              Number.NEGATIVE_INFINITY,
+              eval("VAR1 = -1; VAR2 = 0; VAR1 /= VAR2; VAR1") );
 
 new TestCase( SECTION,
               "VAR1 = -1; VAR2= -0; VAR1 /= VAR2",

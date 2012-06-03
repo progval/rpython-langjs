@@ -162,14 +162,14 @@ new TestCase( SECTION,
 	      -0,
 	      Math.min(-0,-0) );
 
-//new TestCase( SECTION,
-//	      "Infinity/Math.min(0,-0)",
-//	      -Infinity,
-//	      Infinity/Math.min(0,-0) );
-//
-//new TestCase( SECTION,
-//	      "Infinity/Math.min(-0,-0)",
-//	      -Infinity,
-//	      Infinity/Math.min(-0,-0) );
+new TestCase( SECTION,
+	      "Infinity/Math.min(0,-0)",
+	      -Infinity,
+	      Infinity/Math.min(0,-0) );
+
+new TestCase( SECTION,
+	      "Infinity/Math.min(-0,-0)",
+	      -Infinity,
+	      Infinity/Math.min(-0,-0) );
 
 test();

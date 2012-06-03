@@ -89,8 +89,22 @@ def mod(ctx, w_left, w_right):
 
     return W_FloatNumber(math.fmod(left, right))
 
+def sign(x):
+    from math import copysign
+    return copysign(1.0, x)
+
 # 11.5.2
 def division(ctx, nleft, nright):
+    def sign_of(a, b):
+        sign_a = sign(a)
+        sign_b = sign(b)
+        return sign_a * sign_b
+
+    def w_signed_inf(sign):
+        if sign < 0.0:
+            return w_NEGATIVE_INFINITY
+        return w_POSITIVE_INFINITY
+
     fleft = nleft.ToNumber()
     fright = nright.ToNumber()
     if isnan(fleft) or isnan(fright):
@@ -100,7 +114,8 @@ def division(ctx, nleft, nright):
         return w_NAN
 
     if isinf(fleft) and fright == 0:
-        return nleft
+        s = sign_of(fleft, fright)
+        return w_signed_inf(s)
 
     if isinf(fright):
         return _w(0)
@@ -108,11 +123,9 @@ def division(ctx, nleft, nright):
     if fleft == 0 and fright == 0:
         return w_NAN
 
-    if fleft == 0:
-        return _w(0)
-
     if fright == 0:
-        return w_POSITIVE_INFINITY
+        s = sign_of(fleft, fright)
+        return w_signed_inf(s)
 
     val = fleft / fright
     return W_FloatNumber(val)
@@ -157,6 +170,7 @@ def compare_e(ctx, x, y):
         s5 = s2.to_string()
         return s4 >= s5
 
+# 11.9.3
 def AbstractEC(ctx, x, y):
     """
     Implements the Abstract Equality Comparison x == y
@@ -248,5 +262,8 @@ def StrictEC(x, y):
 
 def uminus(obj, ctx):
     if isinstance(obj, W_IntNumber):
-        return W_IntNumber(-obj.ToInteger())
+        intval = obj.ToInteger()
+        if intval == 0:
+            return W_FloatNumber(-float(intval))
+        return W_IntNumber(-intval)
     return W_FloatNumber(-obj.ToNumber())

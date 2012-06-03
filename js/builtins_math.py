@@ -12,8 +12,8 @@ def setup(global_object):
     put_property(global_object, 'Math', w_Math)
 
     put_native_function(w_Math, 'abs', js_abs, params = ['x'])
-    put_native_function(w_Math, 'floor', floor)
-    put_native_function(w_Math, 'round', js_round)
+    put_native_function(w_Math, 'floor', floor, params = ['x'])
+    put_native_function(w_Math, 'round', js_round, params = ['x'])
     put_native_function(w_Math, 'random', random)
     put_native_function(w_Math, 'min', js_min, params = ['value1', 'value2'])
     put_native_function(w_Math, 'max', js_max, params = ['value1', 'value2'])
@@ -58,16 +58,13 @@ def setup(global_object):
 
 # 15.8.2.9
 def floor(this, args):
-    if len(args) < 1:
+    arg0 = get_arg(args, 0)
+    x = arg0.ToNumber()
+
+    if isnan(x):
         return NAN
 
-    val = args[0].ToNumber()
-
-    pos = math.floor(val)
-    if isnan(val):
-        pos = INFINITY
-
-    return pos
+    return math.floor(x)
 
 # 15.8.2.1
 def js_abs(this, args):
@@ -81,10 +78,52 @@ def js_abs(this, args):
 
 # 15.8.2.15
 def js_round(this, args):
-    return floor(this, args)
+    arg0 = get_arg(args, 0)
+    x = arg0.ToNumber()
+
+    if isnan(x):
+        return x
+
+    if x == 0:
+        return x
+
+    if x > 0 and x < 0.5:
+        return 0
+
+    if x < 0 and x >= -0.5:
+        return -0.0
+
+    if isinf(x):
+        return x
+
+    return math.floor(x + 0.5)
 
 def isodd(i):
-    isinstance(i, int) and i % 2 == 1
+    return i % 2 == 1
+
+CMP_LT = -1
+CMP_GT = 1
+CMP_EQ = 0
+def cmp_signed_zero(a, b):
+    from js.baseop import sign
+    sign_a = sign(a)
+    sign_b = sign(b)
+
+    if a == 0 and b == 0:
+        if sign_a < sign_b:
+            return CMP_LT
+        if sign_a > sign_b:
+            return CMP_GT
+        return CMP_EQ
+
+    if a < b:
+        return CMP_LT
+    if a > b:
+        return CMP_GT
+    return CMP_EQ
+
+def eq_signed_zero(a, b):
+    return cmp_signed_zero(a, b) is CMP_EQ
 
 # 15.8.2.13
 def js_pow(this, args):
@@ -118,20 +157,20 @@ def js_pow(this, args):
     if x == -INFINITY and y > 0 and not isodd(y):
         return INFINITY
     if x == -INFINITY and y < 0 and isodd(y):
-        return -0
+        return -0.0
     if x == -INFINITY and y < 0 and not isodd(y):
         return 0
-    if x == 0 and y > 0:
+    if eq_signed_zero(x, 0.0) and y > 0:
         return 0
-    if x == 0 and y < 0:
+    if eq_signed_zero(x, 0.0) and y < 0:
         return INFINITY
-    if x == -0 and y > 0 and isodd(y):
-        return -0
-    if x == -0 and y > 0 and not isodd(y):
+    if eq_signed_zero(x, -0.0) and y > 0 and isodd(y):
+        return -0.0
+    if eq_signed_zero(x, -0.0) and y > 0 and not isodd(y):
         return +0
-    if x == -0 and y < 0 and isodd(y):
+    if eq_signed_zero(x, -0.0) and y < 0 and isodd(y):
         return -INFINITY
-    if x == -0 and y < 0 and not isodd(y):
+    if eq_signed_zero(x, -0.0) and y < 0 and not isodd(y):
         return INFINITY
     if x < 0 and not isinstance(y, int):
         return NAN
@@ -188,7 +227,11 @@ def js_min(this, args):
     if not values:
         return INFINITY
 
-    return min(values)
+    result = min(values)
+    if result == 0 and -0.0 in values:
+        return -0.0
+
+    return result
 
 # 15.8.2.12
 def js_max(this, args):
