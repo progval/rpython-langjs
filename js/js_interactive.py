@@ -32,16 +32,6 @@ try:
 except ImportError:
     pass
 
-def debugjs(this, args):
-    from js.globals import DEBUG
-    DEBUG = not DEBUG
-    return W_Boolean(DEBUG)
-
-def tracejs(this, args):
-    arguments = args
-    import pdb
-    pdb.set_trace()
-    return w_Undefined
 
 def quitjs(this, args):
     sys.exit(0)
@@ -53,8 +43,6 @@ class JSInterpreter(code.InteractiveConsole):
         #ctx = self.interpreter.global_context
         #from builtins import new_native_function
         #self.interpreter.w_Global.Put('quit', new_native_function(ctx, quitjs))
-        #self.interpreter.w_Global.Put('trace', new_native_function(ctx, tracejs))
-        #self.interpreter.w_Global.Put('debug', new_native_function(ctx, debugjs))
 
     def runcodefromfile(self, filename):
         f = open_file_as_stream(filename)

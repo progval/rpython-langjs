@@ -37,6 +37,12 @@ class Interpreter(object):
 
         put_native_function(global_object, 'load', js_load)
 
+        def js_debug(this, args):
+            import js.globals
+            js.globals.DEBUG = not js.globals.DEBUG
+            return js.globals.DEBUG
+
+        put_native_function(global_object, 'debug', js_debug)
 
     def js_load(self, filename):
         ast = load_file(filename)

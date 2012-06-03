@@ -95,6 +95,9 @@ class JsExecutableCode(JsBaseFunction):
             from js.jsobj import w_Undefined
             return w_Undefined
 
+        if DEBUG:
+            print('start running %s' % (str(self)))
+
         pc = 0
         while True:
             if pc >= len(self.opcodes):
