@@ -1295,6 +1295,10 @@ class W_FloatNumber(W_Number):
                 return 'Infinity'
             else:
                 return '-Infinity'
+
+        if self._floatval_ == 0:
+            return '0'
+
         res = ''
         try:
             res = formatd(self._floatval_, 'g', 10)
