@@ -37,7 +37,7 @@
 
 var completed = false;
 var testcases = new Array();
-var tc = testcases.length; 
+var tc = testcases.length;
 
 var SECTION = "";
 var VERSION = "";
@@ -55,7 +55,7 @@ var DEBUG = false;
 var DESCRIPTION;
 var EXPECTED;
 
-/* 
+/*
  * wrapper for test case constructor that doesn't require the SECTION
  * argument.
  */
@@ -126,23 +126,22 @@ function startTest() {
 }
 
 function test() {
-  // for ( tc=0; tc < testcases.length; tc++ ) {
-  //    // temporary hack to work around some unknown issue in 1.7
-  //    try
-  //    {
-  //    testcases[tc].passed = writeTestCaseResult(
-  //      testcases[tc].expect,
-  //      testcases[tc].actual,
-  //      testcases[tc].description +" = "+ testcases[tc].actual );
-  //    testcases[tc].reason += ( testcases[tc].passed ) ? "" : "wrong value ";
-  //    }
-  //    catch(e)
-  //    {
-  //      print('test(): empty testcase for tc = ' + tc + ' ' + e);
-  //    }
-  //  }
-  //  stopTest();
-    return testcases.length;
+ for ( tc=0; tc < testcases.length; tc++ ) {
+    // temporary hack to work around some unknown issue in 1.7
+    try
+    {
+    testcases[tc].passed = writeTestCaseResult(
+      testcases[tc].expect,
+      testcases[tc].actual,
+      testcases[tc].description +" = "+ testcases[tc].actual );
+    testcases[tc].reason += ( testcases[tc].passed ) ? "" : "wrong value ";
+    }
+    catch(e)
+    {
+      print('test(): empty testcase for tc = ' + tc + ' ' + e);
+    }
+  }
+  stopTest();
 }
 
 /*
@@ -196,15 +195,17 @@ function getTestCaseResult( expect, actual ) {
  */
 
 function run_test(tc) {
-    // try {
+     try {
         getTestCaseResult(testcases[tc].expect, testcases[tc].actual);
         testcases[tc].reason += ( testcases[tc].passed ) ? "passed" : testcases[tc].description + " wrong value expected: "
                                 +testcases[tc].expect+" but got: "+ testcases[tc].actual;
-        return testcases[tc].reason;
-    // }
-    // catch(e) {
-    //     return -1;
-    // }
+        //return testcases[tc].reason;
+        //result = testcases[tc].passed;
+        return testcases[tc];
+     }
+     catch(e) {
+         return -1;
+     }
 }
 function writeTestCaseResult( expect, actual, string ) {
   var passed = getTestCaseResult( expect, actual );
@@ -219,7 +220,7 @@ function writeFormattedResult( expect, actual, string, passed ) {
 }
 
 function writeHeaderToLog( string ) {
-  // print( string );
+    print( string );
 }
 /* end of print functions */
 
@@ -257,10 +258,10 @@ function getFailedCases() {
 /* JavaScriptOptions
    encapsulate the logic for setting and retrieving the values
    of the javascript options.
-   
+
    Note: in shell, options() takes an optional comma delimited list
    of option names, toggles the values for each option and returns the
-   list of option names which were set before the call. 
+   list of option names which were set before the call.
    If no argument is passed to options(), it returns the current
    options with value true.
 
@@ -282,7 +283,7 @@ function JavaScriptOptions()
   this.orig.strict = this.strict = false;
   this.orig.werror = this.werror = false;
 
-  this.privileges = 'UniversalXPConnect UniversalPreferencesRead ' + 
+  this.privileges = 'UniversalXPConnect UniversalPreferencesRead ' +
                     'UniversalPreferencesWrite';
 
   if (typeof options == 'function')
@@ -327,7 +328,7 @@ function JavaScriptOptions()
 
     try
     {
-      this.orig.strict = this.strict = 
+      this.orig.strict = this.strict =
         pref.getBoolPref('javascript.options.strict');
     }
     catch(e)
@@ -336,7 +337,7 @@ function JavaScriptOptions()
 
     try
     {
-      this.orig.werror = this.werror = 
+      this.orig.werror = this.werror =
         pref.getBoolPref('javascript.options.werror');
     }
     catch(e)
@@ -345,7 +346,7 @@ function JavaScriptOptions()
   }
 }
 
-JavaScriptOptions.prototype.setOption = 
+JavaScriptOptions.prototype.setOption =
 function (optionName, optionValue)
 {
   if (typeof options == 'function')
