@@ -641,7 +641,6 @@ class W_GlobalObject(W__Object):
 
 class W_DateObject(W__PrimitiveObject):
     _class_ = 'Date'
-
     def default_value(self, hint = 'String'):
         if hint is None:
             hint = 'String'
@@ -793,9 +792,36 @@ class W_BooleanConstructor(W_BasicFunction):
 # 15.9.2
 class W_DateConstructor(W_BasicFunction):
     def Call(self, args=[], this=None):
+        from js.builtins import get_arg
         import time
-        now = _w(int(time.time() * 1000))
-        return W_DateObject(now)
+        import datetime
+
+        if len(args) > 1:
+            arg0 = get_arg(args, 0);
+            arg1 = get_arg(args, 1, _w(0));
+            arg2 = get_arg(args, 2, _w(0));
+
+            year = arg0.ToInteger()
+            month = arg1.ToInteger() + 1
+            day = arg2.ToInteger() + 1
+
+            d = datetime.date(year, month, day)
+            sec = time.mktime(d.timetuple())
+            value = _w(int(sec * 1000))
+
+        elif len(args) == 1:
+            arg0 = get_arg(args, 0);
+            if isinstance(arg0, W_String):
+                raise NotImplementedError()
+            else:
+                num = arg0.ToNumber()
+                if isnan(num) or isinf(num):
+                    raise JsTypeError(num)
+                value = _w(int(num))
+        else:
+            value = _w(int(time.time() * 1000))
+
+        return W_DateObject(value)
 
     # 15.7.2.1
     def Construct(self, args=[]):

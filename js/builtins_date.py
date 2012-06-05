@@ -93,7 +93,8 @@ def setup(global_object):
 def to_string(this, args):
     d = w_date_to_datetime(this)
     local = to_local(d)
-    s = local.strftime('%c %z')
+
+    s = local.strftime('%a %b %d %Y %H:%M:%S GMT%z (%Z)')
     return s
 
 # 15.9.5.8
@@ -195,7 +196,7 @@ def get_utc_milliseconds(this, args):
 # 15.9.5.26
 def get_timezone_offset(this, args):
     d = w_date_to_datetime(this)
-    offset = -1 * (d.utcoffset().to_seconds() / 60)
+    offset = -1 * (d.utcoffset().total_seconds() / 60)
     return offset
 
 # 15.9.5.27
