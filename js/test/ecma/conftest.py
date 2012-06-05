@@ -9,14 +9,14 @@ from js.execution import JsException
 from pypy.rlib.parsing.parsing import ParseError
 
 
-exclusionlist = ['shell.js', 'browser.js']
-skip = [\
-    '15.4.5.1-1',
-    '10.2.2-2',
-    '15.1.2.1-2',
-    '15.5.4.11-2',
-    '15.5.4.11-5',
-    '7.2-1',
+EXCLUSIONLIST = ['shell.js', 'browser.js']
+SKIP = [\
+    '7.2-1.0',
+    '7.2-1.1',
+    '7.2-1.2',
+    '7.2-1.3',
+    '7.2-1.4',
+    '7.2-1.5',
     '7.4.3-14-n',
     '7.4.3-15-n',
     '7.4.3-4-n',
@@ -24,14 +24,122 @@ skip = [\
     '7.4.3-9-n',
     '7.7.3-2',
     '7.7.4',
-    '11.2.1-3-n',
+    '7.2-6.0',
+    '7.2-6.1',
+    '7.4.3-13-n.0',
+    '7.4.3-2-n.0',
+    '7.4.3-3-n.0',
+    '7.6.14',
+    '7.6.15',
+    '7.7.3-1.9',
+    '7.7.3-1.11',
+    '7.7.3-1.12',
+    '7.7.3-1.13',
+    '7.7.3-1.15',
+    '7.7.3-1.16',
+    '7.7.3-1.17',
+    '7.7.3-1.18',
+    '7.7.3-1.20',
+    '7.7.3-1.21',
+    '7.7.3-1.22',
+    '7.7.3-1.23',
+    '7.7.3-1.25',
+    '7.7.3.155',
+    '7.7.3.156',
+    '7.7.3.157',
+    '7.7.3.161',
+    '7.7.3.162',
+    '7.7.3.163',
+    '7.7.3.167',
+    '9.8.1.12',
+    '9.8.1.13',
+    '9.8.1.22',
+    '9.8.1.35',
+    '9.4-1.0',
+    '9.4-1.1',
+    '9.4-1.2',
+    '9.4-2.0',
+    '9.4-2.1',
+    '9.4-2.2',
+    '9.8.1.36',
+    '9.3.1-3.39',
+    '9.3.1-3.41',
+    '9.3.1-3.42',
+    '9.3.1-3.43',
+    '9.3.1-3.45',
+    '9.3.1-3.46',
+    '9.3.1-3.47',
+    '9.3.1-3.48',
+    '9.3.1-3.50',
+    '9.3.1-3.51',
+    '9.3.1-3.52',
+    '9.3.1-3.53',
+    '9.3.1-3.55',
+    '9.3.1-3.104',
+    '10.2.2-2.1',
+    '11.2.1-3-n.0',
+    '11.2.1-3-n.1',
     '12.10-1',
+    '12.6.3-2.0',
     '12.7-1-n',
     '12.8-1-n',
+    '12.9-1-n.0',
+    '15.1.2.1-2.0',
+    '15.4.4.5-3',
+    '15.4.5.1-1',
+    '15.5.4.11-2.0',
+    '15.5.4.11-2.1',
+    '15.5.4.11-2.2',
+    '15.5.4.11-2.3',
+    '15.5.4.11-2.4',
+    '15.5.4.11-2.5',
+    '15.5.4.11-2.6',
+    '15.5.4.11-2.7',
+    '15.5.4.11-2.8',
+    '15.5.4.11-2.9',
+    '15.5.4.11-2.10',
+    '15.5.4.11-2.11',
+    '15.5.4.11-2.12',
+    '15.5.4.11-2.13',
+    '15.5.4.11-2.14',
+    '15.5.4.11-2.15',
+    '15.5.4.11-2.16',
+    '15.5.4.11-2.17',
+    '15.5.4.11-2.18',
+    '15.5.4.11-2.19',
+    '15.5.4.11-2.20',
+    '15.5.4.11-2.21',
+    '15.5.4.11-2.22',
+    '15.5.4.11-2.23',
+    '15.5.4.11-2.24',
+    '15.5.4.11-2.25',
+    '15.5.4.11-2.26',
+    '15.5.4.11-2.27',
+    '15.5.4.11-2.28',
+    '15.5.4.11-2.29',
+    '15.5.4.11-2.30',
+    '15.5.4.11-2.31',
+    '15.5.4.11-2.32',
+    '15.5.4.11-2.33',
+    '15.5.4.11-2.34',
+    '15.5.4.11-2.35',
+    '15.5.4.11-2.36',
+    '15.5.4.11-2.37',
+    '15.5.4.11-5.3',
+    '15.5.4.11-5.16',
+    '15.5.1.22',
+    '15.5.1.23',
+    '15.5.1.32',
+    '15.5.1.45',
+    '15.5.1.46',
+    '15.5.4.12-1.184',
+    '15.5.4.12-4.80',
+    '15.5.4.12-4.93',
     ]
 
+
 def pytest_ignore_collect(path, config):
-    if path.basename in exclusionlist:
+    if path.basename in EXCLUSIONLIST:
         return True
 
 def pytest_collect_file(path, parent):
@@ -55,7 +163,7 @@ class JSTestFile(pytest.File):
     def collect(self):
         if self.session.config.getvalue("ecma") is not True:
             pytest.skip("ECMA tests disabled, run with --ecma")
-        if self.name in skip:
+        if self.name in SKIP:
             pytest.skip()
 
         interp = Interpreter()
@@ -65,10 +173,11 @@ class JSTestFile(pytest.File):
         def overriden_eval(ctx):
             from js.builtins_global import js_eval
             from js.execution import JsException
+            from js.completion import NormalCompletion
             try:
                 return js_eval(ctx)
             except JsException:
-                return _w("error")
+                return NormalCompletion(value = _w("error"))
 
         global_object = interp.global_object
         del(global_object._properties_['eval'])
@@ -97,25 +206,31 @@ class JSTestFile(pytest.File):
         run_test_func = global_object.get('run_test')
         def get_result(test_num):
             w_test_number = _w(test_num)
-            result = run_test_func.Call(args = [w_test_number])
-            return result.to_string()
+            result_obj = run_test_func.Call(args = [w_test_number])
+            result_passed = result_obj.get('passed').ToBoolean()
+            result_reason = result_obj.get('reason').to_string();
+            return (result_passed, result_reason) # result.to_string()
 
         for number in xrange(testcount):
-            result = get_result(number)
-            yield JSTestItem(str(number), result, parent=self)
+            passed, reason = get_result(number)
+            yield JSTestItem(str(number), passed, reason, parent=self)
 
 class JSTestItem(pytest.Item):
-    def __init__(self, name, result, parent=None, config=None, session=None):
+    def __init__(self, name, passed, reason, parent=None, config=None, session=None):
         super(JSTestItem, self).__init__(name, parent, config, session)
         self.test_number = int(name)
         self.name = parent.name + '.' + name
-        self.result = result
+        self.passed = passed
+        self.reason = reason
 
     def runtest(self):
-        result = self.result
+        reason = self.reason
+        passed = self.passed
+        if self.name in SKIP:
+            py.test.skip()
         __tracebackhide__ = True
-        if result != "passed":
-            raise JsTestException(self, result)
+        if passed != True:
+            raise JsTestException(self, reason)
 
     def repr_failure(self, excinfo):
         if isinstance(excinfo.value, JsTestException):
