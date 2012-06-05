@@ -1,5 +1,3 @@
-from js.jscode import JsCode
-
 from pypy.rlib.objectmodel import we_are_translated
 from pypy.rlib.streamio import open_file_as_stream
 
@@ -70,15 +68,3 @@ class Interpreter(object):
 
         result = c.run(ctx)
         return result.value
-
-        #"""run the interpreter"""
-        #bytecode = JsCode()
-        #script.emit(bytecode)
-        #if not we_are_translated():
-            ## debugging
-            #self._code = bytecode
-        #func = bytecode.make_js_function()
-        #if interactive:
-        #    return func._run_with_context(self.global_context)
-        #else:
-        #    func._run_with_context(self.global_context)
