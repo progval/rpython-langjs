@@ -78,10 +78,6 @@ class JsExecutableCode(JsBaseFunction):
         JsBaseFunction.__init__(self)
         self._js_code_ = js_code
         self.stack_size = js_code.estimated_stack_size()
-        self.opcodes = self._opcodes_from_code_()
-
-    def _opcodes_from_code_(self):
-        return self._js_code_.to_executable_opcodes()
 
     #def estimated_stack_size(self):
         #return self.stack_size
@@ -119,12 +115,10 @@ class JsExecutableCode(JsBaseFunction):
             return 'function () { }'
 
 class JsGlobalCode(JsExecutableCode):
-    def _opcodes_from_code_(self):
-        return self._js_code_.to_global_opcodes()
+    pass
 
 class JsEvalCode(JsExecutableCode):
-    def _opcodes_from_code_(self):
-        return self._js_code_.to_eval_opcodes()
+    pass
 
     def is_eval_code(self):
         return True
@@ -135,10 +129,6 @@ class JsFunction(JsExecutableCode):
     def __init__(self, name, js_code):
         JsExecutableCode.__init__(self, js_code)
         self._name_ = name
-
-    def _opcodes_from_code_(self):
-        return self._js_code_.to_function_opcodes()
-        #self.opcodes = make_sure_not_resized(code.opcodes[:])
 
     def name(self):
         return self._name_

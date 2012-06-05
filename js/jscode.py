@@ -211,6 +211,8 @@ class JsCode(object):
         from js.opcodes import RETURN, BaseJump
         from js.jsobj import w_Undefined
 
+        self.unlabel()
+
         if len(self.opcodes) == 0:
             return w_Undefined
 
