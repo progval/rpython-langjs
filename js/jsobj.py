@@ -1345,7 +1345,7 @@ class W_List(W_Root):
         return self.values
 
     def __str__(self):
-        return 'W_List(%s)' % ( str([str(v) for v in self.values]) )
+        return 'W_List(%s)' % ( unicode([unicode(v) for v in self.values]) )
 
 class W_Iterator(W_Root):
     def __init__(self, elements_w):
