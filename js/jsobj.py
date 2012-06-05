@@ -870,6 +870,8 @@ class W__Function(W_BasicFunction):
 
     def Call(self, args = [], this = None, calling_context = None):
         from js.execution_context import FunctionExecutionContext
+        from js.completion import Completion
+
         code = self.code()
         argn = self.formal_parameters()
         strict = self._strict_
@@ -885,6 +887,8 @@ class W__Function(W_BasicFunction):
         ctx._calling_context_ = calling_context
 
         res = code.run(ctx)
+
+        assert isinstance(res, Completion)
         return res.value
 
     # 15.3.5.4

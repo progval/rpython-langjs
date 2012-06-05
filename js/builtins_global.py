@@ -249,9 +249,11 @@ def js_eval(ctx):
     x = get_arg(args, 0)
 
     if not isinstance(x, W_String):
-        return x
+        from js.completion import NormalCompletion
+        return NormalCompletion(value = x)
 
     src = x.to_string()
+
     try:
         ast = parse_to_ast(src)
     except ParseError, e:
@@ -272,6 +274,7 @@ def js_eval(ctx):
 
     f = JsEvalCode(code)
     calling_context = ctx._calling_context_
+
     ctx = EvalExecutionContext(f, calling_context = calling_context)
     res = f.run(ctx)
     return res
