@@ -578,6 +578,14 @@ class W_BasicObject(W_Root):
     def ToObject(self):
         return self
 
+    ###
+
+    def named_properties(self):
+        properties = set(self._properties_.keys())
+        if not isnull_or_undefined(self._prototype_):
+            properties.update(self._prototype_.named_properties())
+        return properties
+
 class W__PrimitiveObject(W_BasicObject):
     def __init__(self, primitive_value):
         W_BasicObject.__init__(self)

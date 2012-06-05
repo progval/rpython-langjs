@@ -677,9 +677,11 @@ class LOAD_ITERATOR(Opcode):
         from js.jsobj import W_BasicObject
         assert isinstance(obj, W_BasicObject)
 
-        properties = obj._properties_.items()
+        properties = list(obj.named_properties())
         properties.sort()
-        for key, prop in properties:
+
+        for key in properties:
+            prop = obj.get_property(key)
             if prop.enumerable is True:
                 props.append(_w(key))
 
@@ -797,6 +799,25 @@ class STORE_LOCAL(Opcode):
 
     #def __repr__(self):
         #return 'STORE_LOCAL %d' % (self.local,)
+
+class SETUP_TRY(Opcode):
+    def __init__(self, end):
+        self.end = end
+
+    def eval(self, ctx):
+        from js.jsobj import W_Try
+        ctx.stack_push(W_Try(self.end))
+
+    def __str__(self):
+        return 'SETUP_TRY %d' % (self.end)
+
+class POP_BLOCK(Opcode):
+    def eval(self, ctx):
+        from js.jsobj import W_Block
+        while True:
+            b = ctx.stack_pop()
+            if isinstance(b, W_Block):
+                break
 
 # different opcode mappings, to make annotator happy
 
