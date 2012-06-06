@@ -973,6 +973,7 @@ def test_return_trycatch():
     assertv("function f() { try { return 1; } catch(e) { return -1; } }; f()", 1)
     assertv("function f() { try { throw('foo'); return 1; } catch(e) { return -1; } }; f()", -1)
     assertv("function f() { try { throw('foo'); return 1; } catch(e) { return -1; } finally { return 0; } }; f()", 0)
+    assertv("function f() { try { throw('foo'); return 1; } finally { return 0; } }; f()", 0)
 
 def test_instanceof():
     assertv("function f(){this.a = 1;}; x = new f(); x instanceof f;", True);

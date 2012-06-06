@@ -746,7 +746,8 @@ class Try(Statement):
             catchexec = JsExecutableCode(catchcode)
             catchparam = self.catchparam.get_literal()
         else:
-            catchfunc = None
+            catchexec = None
+            catchparam = None
 
         if self.finallyblock:
             finallycode = JsCode()
@@ -754,7 +755,6 @@ class Try(Statement):
             finallyexec = JsExecutableCode(finallycode)
         else:
             finallyexec = None
-        catchparam = self.catchparam.get_literal()
         bytecode.emit('TRYCATCHBLOCK', tryexec, catchparam, catchexec, finallyexec)
 
 class VariableDeclaration(Expression):
