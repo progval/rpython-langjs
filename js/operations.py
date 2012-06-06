@@ -521,6 +521,7 @@ StrictEq = create_binary_op('IS')
 StrictNe = create_binary_op('ISNOT')
 
 In = create_binary_op('IN')
+InstanceOf = create_binary_op('INSTANCEOF')
 
 class Typeof(Expression):
     def __init__(self, pos, left):
@@ -743,6 +744,7 @@ class Try(Statement):
             catchcode = JsCode()
             self.catchblock.emit(catchcode)
             catchexec = JsExecutableCode(catchcode)
+            catchparam = self.catchparam.get_literal()
         else:
             catchfunc = None
 

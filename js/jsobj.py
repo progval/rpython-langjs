@@ -578,6 +578,8 @@ class W_BasicObject(W_Root):
     def ToObject(self):
         return self
 
+    def has_instance(self, other):
+        raise JsTypeError()
     ###
 
     def named_properties(self):
@@ -675,6 +677,23 @@ class W_BasicFunction(W_BasicObject):
 
     def _to_string_(self):
         return 'function() {}'
+
+    # 15.3.5.3
+    def has_instance(self, v):
+        if not isinstance(v, W_BasicObject):
+            return False
+
+        o = self.get('prototype')
+
+        if not isinstance(o, W_BasicObject):
+            raise JsTypeError()
+
+        while True:
+            v = v.prototype()
+            if isnull_or_undefined(v):
+                return False
+            if v == o:
+                return True
 
 class W_ObjectConstructor(W_BasicFunction):
     def Call(self, args = [], this = None, calling_context = None):

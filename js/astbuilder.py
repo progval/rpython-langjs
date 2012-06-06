@@ -87,6 +87,7 @@ class ASTBuilder(RPythonVisitor):
         '[': operations.Member,
         ',': operations.Comma,
         'in': operations.In,
+        'instanceof': operations.InstanceOf,
     }
     UNOP_TO_CLS = {
         '~': operations.BitwiseNot,

@@ -800,24 +800,15 @@ class STORE_LOCAL(Opcode):
     #def __repr__(self):
         #return 'STORE_LOCAL %d' % (self.local,)
 
-class SETUP_TRY(Opcode):
-    def __init__(self, end):
-        self.end = end
-
+class INSTANCEOF(Opcode):
     def eval(self, ctx):
-        from js.jsobj import W_Try
-        ctx.stack_push(W_Try(self.end))
-
-    def __str__(self):
-        return 'SETUP_TRY %d' % (self.end)
-
-class POP_BLOCK(Opcode):
-    def eval(self, ctx):
-        from js.jsobj import W_Block
-        while True:
-            b = ctx.stack_pop()
-            if isinstance(b, W_Block):
-                break
+        rval = ctx.stack_pop()
+        lval = ctx.stack_pop()
+        from js.jsobj import W_BasicObject
+        if not isinstance(rval, W_BasicObject):
+            raise JsTypeError(str(rval))
+        res = rval.has_instance(lval)
+        ctx.stack_append(_w(res))
 
 # different opcode mappings, to make annotator happy
 
