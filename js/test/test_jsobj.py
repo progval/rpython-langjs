@@ -30,8 +30,6 @@ class TestWObjectProperties(object):
     def test_put(self):
         obj = W_BasicObject()
 
-        desc = PropertyDescriptor(enumerable = True, configurable = True)
-        obj.define_own_property('foo', desc)
         obj.put('foo', 1)
         assert obj.get('foo') == 1
 

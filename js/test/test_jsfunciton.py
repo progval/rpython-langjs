@@ -20,7 +20,7 @@ class TestJsFunctionAndStuff(object):
         f = JsExecutableCode(code)
         ctx = ExecutionContext()
         res = f.run(ctx)
-        assert res == _w(2)
+        assert res.value == _w(2)
 
     def test_foo2(self):
         code = JsCode()
@@ -33,7 +33,7 @@ class TestJsFunctionAndStuff(object):
         ctx = FunctionExecutionContext(f)
         res = f.run(ctx)
 
-        assert res == _w(2)
+        assert res.value == _w(2)
 
     def test_foo3(self):
         symbol_map = SymbolMap()
@@ -47,7 +47,7 @@ class TestJsFunctionAndStuff(object):
         ctx = FunctionExecutionContext(f, argv = [_w(42)], formal_parameters = ['a'])
 
         res = f.run(ctx)
-        assert res == _w(42)
+        assert res.value == _w(42)
 
     def test_foo4(self):
         symbol_map = SymbolMap()
@@ -69,7 +69,7 @@ class TestJsFunctionAndStuff(object):
         env_rec.set_mutable_binding('a', _w(21))
 
         res = f.run(ctx)
-        assert res == _w(42)
+        assert res.value == _w(42)
 
     def test_foo5(self):
         symbol_map = SymbolMap()
@@ -93,7 +93,7 @@ class TestJsFunctionAndStuff(object):
         res = f.run(ctx)
 
         assert env_rec.get_binding_value('a') == _w(42)
-        assert res == _w(42)
+        assert res.value == _w(42)
 
     def test_foo6(self):
         symbol_map = SymbolMap()
@@ -126,7 +126,7 @@ class TestJsFunctionAndStuff(object):
 
         assert env_rec.get_binding_value('a') == _w(42)
         assert outer_env_rec.get_binding_value('b') == _w(21)
-        assert res == _w(42)
+        assert res.value == _w(42)
 
     def test_foo7(self):
         symbol_map = SymbolMap()
@@ -159,7 +159,7 @@ class TestJsFunctionAndStuff(object):
 
         assert env_rec.get_binding_value('a') == _w(21)
         assert outer_env_rec.get_binding_value('b') == _w(42)
-        assert res == _w(42)
+        assert res.value == _w(42)
 
     def test_foo8(self):
         symbol_map = SymbolMap()
@@ -193,7 +193,7 @@ class TestJsFunctionAndStuff(object):
         assert env_rec.get_binding_value('a') == _w(21)
         assert env_rec.get_binding_value('b') == _w(21)
         assert env_rec.get_binding_value('c') == _w(42)
-        assert res == _w(42)
+        assert res.value == _w(42)
 
     def test_foo9(self):
         src = '''
@@ -219,7 +219,7 @@ class TestJsFunctionAndStuff(object):
         assert env_rec.get_binding_value('a') == _w(21)
         assert env_rec.get_binding_value('b') == _w(21)
         assert env_rec.get_binding_value('c') == _w(42)
-        assert res == _w(42)
+        assert res.value == _w(42)
 
     def test_foo10(self):
         src = '''
@@ -243,7 +243,7 @@ class TestJsFunctionAndStuff(object):
         env_rec = lex_env.environment_record
 
         assert env_rec.get_binding_value('a') == _w(42)
-        assert res == _w(42)
+        assert res.value == _w(42)
 
     def test_foo10(self):
         src = '''
@@ -271,7 +271,7 @@ class TestJsFunctionAndStuff(object):
         assert env_rec.get_binding_value('a') == _w(42)
         assert env_rec.has_binding('b') is False
         assert env_rec.has_binding('c') is False
-        assert res == _w(42)
+        assert res.value == _w(42)
 
     def test_foo11(self):
         src = '''
@@ -295,7 +295,7 @@ class TestJsFunctionAndStuff(object):
         ctx = GlobalExecutionContext(f, w_global)
         res = f.run(ctx)
 
-        assert res == _w(55)
+        assert res.value == _w(55)
 
     def test_foo12(self):
         def f(this, args):
@@ -306,7 +306,7 @@ class TestJsFunctionAndStuff(object):
         ctx = FunctionExecutionContext(func, argv=[_w(41)])
         res = func.run(ctx)
 
-        assert res == _w(42)
+        assert res.value == _w(42)
 
     def test_foo13(self):
         def f(this, args):
@@ -333,7 +333,7 @@ class TestJsFunctionAndStuff(object):
         ctx = GlobalExecutionContext(c, w_global)
         res = c.run(ctx)
 
-        assert res == _w(42)
+        assert res.value == _w(42)
 
     def test_foo14(self):
         code = JsCode()
@@ -344,7 +344,7 @@ class TestJsFunctionAndStuff(object):
         f = JsExecutableCode(code)
         ctx = ExecutionContext()
         res = f.run(ctx)
-        assert res == _w(2)
+        assert res.value == _w(2)
 
     def test_foo15(self):
         src = '''
@@ -410,7 +410,7 @@ class TestJsFunctionAndStuff(object):
         ctx = EvalExecutionContext(f, calling_context = global_ctx)
         res = f.run(ctx)
 
-        assert res == _w(1)
+        assert res.value == _w(1)
 
     def run_src(self, src):
         ast = parse_to_ast(src)
@@ -422,4 +422,4 @@ class TestJsFunctionAndStuff(object):
         w_global = W_BasicObject()
         ctx = GlobalExecutionContext(c, w_global)
         res = c.run(ctx)
-        return res
+        return res.value

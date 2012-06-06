@@ -2,6 +2,7 @@ from js.jsobj import isnull_or_undefined
 from js.execution import JsTypeError
 from js.jsobj import w_Undefined, _w, isnull_or_undefined
 from js.builtins import get_arg
+from js.completion import NormalCompletion
 
 def to_string(this, args):
     from js.jsobj import W_BasicFunction
@@ -25,7 +26,8 @@ def call(ctx):
     arg_list = args[1:]
 
     res = func.Call(args = arg_list, this = this_arg, calling_context = ctx)
-    return _w(res)
+    compl = NormalCompletion(value = _w(res))
+    return compl
 
 # 15.3.4.3 Function.prototype.apply (thisArg, argArray)
 def apply(ctx):
@@ -54,4 +56,5 @@ def apply(ctx):
         index += 1
 
     res = func.Call(args = arg_list, this = this_arg, calling_context = ctx)
-    return _w(res)
+    compl = NormalCompletion(value = _w(res))
+    return compl
