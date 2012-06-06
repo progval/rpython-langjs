@@ -336,7 +336,10 @@ class UMINUS(BaseUnaryOperation):
 
 class NOT(BaseUnaryOperation):
     def eval(self, ctx):
-        ctx.stack_append(newbool(not ctx.stack_pop().ToBoolean()))
+        val = ctx.stack_pop()
+        boolval = val.to_boolean()
+        inv_boolval = not boolval
+        ctx.stack_append(_w(inv_boolval))
 
 class INCR(BaseUnaryOperation):
     def eval(self, ctx):
@@ -451,12 +454,12 @@ class JUMP(BaseJump):
 class BaseIfJump(BaseJump):
     def eval(self, ctx):
         value = ctx.stack_pop()
-        self.decision = value.ToBoolean()
+        self.decision = value.to_boolean()
 
 class BaseIfNopopJump(BaseJump):
     def eval(self, ctx):
         value = ctx.stack_top()
-        self.decision = value.ToBoolean()
+        self.decision = value.to_boolean()
 
 class JUMP_IF_FALSE(BaseIfJump):
     def do_jump(self, ctx, pos):

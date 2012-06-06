@@ -16,7 +16,7 @@ class W_Root(object):
     def type(self):
         return self._type_
 
-    def ToBoolean(self):
+    def to_boolean(self):
         return False
 
     def ToPrimitive(self, hint = None):
@@ -93,7 +93,7 @@ class W_Undefined(W_Primitive):
 class W_Null(W_Primitive):
     _type_ = 'null'
 
-    def ToBoolean(self):
+    def to_boolean(self):
         return False
 
     def to_string(self):
@@ -563,7 +563,7 @@ class W_BasicObject(W_Root):
         return True
 
     ##########
-    def ToBoolean(self):
+    def to_boolean(self):
         return True
 
     def ToNumber(self):
@@ -798,7 +798,8 @@ class W_StringConstructor(W_BasicFunction):
 class W_BooleanConstructor(W_BasicFunction):
     def Call(self, args = [], this = None, calling_context = None):
         if len(args) >= 1 and not isnull_or_undefined(args[0]):
-            return _w(args[0].ToBoolean())
+            boolval = args[0].to_boolean()
+            return _w(boolval)
         else:
             return _w(False)
 
@@ -1193,7 +1194,7 @@ class W_Boolean(W_Primitive):
             return 1.0
         return 0.0
 
-    def ToBoolean(self):
+    def to_boolean(self):
         return self._boolval_
 
 class W_String(W_Primitive):
@@ -1217,7 +1218,7 @@ class W_String(W_Primitive):
     def to_string(self):
         return self._strval_
 
-    def ToBoolean(self):
+    def to_boolean(self):
         if len(self._strval_) == 0:
             return False
         else:
@@ -1255,7 +1256,7 @@ class W_Number(W_Primitive):
     def ToObject(self):
         return W_NumericObject(self)
 
-    def ToBoolean(self):
+    def to_boolean(self):
         num = self.ToNumber()
         if isnan(num):
             return False

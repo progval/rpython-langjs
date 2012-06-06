@@ -45,7 +45,7 @@ def to_string(this, args):
     else:
         raise JsTypeError()
 
-    if b.ToBoolean() == True:
+    if b.to_boolean() == True:
         return 'true'
     else:
         return 'false'

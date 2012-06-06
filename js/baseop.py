@@ -198,7 +198,7 @@ def AbstractEC(ctx, x, y):
         elif type1 == "string":
             return x.to_string() == y.to_string()
         elif type1 == "boolean":
-            return x.ToBoolean() == x.ToBoolean()
+            return x.to_boolean() == x.to_boolean()
         # XXX rethink it here
         return x.to_string() == y.to_string()
     else:
@@ -256,7 +256,7 @@ def StrictEC(x, y):
     if type1 == "string":
         return x.to_string() == y.to_string()
     if type1 == "boolean":
-        return x.ToBoolean() == x.ToBoolean()
+        return x.to_boolean() == x.to_boolean()
     return x == y
 
 

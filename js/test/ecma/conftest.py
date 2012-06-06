@@ -207,7 +207,7 @@ class JSTestFile(pytest.File):
         def get_result(test_num):
             w_test_number = _w(test_num)
             result_obj = run_test_func.Call(args = [w_test_number])
-            result_passed = result_obj.get('passed').ToBoolean()
+            result_passed = result_obj.get('passed').to_boolean()
             result_reason = result_obj.get('reason').to_string();
             return (result_passed, result_reason) # result.to_string()
 
