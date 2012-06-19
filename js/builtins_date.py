@@ -8,13 +8,12 @@ def setup(global_object):
     from js.builtins import put_property, put_native_function
     from js.builtins_number import w_NAN
     from js.jsobj import W_DateObject, W_DateConstructor, W__Object
+    from js.object_space import object_space
     ##Date
     # 15.9.5
 
-    w_DatePrototype = W_DateObject(w_NAN)
-    w_DatePrototype._prototype_ = W__Object._prototype_
-
-    W_DateObject._prototype_ = w_DatePrototype
+    w_DatePrototype = object_space.new_obj_with_proto(W_DateObject, object_space.proto_object, w_NAN)
+    object_space.proto_date = w_DatePrototype
 
     def putf(name, func):
         put_native_function(w_DatePrototype, name, func)

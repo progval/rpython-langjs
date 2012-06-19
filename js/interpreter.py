@@ -71,8 +71,8 @@ class Interpreter(object):
         from js.execution_context import GlobalExecutionContext
 
         ctx = GlobalExecutionContext(c, self.global_object)
-        object_space.set_global_context(ctx)
-        object_space.set_global_object(self.global_object)
+        object_space.global_context = ctx
+        object_space.global_object = self.global_object
 
         result = c.run(ctx)
         return result.value

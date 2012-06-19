@@ -4,16 +4,16 @@ from js.builtins import get_arg
 def setup(global_object):
     from js.builtins import put_property, put_native_function
     from js.jsobj import W_ArrayConstructor, W__Array, W__Object
+    from js.object_space import object_space
+
     w_Array = W_ArrayConstructor()
     put_property(global_object, u'Array', w_Array)
 
     # 15.4.4
-    w_ArrayPrototype = W__Array()
-
-    w_ArrayPrototype._prototype_ = W__Object._prototype_
+    w_ArrayPrototype = object_space.new_obj_with_proto(W__Array, object_space.proto_object)
+    object_space.proto_array = w_ArrayPrototype
 
     # 15.4.3.1
-    W__Array._prototype_ = w_ArrayPrototype
     put_property(w_Array, u'prototype', w_ArrayPrototype, writable = False, enumerable = False, configurable = False)
 
     # 15.4.4.1

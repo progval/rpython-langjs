@@ -106,7 +106,7 @@ def put_value(v, w):
             name = v.get_referenced_name()
             # TODO how to solve this ????
             from js.object_space import object_space
-            global_object = object_space.get_global_object()
+            global_object = object_space.global_object
 
             global_object.put(name, w, throw = False)
     elif v.is_property_reference():

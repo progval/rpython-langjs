@@ -10,16 +10,13 @@ def setup(global_object):
     w_Number = W_NumberConstructor()
     put_property(global_object, u'Number', w_Number)
 
-    #put_property(w_Number, '__proto__', w_Number._prototype_, writable = False, enumerable = False, configurable = False)
-
     # 15.7.3
     put_property(w_Number, u'length', _w(1), writable = False, enumerable = False, configurable = False)
 
     # 15.7.4
-    from js.jsobj import W__Object
-    w_NumberPrototype = W_NumericObject(_w(0))
-    w_NumberPrototype._prototype_ = W__Object._prototype_
-    #put_property(w_NumberPrototype, '__proto__', w_NumberPrototype._prototype_, writable = False, enumerable = False, configurable = False)
+    from js.object_space import object_space
+    w_NumberPrototype = object_space.new_obj_with_proto(W_NumericObject, object_space.proto_object, _w(0))
+    object_space.proto_number = w_NumberPrototype
 
     # 15.7.4.1
     put_property(w_NumberPrototype, u'constructor', w_Number)
@@ -32,7 +29,6 @@ def setup(global_object):
 
     # 15.7.3.1
     put_property(w_Number, u'prototype', w_NumberPrototype, writable = False, enumerable = False, configurable = False)
-    W_NumericObject._prototype_ = w_NumberPrototype
 
     # 15.7.3.2
     put_property(w_Number, u'MAX_VALUE', w_MAX_VALUE, writable = False, configurable = False, enumerable = False)

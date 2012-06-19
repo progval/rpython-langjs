@@ -4,6 +4,7 @@ from js.jsobj import _w
 
 def setup(global_object):
     from js.builtins import put_property, put_native_function
+    from js.object_space import object_space
 
     # 15.6.2
     from js.jsobj import W_BooleanConstructor
@@ -14,12 +15,10 @@ def setup(global_object):
     put_property(w_Boolean, u'length', _w(1), writable = False, enumerable = False, configurable = False)
 
     # 15.6.4
-    w_BooleanPrototype = W_BooleanObject(_w(False))
+    w_BooleanPrototype = object_space.new_obj_with_proto(W_BooleanObject, object_space.proto_object, _w(False))
 
-    from js.jsobj import W__Object
-    w_BooleanPrototype._prototype_ = W__Object._prototype_
-    #del(w_BooleanPrototype._properties_['__proto__'])
-    #put_property(w_BooleanPrototype, '__proto__', w_BooleanPrototype._prototype_, writable = False, enumerable = False, configurable = False)
+    # 15.6.3.1
+    object_space.proto_boolean = w_BooleanPrototype
 
     # 15.6.3.1
     put_property(w_Boolean, u'prototype', w_BooleanPrototype, writable = False, enumerable = False, configurable = False)
@@ -32,9 +31,6 @@ def setup(global_object):
 
     # 15.6.4.3
     put_native_function(w_BooleanPrototype, u'valueOf', value_of)
-
-    # 15.6.3.1
-    W_BooleanObject._prototype_ = w_BooleanPrototype
 
 # 15.6.4.2
 def to_string(this, args):

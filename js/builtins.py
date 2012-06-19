@@ -15,10 +15,11 @@ from pypy.rlib import jit
 def new_native_function(function, name = None, params = []):
     from js.functions import JsNativeFunction
     from js.jsobj import W__Function
+    from js.object_space import object_space
 
-    scope = None
     jsfunc = JsNativeFunction(function, name)
-    return W__Function(jsfunc, formal_parameter_list = params)
+    obj = object_space.new_obj(W__Function, jsfunc, formal_parameter_list = params)
+    return obj
 
 # 15
 def put_native_function(obj, name, func, writable = True, configurable = True, enumerable = False, params = []):
@@ -29,10 +30,10 @@ def put_native_function(obj, name, func, writable = True, configurable = True, e
 def put_intimate_function(obj, name, func, writable = True, configurable = True, enumerable = False, params = []):
     from js.functions import JsIntimateFunction
     from js.jsobj import W__Function
+    from js.object_space import object_space
 
-    scope = None
     jsfunc = JsIntimateFunction(func, name)
-    w_func = W__Function(jsfunc, formal_parameter_list = params)
+    w_func = object_space.new_obj(W__Function, jsfunc, formal_parameter_list = params)
     put_property(obj, name, w_func, writable = writable, configurable = configurable, enumerable = enumerable)
 
 # 15
@@ -41,44 +42,34 @@ def put_property(obj, name, value, writable = True, configurable = True, enumera
     _put_property(obj, name, value, writable, configurable, enumerable)
 
 def setup_builtins(global_object):
-    # Forward declaration
-    # 15.2.3
-    from js.jsobj import W_ObjectConstructor
-    w_Object = W_ObjectConstructor()
-    put_property(global_object, u'Object', w_Object)
+    from js.object_space import object_space
 
-    # 15.2.4
+    # 15.2.4 Properties of the Object Prototype Object
     from js.jsobj import W_BasicObject
-    w_ObjectPrototype = W_BasicObject()
+    w_ObjectPrototype = object_space.new_obj_with_proto(W_BasicObject, w_Null)
+    object_space.proto_object = w_ObjectPrototype
 
     # 15.3.2
     from js.jsobj import W_FunctionConstructor
     w_Function = W_FunctionConstructor()
     put_property(global_object, u'Function', w_Function)
 
-    # 15.3.4
-    import js.builtins_function as function_builtins
-    w_FunctionPrototype = new_native_function(function_builtins.empty, u'Empty')
-
-    # 15.2.4 Properties of the Object Prototype Object
-    w_ObjectPrototype._prototype_ = w_Null
-
     # 15.3.4 Properties of the Function Prototype Object
-    w_FunctionPrototype._prototype_ = w_ObjectPrototype
-
-    # initial prototype
+    import js.builtins_function as function_builtins
     from js.jsobj import W__Object, W__Function, W_BasicFunction
-    W__Object._prototype_ = w_ObjectPrototype
+    from js.functions import JsNativeFunction
 
-    W__Function._prototype_ = w_FunctionPrototype
-    W_BasicFunction._prototype_ = w_FunctionPrototype
+    empty_func = JsNativeFunction(function_builtins.empty, u'Empty')
+    w_FunctionPrototype = object_space.new_obj_with_proto(W__Function, w_ObjectPrototype, empty_func, formal_parameter_list = [])
+    object_space.proto_function = w_FunctionPrototype
 
     # 15.2 Object Objects
     # 15.2.3 Properties of the Object Constructor
-    w_Object._prototype_ = w_FunctionPrototype
-    del(w_Object._properties_['__proto__'])
-    #put_property(w_Object, '__proto__', w_Object._prototype_)
+    from js.jsobj import W_ObjectConstructor
+    w_Object = object_space.new_obj_with_proto(W_ObjectConstructor, object_space.proto_function)
     put_property(w_Object, u'length', _w(1))
+
+    put_property(global_object, u'Object', w_Object)
 
     # 15.2.3.1 Object.prototype
     put_property(w_Object, u'prototype', w_ObjectPrototype, writable = False, configurable = False, enumerable = False)

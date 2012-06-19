@@ -274,14 +274,12 @@ def reject(throw):
 class W_BasicObject(W_Root):
     _type_ = 'object'
     _class_ = 'Object'
-    _prototype_ = w_Null
     _extensible_ = True
 
     def __init__(self):
         W_Root.__init__(self)
         self._properties_ = {}
-
-        #desc = PropertyDescriptor(value = self._prototype_, writable = False, enumerable = False, configurable = False)
+        self._prototype_ = w_Null
         desc = proto_desc
         W_BasicObject.define_own_property(self, u'__proto__', desc)
 
@@ -659,14 +657,15 @@ class W_BasicFunction(W_BasicObject):
 
     # 13.2.2
     def Construct(self, args=[]):
-        obj = W__Object()
+        from js.object_space import object_space
+
         proto = self.get(u'prototype')
         if isinstance(proto, W_BasicObject):
-            obj._prototype_ = proto
+            obj = object_space.new_obj_with_proto(W__Object, proto)
         else:
             # would love to test this
             # but I fail to find a case that falls into this
-            obj._prototype_ = W__Object._prototype_
+            obj = object_space.new_obj(W__Object)
 
         result = self.Call(args, this=obj)
         if isinstance(result, W__Object):
@@ -713,7 +712,8 @@ class W_ObjectConstructor(W_BasicFunction):
 
         assert isnull_or_undefined(value)
 
-        obj = W__Object()
+        from js.object_space import object_space
+        obj = object_space.new_obj(W__Object)
         return obj
 
     # TODO
@@ -758,7 +758,7 @@ class W_FunctionConstructor(W_BasicFunction):
         scope = object_space.get_global_environment()
         strict = func.strict
         params = func.params()
-        w_func = W__Function(func, formal_parameter_list = params, scope = scope, strict = strict)
+        w_func = object_space.new_obj(W__Function, func, formal_parameter_list = params, scope = scope, strict = strict)
         return w_func
 
     # TODO
@@ -844,7 +844,9 @@ class W_DateConstructor(W_BasicFunction):
         else:
             value = _w(int(time.time() * 1000))
 
-        return W_DateObject(value)
+        from js.object_space import object_space
+        obj = object_space.new_obj(W_DateObject, value)
+        return obj
 
     # 15.7.2.1
     def Construct(self, args=[]):
@@ -857,6 +859,7 @@ class W_DateConstructor(W_BasicFunction):
 class W__Function(W_BasicFunction):
 
     def __init__(self, function_body, formal_parameter_list=[], scope=None, strict=False):
+        from js.object_space import object_space
         W_BasicFunction.__init__(self)
         self._function_ = function_body
         self._scope_ = scope
@@ -869,7 +872,7 @@ class W__Function(W_BasicFunction):
         # 15.
         put_property(self, u'length', _w(_len), writable = False, enumerable = False, configurable = False)
         # 16.
-        proto_obj = W__Object()
+        proto_obj = object_space.new_obj(W__Object)
         # 17.
         put_property(proto_obj, u'constructor', self, writable = True, enumerable = False, configurable = True)
         # 18.
@@ -937,7 +940,8 @@ class W_Arguments(W__Object):
         _len = len(args)
         put_property(self, u'length', _w(_len), writable = True, enumerable = False, configurable = True)
 
-        _map = W__Object()
+        from js.object_space import object_space
+        _map = object_space.new_obj(W__Object)
         mapped_names = []
         indx = _len - 1
         while indx >= 0:
@@ -979,21 +983,23 @@ class W_ArrayConstructor(W_BasicFunction):
         return True
 
     def Call(self, args = [], this = None, calling_context = None):
+        from js.object_space import object_space
+
         if len(args) == 1:
             _len = args[0]
             if isinstance(_len, W_Number):
                 length = _len.ToUInt32()
                 if length != _len.ToNumber():
                     raise JsRangeError()
-                array = W__Array(length)
+                array = object_space.new_obj(W__Array, length)
             else:
                 length = 1
-                array = W__Array(length)
+                array = object_space.new_obj(W__Array, length)
                 array.put(u'0', _len)
 
             return array
         else:
-            array = W__Array()
+            array = object_space.new_obj(W__Array)
             for index, obj in enumerate(args):
                 array.put(unicode(str(index)), obj)
             return array
@@ -1120,7 +1126,8 @@ class W_Boolean(W_Primitive):
         return 'W_Bool(%s)' % (str(self._boolval_), )
 
     def ToObject(self):
-        return W_BooleanObject(self)
+        from js.object_space import object_space
+        return object_space.new_obj(W_BooleanObject, self)
 
     def to_string(self):
         if self._boolval_ == True:
@@ -1151,7 +1158,8 @@ class W_String(W_Primitive):
         return u'W_String("%s")' % (self._strval_)
 
     def ToObject(self):
-        return W_StringObject(self)
+        from js.object_space import object_space
+        return object_space.new_obj(W_StringObject, self)
 
     def to_string(self):
         return self._strval_
@@ -1198,7 +1206,9 @@ class W_Number(W_Primitive):
 
     # 9.9
     def ToObject(self):
-        return W_NumericObject(self)
+        from js.object_space import object_space
+        obj = object_space.new_obj(W_NumericObject, self)
+        return obj
 
     def to_boolean(self):
         num = self.ToNumber()
@@ -1341,7 +1351,8 @@ def _w(value):
     elif isinstance(value, str):
         return W_String(unicode(value))
     elif isinstance(value, list):
-        a = W__Array()
+        from js.object_space import object_space
+        a = object_space.new_obj(W__Array)
         for index, item in enumerate(value):
             put_property(a, unicode(index), _w(item), writable = True, enumerable = True, configurable = True)
         return a

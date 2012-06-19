@@ -10,19 +10,18 @@ def setup(global_object):
     # 15.5.1
     from js.jsobj import W_StringConstructor
     w_String = W_StringConstructor()
-    #put_property(w_String, '__proto__', w_String._prototype_, writable = False, enumerable = False, configurable = False)
     put_property(w_String, u'length', _w(1), writable = False, enumerable = False, configurable = False)
 
     put_property(global_object, u'String', w_String)
 
 
     # 15.5.4
-    from js.jsobj import W_StringObject, W__Object
-    w_StringPrototype = W_StringObject(_w(u''))
-    w_StringPrototype._prototype_ = W__Object._prototype_
+    from js.jsobj import W_StringObject
+    from js.object_space import object_space
+    w_StringPrototype = object_space.new_obj_with_proto(W_StringObject, object_space.proto_object, _w(u''))
 
     # 15.5.3.1
-    W_StringObject._prototype_ = w_StringPrototype
+    object_space.proto_string = w_StringPrototype
     put_property(w_String, u'prototype', w_StringPrototype, writable = False, enumerable = False, configurable = False)
 
     # 15.5.3.2

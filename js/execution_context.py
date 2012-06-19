@@ -169,7 +169,7 @@ class FunctionExecutionContext(ExecutionContext):
             self._this_binding_ = this
         elif this is None or isnull_or_undefined(this):
             from js.object_space import object_space
-            self._this_binding_ = object_space.get_global_object()
+            self._this_binding_ = object_space.global_object
         elif this.klass() is not 'Object':
             self._this_binding_ = this.ToObject()
         else:
