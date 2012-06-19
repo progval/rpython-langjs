@@ -180,8 +180,8 @@ class JSTestFile(pytest.File):
                 return NormalCompletion(value = _w("error"))
 
         global_object = interp.global_object
-        del(global_object._properties_['eval'])
-        put_intimate_function(global_object, 'eval', overriden_eval, configurable = False, params = ['x'])
+        del(global_object._properties_[u'eval'])
+        put_intimate_function(global_object, u'eval', overriden_eval, configurable = False, params = [u'x'])
 
         shellpath = rootdir/'shell.js'
         shellfile = load_file(str(shellpath))
@@ -197,18 +197,18 @@ class JSTestFile(pytest.File):
             #import pdb; pdb.set_trace()
             #raise Failed(msg="Javascript Error: "+str(e)) #, excinfo=py.code.ExceptionInfo())
 
-        testcases = global_object.get('testcases')
+        testcases = global_object.get(u'testcases')
         #tc = global_object.get('tc')
         #self.tc = tc
-        testcount = testcases.get('length').ToInt32()
+        testcount = testcases.get(u'length').ToInt32()
         self.testcases = testcases
 
-        run_test_func = global_object.get('run_test')
+        run_test_func = global_object.get(u'run_test')
         def get_result(test_num):
             w_test_number = _w(test_num)
             result_obj = run_test_func.Call(args = [w_test_number])
-            result_passed = result_obj.get('passed').to_boolean()
-            result_reason = result_obj.get('reason').to_string();
+            result_passed = result_obj.get(u'passed').to_boolean()
+            result_reason = result_obj.get(u'reason').to_string();
             return (result_passed, result_reason) # result.to_string()
 
         for number in xrange(testcount):

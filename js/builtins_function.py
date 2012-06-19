@@ -7,7 +7,7 @@ from js.completion import NormalCompletion
 def to_string(this, args):
     from js.jsobj import W_BasicFunction
     if not isinstance(this, W_BasicFunction):
-        raise JsTypeError()
+        raise JsTypeError(u'')
 
     return this._to_string_()
 
@@ -20,7 +20,7 @@ def call(ctx):
     args = ctx.argv()
 
     if not func.is_callable():
-        raise JsTypeError()
+        raise JsTypeError(u'')
 
     this_arg = get_arg(args, 0)
     arg_list = args[1:]
@@ -43,14 +43,14 @@ def apply(ctx):
 
     from js.jsobj import W_BasicObject
     if not isinstance(arg_array, W_BasicObject):
-        raise JsTypeError()
+        raise JsTypeError(u'')
 
-    length = arg_array.get('length')
+    length = arg_array.get(u'length')
     n = length.ToUInt32()
     arg_list = []
     index = 0
     while index < n:
-        index_name = str(index)
+        index_name = unicode(index)
         next_arg = arg_array.get(index_name)
         arg_list.append(next_arg)
         index += 1

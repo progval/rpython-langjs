@@ -8,13 +8,13 @@ def setup(global_object):
     # 15.6.2
     from js.jsobj import W_BooleanConstructor
     w_Boolean = W_BooleanConstructor()
-    put_property(global_object, 'Boolean', w_Boolean)
+    put_property(global_object, u'Boolean', w_Boolean)
 
     # 15.6.3
-    put_property(w_Boolean, 'length', _w(1), writable = False, enumerable = False, configurable = False)
+    put_property(w_Boolean, u'length', _w(1), writable = False, enumerable = False, configurable = False)
 
     # 15.6.4
-    w_BooleanPrototype = W_BooleanObject(False)
+    w_BooleanPrototype = W_BooleanObject(_w(False))
 
     from js.jsobj import W__Object
     w_BooleanPrototype._prototype_ = W__Object._prototype_
@@ -22,16 +22,16 @@ def setup(global_object):
     #put_property(w_BooleanPrototype, '__proto__', w_BooleanPrototype._prototype_, writable = False, enumerable = False, configurable = False)
 
     # 15.6.3.1
-    put_property(w_Boolean, 'prototype', w_BooleanPrototype, writable = False, enumerable = False, configurable = False)
+    put_property(w_Boolean, u'prototype', w_BooleanPrototype, writable = False, enumerable = False, configurable = False)
 
     # 15.6.4.1
-    put_property(w_BooleanPrototype, 'constructor', w_Boolean)
+    put_property(w_BooleanPrototype, u'constructor', w_Boolean)
 
     # 15.6.4.2
-    put_native_function(w_BooleanPrototype, 'toString', to_string)
+    put_native_function(w_BooleanPrototype, u'toString', to_string)
 
     # 15.6.4.3
-    put_native_function(w_BooleanPrototype, 'valueOf', value_of)
+    put_native_function(w_BooleanPrototype, u'valueOf', value_of)
 
     # 15.6.3.1
     W_BooleanObject._prototype_ = w_BooleanPrototype
@@ -43,7 +43,7 @@ def to_string(this, args):
     elif isinstance(this, W_BooleanObject):
         b = this.PrimitiveValue()
     else:
-        raise JsTypeError()
+        raise JsTypeError(u'')
 
     if b.to_boolean() == True:
         return 'true'
@@ -57,6 +57,6 @@ def value_of(this, args):
     elif isinstance(this, W_BooleanObject):
         b = this.PrimitiveValue()
     else:
-        raise JsTypeError()
+        raise JsTypeError(u'')
 
     return b

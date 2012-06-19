@@ -93,17 +93,18 @@ def sign(x):
     from math import copysign
     return copysign(1.0, x)
 
+def sign_of(a, b):
+    sign_a = sign(a)
+    sign_b = sign(b)
+    return sign_a * sign_b
+
+def w_signed_inf(sign):
+    if sign < 0.0:
+        return w_NEGATIVE_INFINITY
+    return w_POSITIVE_INFINITY
+
 # 11.5.2
 def division(ctx, nleft, nright):
-    def sign_of(a, b):
-        sign_a = sign(a)
-        sign_b = sign(b)
-        return sign_a * sign_b
-
-    def w_signed_inf(sign):
-        if sign < 0.0:
-            return w_NEGATIVE_INFINITY
-        return w_POSITIVE_INFINITY
 
     fleft = nleft.ToNumber()
     fright = nright.ToNumber()

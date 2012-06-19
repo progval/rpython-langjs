@@ -11,58 +11,58 @@ def setup(global_object):
     from js.jsobj import W_StringConstructor
     w_String = W_StringConstructor()
     #put_property(w_String, '__proto__', w_String._prototype_, writable = False, enumerable = False, configurable = False)
-    put_property(w_String, 'length', _w(1), writable = False, enumerable = False, configurable = False)
+    put_property(w_String, u'length', _w(1), writable = False, enumerable = False, configurable = False)
 
-    put_property(global_object, 'String', w_String)
+    put_property(global_object, u'String', w_String)
 
 
     # 15.5.4
     from js.jsobj import W_StringObject, W__Object
-    w_StringPrototype = W_StringObject('')
+    w_StringPrototype = W_StringObject(_w(u''))
     w_StringPrototype._prototype_ = W__Object._prototype_
 
     # 15.5.3.1
     W_StringObject._prototype_ = w_StringPrototype
-    put_property(w_String, 'prototype', w_StringPrototype, writable = False, enumerable = False, configurable = False)
+    put_property(w_String, u'prototype', w_StringPrototype, writable = False, enumerable = False, configurable = False)
 
     # 15.5.3.2
-    put_native_function(w_String, 'fromCharCode', from_char_code, params = ['char1'])
+    put_native_function(w_String, u'fromCharCode', from_char_code, params = [u'char1'])
 
     # 15.5.4.1
-    put_property(w_StringPrototype, 'constructor', w_String)
+    put_property(w_StringPrototype, u'constructor', w_String)
 
     # 15.5.4.2
-    put_native_function(w_StringPrototype, 'toString', to_string)
+    put_native_function(w_StringPrototype, u'toString', to_string)
 
     # 15.5.4.3
-    put_native_function(w_StringPrototype, 'valueOf', value_of)
+    put_native_function(w_StringPrototype, u'valueOf', value_of)
 
     # 15.5.4.4
-    put_native_function(w_StringPrototype, 'charAt', char_at, params = ['pos'])
+    put_native_function(w_StringPrototype, u'charAt', char_at, params = [u'pos'])
 
     # 15.5.4.5
-    put_native_function(w_StringPrototype, 'charCodeAt', char_code_at, params = ['pos'])
+    put_native_function(w_StringPrototype, u'charCodeAt', char_code_at, params = [u'pos'])
 
     # 15.5.4.6
-    put_native_function(w_StringPrototype, 'concat', concat, params = ['string1'])
+    put_native_function(w_StringPrototype, u'concat', concat, params = [u'string1'])
 
     # 15.5.4.7
-    put_native_function(w_StringPrototype, 'indexOf', index_of, params = ['searchstring'])
+    put_native_function(w_StringPrototype, u'indexOf', index_of, params = [u'searchstring'])
 
     # 15.5.4.8
-    put_native_function(w_StringPrototype, 'lastIndexOf', last_index_of, params = ['searchstring'])
+    put_native_function(w_StringPrototype, u'lastIndexOf', last_index_of, params = [u'searchstring'])
 
     # 15.5.4.14
-    put_native_function(w_StringPrototype, 'split', split, params = ['separator', 'limit'])
+    put_native_function(w_StringPrototype, u'split', split, params = [u'separator', u'limit'])
 
     # 15.5.4.15
-    put_native_function(w_StringPrototype, 'substring', substring, params = ['start', 'end'])
+    put_native_function(w_StringPrototype, u'substring', substring, params = [u'start', u'end'])
 
     # 15.5.4.16
-    put_native_function(w_StringPrototype, 'toLowerCase', to_lower_case)
+    put_native_function(w_StringPrototype, u'toLowerCase', to_lower_case)
 
     # 15.5.4.18
-    put_native_function(w_StringPrototype, 'toUpperCase', to_upper_case)
+    put_native_function(w_StringPrototype, u'toUpperCase', to_upper_case)
 
 # 15.5.3.2
 def from_char_code(this, args):
@@ -79,7 +79,7 @@ def to_string(this, args):
     elif isinstance(this, W_StringObject):
         s = this.PrimitiveValue()
     else:
-        raise JsTypeError()
+        raise JsTypeError(u'')
 
     assert isinstance(s, W_String)
     return s.to_string()
@@ -91,7 +91,7 @@ def value_of(this, args):
     elif isinstance(this, W_StringObject):
         s = this.PrimitiveValue()
     else:
-        raise JsTypeError()
+        raise JsTypeError(u'')
 
     assert isinstance(s, W_String)
     return s

@@ -11,42 +11,42 @@ def setup(global_object):
     from pypy.rlib.objectmodel import we_are_translated
 
     # 15.1.1.1
-    put_property(global_object, 'NaN', w_NAN, writable = False, enumerable = False, configurable = False)
+    put_property(global_object, u'NaN', w_NAN, writable = False, enumerable = False, configurable = False)
 
     # 15.1.1.2
-    put_property(global_object, 'Infinity', w_POSITIVE_INFINITY, writable = False, enumerable = False, configurable = False)
+    put_property(global_object, u'Infinity', w_POSITIVE_INFINITY, writable = False, enumerable = False, configurable = False)
 
     # 15.1.1.3
-    put_property(global_object, 'undefined', w_Undefined, writable = False, enumerable = False, configurable = False)
+    put_property(global_object, u'undefined', w_Undefined, writable = False, enumerable = False, configurable = False)
 
     # 15.1.2.1
-    put_intimate_function(global_object, 'eval', js_eval, params = ['x'])
+    put_intimate_function(global_object, u'eval', js_eval, params = [u'x'])
 
     # 15.1.2.2
-    put_native_function(global_object, 'parseInt', parse_int, params = ['string', 'radix'])
+    put_native_function(global_object, u'parseInt', parse_int, params = [u'string', u'radix'])
 
     # 15.1.2.3
-    put_native_function(global_object, 'parseFloat', parse_float, params = ['string'])
+    put_native_function(global_object, u'parseFloat', parse_float, params = [u'string'])
 
     # 15.1.2.4
-    put_native_function(global_object, 'isNaN', is_nan, params = ['number'])
+    put_native_function(global_object, u'isNaN', is_nan, params = [u'number'])
 
     # 15.1.2.5
-    put_native_function(global_object, 'isFinite', is_finite, params = ['number'])
+    put_native_function(global_object, u'isFinite', is_finite, params = [u'number'])
 
-    put_native_function(global_object, 'alert', alert)
+    put_native_function(global_object, u'alert', alert)
 
-    put_native_function(global_object, 'print', printjs)
+    put_native_function(global_object, u'print', printjs)
 
-    put_native_function(global_object, 'escape', escape, params = ['string'])
-    put_native_function(global_object, 'unescape', unescape, params = ['string'])
+    put_native_function(global_object, u'escape', escape, params = [u'string'])
+    put_native_function(global_object, u'unescape', unescape, params = [u'string'])
 
-    put_native_function(global_object, 'version', version)
+    put_native_function(global_object, u'version', version)
 
     ## debugging
     if not we_are_translated():
-        put_native_function(global_object, 'pypy_repr', pypy_repr)
-        put_native_function(global_object, 'inspect', inspect)
+        put_native_function(global_object, u'pypy_repr', pypy_repr)
+        put_native_function(global_object, u'inspect', inspect)
 
 # 15.1.2.4
 def is_nan(this, args):
@@ -67,7 +67,7 @@ def is_finite(this, args):
 
 # 15.1.2.2
 def parse_int(this, args):
-    NUMERALS = '0123456789abcdefghijklmnopqrstuvwxyz'
+    NUMERALS = u'0123456789abcdefghijklmnopqrstuvwxyz'
     string = get_arg(args, 0)
     radix = get_arg(args, 1)
 
@@ -75,9 +75,9 @@ def parse_int(this, args):
     s = input_string.lstrip()
     sign = 1
 
-    if s.startswith('-'):
+    if s.startswith(u'-'):
         sign = -1
-    if s.startswith('-') or s.startswith('+'):
+    if s.startswith(u'-') or s.startswith(u'+'):
         s = s[1:]
 
     r = radix.ToInt32()
@@ -202,7 +202,7 @@ def unescape(this, args):
                         pass # goto step 18
                     else:
                         # 16
-                        hex_numeral = '00%s' % (r1[k+1:k+3])
+                        hex_numeral = u'00%s' % (r1[k+1:k+3])
                         number = int(hex_numeral, 16)
                         c = unichr(number)
                         #17
@@ -224,7 +224,7 @@ def unescape(this, args):
 
 def pypy_repr(this, args):
     o = args[0]
-    return str(o)
+    return unicode(o)
 
 def inspect(this, args):
     pass
@@ -266,7 +266,7 @@ def js_eval(ctx):
     except LexerError, e:
         error_lineno = e.source_pos.lineno
         error_pos = e.source_pos.columnno
-        error_msg = 'LexerError'
+        error_msg = u'LexerError'
         raise JsSyntaxError(msg = error_msg, src = src, line = error_lineno, column = error_pos)
 
     symbol_map = ast.symbol_map

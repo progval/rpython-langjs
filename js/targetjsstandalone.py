@@ -3,17 +3,16 @@ A simple standalone target for the javascript interpreter.
 """
 
 import sys
-from js.interpreter import *
+from js.interpreter import load_file, Interpreter
 from js.execution import ExecutionReturned
 
 # __________  Entry point  __________
 
-interp = Interpreter()
 
 def entry_point(argv):
     if len(argv) == 2:
-        t = load_file(argv[1])
-        interp.run(t)
+        interp = Interpreter()
+        interp.js_load(argv[1])
         return 0
     elif argv[0] == 'foo':
         raise ExecutionReturned(None)

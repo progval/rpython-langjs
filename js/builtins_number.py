@@ -8,46 +8,46 @@ def setup(global_object):
     # 15.7.2
     from js.jsobj import W_NumberConstructor
     w_Number = W_NumberConstructor()
-    put_property(global_object, 'Number', w_Number)
+    put_property(global_object, u'Number', w_Number)
 
     #put_property(w_Number, '__proto__', w_Number._prototype_, writable = False, enumerable = False, configurable = False)
 
     # 15.7.3
-    put_property(w_Number, 'length', _w(1), writable = False, enumerable = False, configurable = False)
+    put_property(w_Number, u'length', _w(1), writable = False, enumerable = False, configurable = False)
 
     # 15.7.4
     from js.jsobj import W__Object
-    w_NumberPrototype = W_NumericObject(0)
+    w_NumberPrototype = W_NumericObject(_w(0))
     w_NumberPrototype._prototype_ = W__Object._prototype_
     #put_property(w_NumberPrototype, '__proto__', w_NumberPrototype._prototype_, writable = False, enumerable = False, configurable = False)
 
     # 15.7.4.1
-    put_property(w_NumberPrototype, 'constructor', w_Number)
+    put_property(w_NumberPrototype, u'constructor', w_Number)
 
     # 15.7.4.2
-    put_native_function(w_NumberPrototype, 'toString', to_string)
+    put_native_function(w_NumberPrototype, u'toString', to_string)
 
     # 15.7.4.4
-    put_native_function(w_NumberPrototype, 'valueOf', value_of)
+    put_native_function(w_NumberPrototype, u'valueOf', value_of)
 
     # 15.7.3.1
-    put_property(w_Number, 'prototype', w_NumberPrototype, writable = False, enumerable = False, configurable = False)
+    put_property(w_Number, u'prototype', w_NumberPrototype, writable = False, enumerable = False, configurable = False)
     W_NumericObject._prototype_ = w_NumberPrototype
 
     # 15.7.3.2
-    put_property(w_Number, 'MAX_VALUE', w_MAX_VALUE, writable = False, configurable = False, enumerable = False)
+    put_property(w_Number, u'MAX_VALUE', w_MAX_VALUE, writable = False, configurable = False, enumerable = False)
 
     # 15.7.3.3
-    put_property(w_Number, 'MIN_VALUE', w_MIN_VALUE, writable = False, configurable = False, enumerable = False)
+    put_property(w_Number, u'MIN_VALUE', w_MIN_VALUE, writable = False, configurable = False, enumerable = False)
 
     # 15.7.3.4
-    put_property(w_Number, 'NaN', w_NAN, writable = False, configurable = False, enumerable = False)
+    put_property(w_Number, u'NaN', w_NAN, writable = False, configurable = False, enumerable = False)
 
     # 15.7.3.5
-    put_property(w_Number, 'POSITIVE_INFINITY', w_POSITIVE_INFINITY, writable = False, configurable = False, enumerable = False)
+    put_property(w_Number, u'POSITIVE_INFINITY', w_POSITIVE_INFINITY, writable = False, configurable = False, enumerable = False)
 
     # 15.7.3.6
-    put_property(w_Number, 'NEGATIVE_INFINITY', w_NEGATIVE_INFINITY, writable = False, configurable = False, enumerable = False)
+    put_property(w_Number, u'NEGATIVE_INFINITY', w_NEGATIVE_INFINITY, writable = False, configurable = False, enumerable = False)
 
 # 15.7.3.2
 w_MAX_VALUE = _w(1.7976931348623157e308)
@@ -76,7 +76,7 @@ def to_string(this, args):
     elif isinstance(this, W_NumericObject):
         num = this.PrimitiveValue()
     else:
-        raise JsTypeError()
+        raise JsTypeError(u'')
 
     # TODO radix, see 15.7.4.2
     return num.to_string()
@@ -88,6 +88,6 @@ def value_of(this, args):
     elif isinstance(this, W_NumericObject):
         num = this.PrimitiveValue()
     else:
-        raise JsTypeError()
+        raise JsTypeError(u'')
 
     return num.ToNumber()

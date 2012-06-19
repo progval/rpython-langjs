@@ -17,11 +17,13 @@ class SymbolMap(object):
         self.next_index = 0
 
     def add_symbol(self, identifyer):
-        assert identifyer is not None
+        assert isinstance(identifyer, unicode)
         if identifyer not in self.symbols:
             self.symbols[identifyer] = self.next_index
             self.next_index += 1
-        return self.symbols[identifyer]
+        idx = self.symbols[identifyer]
+        assert isinstance(idx, int)
+        return idx
 
     def add_variable(self, identifyer):
         idx = self.add_symbol(identifyer)
@@ -36,9 +38,11 @@ class SymbolMap(object):
         return idx
 
     def add_parameter(self, identifyer):
-        idx = self.add_symbol(identifyer)
-
-        self.parameters.append(identifyer)
+        assert isinstance(identifyer, unicode)
+        f = unicode(identifyer)
+        assert isinstance(f, unicode)
+        idx = self.add_symbol(f)
+        self.parameters.append(f)
         return idx
 
     def get_index(self, identifyer):
@@ -118,18 +122,24 @@ class ASTBuilder(RPythonVisitor):
         #print 'starting new scope %d' % (self.depth, )
 
     def declare_symbol(self, symbol):
-        idx = self.scopes[-1].add_symbol(symbol)
+        s = unicode(symbol)
+        assert isinstance(s, unicode)
+        idx = self.scopes[-1].add_symbol(s)
         #print 'symbol "%s"@%d in scope %d' % (symbol, idx, self.depth,)
         return idx
 
     def declare_variable(self, symbol):
-        idx = self.scopes[-1].add_variable(symbol)
+        s = unicode(symbol)
+        assert isinstance(s, unicode)
+        idx = self.scopes[-1].add_variable(s)
         #print 'var declaration "%s"@%d in scope %d' % (symbol, idx, self.depth,)
         return idx
 
     def declare_function(self, symbol, funcobj):
-        self.funclists[-1][symbol] = funcobj
-        idx = self.scopes[-1].add_function(symbol)
+        s = unicode(symbol)
+        assert isinstance(s, unicode)
+        self.funclists[-1][s] = funcobj
+        idx = self.scopes[-1].add_function(s)
         #print 'func declaration "%s"@%d in scope %d' % (symbol, idx, self.depth,)
         return idx
 
@@ -206,7 +216,7 @@ class ASTBuilder(RPythonVisitor):
 
     def string(self,node):
         pos = self.get_pos(node)
-        return operations.String(pos, node.additional_info)
+        return operations.String(pos, unicode(node.additional_info))
     visit_DOUBLESTRING = string
     visit_SINGLESTRING = string
 
@@ -290,13 +300,15 @@ class ASTBuilder(RPythonVisitor):
     visit_objectliteral = listop
 
     def visit_block(self, node):
-        def isnotempty(node):
-            return node is not None and not isinstance(node, operations.Empty)
-
         op = node.children[0]
         pos = self.get_pos(op)
         l = [self.dispatch(child) for child in node.children[1:]]
-        nodes = [node for node in l if isnotempty(node)]
+
+        nodes = []
+        for node in l:
+            if not(node is None or isinstance(node, operations.Empty)):
+                nodes.append(node)
+
         return operations.Block(pos, nodes)
 
     def visit_arguments(self, node):
@@ -322,9 +334,11 @@ class ASTBuilder(RPythonVisitor):
         l = node.children[0]
         if l.symbol == "IDENTIFIERNAME":
             identifier = l.additional_info
-            index = self.declare_symbol(identifier)
+            i = unicode(identifier)
+            assert isinstance(i, unicode)
+            index = self.declare_symbol(i)
             lpos = self.get_pos(l)
-            left = operations.Identifier(lpos, identifier, index)
+            left = operations.Identifier(lpos, i, index)
         else:
             left = self.dispatch(l)
         right = self.dispatch(node.children[1])
@@ -333,11 +347,13 @@ class ASTBuilder(RPythonVisitor):
     def visit_IDENTIFIERNAME(self, node):
         pos = self.get_pos(node)
         name = node.additional_info
-        index = self.declare_symbol(name)
+        n = unicode(name)
+        assert isinstance(n, unicode)
+        index = self.declare_symbol(n)
         #if self.scopes.is_local(name):
             #local = self.scopes.get_local(name)
             #return operations.LocalIdentifier(pos, name, local)
-        return operations.Identifier(pos, name, index)
+        return operations.Identifier(pos, n, index)
 
     def visit_program(self, node):
         self.enter_scope()
@@ -361,12 +377,9 @@ class ASTBuilder(RPythonVisitor):
         self.funclists.append({})
         nodes=[]
 
-        def isnotempty(node):
-            return node is not None and not isinstance(node, operations.Empty)
-
         for child in node.children:
             n = self.dispatch(child)
-            if isnotempty(n):
+            if not (n is None or isinstance(n, operations.Empty)):
                 nodes.append(n)
 
         var_decl = self.current_scope_variables()
@@ -389,18 +402,20 @@ class ASTBuilder(RPythonVisitor):
 
         params = self.current_scope_parameters()
 
-        funcname = None
         if identifier is not None:
             funcname = identifier.get_literal()
+        else:
+            funcname = u''
 
         scope = self.current_scope()
 
         self.exit_scope()
 
-        funcindex = None
-
+        funcindex = -1
         if declaration:
-            funcindex = self.declare_symbol(funcname)
+            f = unicode(funcname)
+            assert isinstance(f, unicode)
+            funcindex = self.declare_symbol(f)
 
         funcobj = operations.FunctionStatement(pos, funcname, funcindex, functionbody, scope)
 
@@ -454,8 +469,8 @@ class ASTBuilder(RPythonVisitor):
         return left
 
     def is_identifier(self, obj):
-        from js.operations import Identifier, VariableIdentifier
-        return isinstance(obj, Identifier) or isinstance(obj, VariableIdentifier)
+        from js.operations import Identifier
+        return isinstance(obj, Identifier)
 
     def is_member(self, obj):
         from js.operations import  Member, MemberDot
@@ -477,7 +492,9 @@ class ASTBuilder(RPythonVisitor):
             return operations.LocalAssignmentOperation(pos, left, right, operation)
         elif self.is_identifier(left):
             identifier = left.get_literal()
-            index = self.declare_symbol(identifier)
+            i = unicode(identifier)
+            assert isinstance(i, unicode)
+            index = self.declare_symbol(i)
             return operations.AssignmentOperation(pos, left, identifier, index, right, operation)
         elif self.is_member(left):
             return operations.MemberAssignmentOperation(pos, left, right, operation)
@@ -654,8 +671,7 @@ class ASTBuilder(RPythonVisitor):
 
     def visit_primaryexpression(self, node):
         pos = self.get_pos(node)
-        index = self.declare_symbol('this')
-        return operations.This(pos, 'this', index)
+        return operations.This(pos)
 
     def visit_withstatement(self, node):
         pos = self.get_pos(node)
@@ -689,7 +705,8 @@ def parse_tree_to_ast(parse_tree):
     return tree
 
 def parse_to_ast(code):
+    assert isinstance(code, unicode)
     from js.jsparser import parse, ParseError
-    parse_tree = parse(code.encode('utf-8'))
+    parse_tree = parse(str(code))
     ast = parse_tree_to_ast(parse_tree)
     return ast

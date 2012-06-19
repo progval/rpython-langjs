@@ -19,83 +19,83 @@ def setup(global_object):
     def putf(name, func):
         put_native_function(w_DatePrototype, name, func)
 
-    putf('toString', to_string)
+    putf(u'toString', to_string)
 
-    putf('valueOf', value_of)
+    putf(u'valueOf', value_of)
 
-    putf('getTime', get_time)
+    putf(u'getTime', get_time)
 
-    putf('getFullYear', get_full_year)
-    putf('getUTCFullYear', get_utc_full_year)
+    putf(u'getFullYear', get_full_year)
+    putf(u'getUTCFullYear', get_utc_full_year)
 
-    putf('getMonth', get_month)
-    putf('getUTCMonth', get_utc_month)
+    putf(u'getMonth', get_month)
+    putf(u'getUTCMonth', get_utc_month)
 
-    putf('getDate', get_date)
-    putf('getUTCDate', get_utc_date)
+    putf(u'getDate', get_date)
+    putf(u'getUTCDate', get_utc_date)
 
-    putf('getDay', get_day)
-    putf('getUTCDay', get_utc_day)
+    putf(u'getDay', get_day)
+    putf(u'getUTCDay', get_utc_day)
 
-    putf('getHours', get_hours)
-    putf('getUTCHours', get_utc_hours)
+    putf(u'getHours', get_hours)
+    putf(u'getUTCHours', get_utc_hours)
 
-    putf('getMinutes', get_minutes)
-    putf('getUTCMinutes', get_utc_minutes)
+    putf(u'getMinutes', get_minutes)
+    putf(u'getUTCMinutes', get_utc_minutes)
 
-    putf('getSeconds', get_seconds)
-    putf('getUTCSeconds', get_utc_seconds)
+    putf(u'getSeconds', get_seconds)
+    putf(u'getUTCSeconds', get_utc_seconds)
 
-    putf('getMilliseconds', get_milliseconds)
-    putf('getUTCMilliseconds', get_utc_milliseconds)
+    putf(u'getMilliseconds', get_milliseconds)
+    putf(u'getUTCMilliseconds', get_utc_milliseconds)
 
-    putf('getTimezoneOffset', get_timezone_offset)
+    putf(u'getTimezoneOffset', get_timezone_offset)
 
-    putf('setTime', set_time)
+    putf(u'setTime', set_time)
 
-    putf('setMilliseconds', set_milliseconds)
-    putf('setUTCMilliseconds', set_utc_milliseconds)
+    putf(u'setMilliseconds', set_milliseconds)
+    putf(u'setUTCMilliseconds', set_utc_milliseconds)
 
-    putf('setSeconds', set_seconds)
-    putf('setUTCSeconds', set_utc_seconds)
+    putf(u'setSeconds', set_seconds)
+    putf(u'setUTCSeconds', set_utc_seconds)
 
-    putf('setMinutes', set_minutes)
-    putf('setUTCMinutes', set_utc_minutes)
+    putf(u'setMinutes', set_minutes)
+    putf(u'setUTCMinutes', set_utc_minutes)
 
-    putf('setHours', set_hours)
-    putf('setUTCHours', set_utc_hours)
+    putf(u'setHours', set_hours)
+    putf(u'setUTCHours', set_utc_hours)
 
-    putf('setDate', set_date)
-    putf('setUTCDate', set_utc_date)
+    putf(u'setDate', set_date)
+    putf(u'setUTCDate', set_utc_date)
 
-    putf('setMonth', set_month)
-    putf('setUTCMonth', set_utc_month)
+    putf(u'setMonth', set_month)
+    putf(u'setUTCMonth', set_utc_month)
 
-    putf('setFullYear', set_full_year)
-    putf('setUTCFullYear', set_utc_full_year)
+    putf(u'setFullYear', set_full_year)
+    putf(u'setUTCFullYear', set_utc_full_year)
 
-    putf('getYear', get_year)
-    putf('setYear', set_year)
+    putf(u'getYear', get_year)
+    putf(u'setYear', set_year)
 
-    putf('toUTCString', to_utc_string)
-    putf('toGMTString', to_gmt_string)
+    putf(u'toUTCString', to_utc_string)
+    putf(u'toGMTString', to_gmt_string)
 
     # 15.9.3
     w_Date = W_DateConstructor()
-    put_property(global_object, 'Date', w_Date)
+    put_property(global_object, u'Date', w_Date)
 
-    put_property(w_Date, 'prototype', w_DatePrototype, writable = False, enumerable = False, configurable = False)
+    put_property(w_Date, u'prototype', w_DatePrototype, writable = False, enumerable = False, configurable = False)
 
-    put_native_function(w_Date, 'parse', parse)
+    put_native_function(w_Date, u'parse', parse)
 
-    put_native_function(w_Date, 'UTC', parse)
+    put_native_function(w_Date, u'UTC', parse)
 
 def to_string(this, args):
     d = w_date_to_datetime(this)
     local = to_local(d)
 
     s = local.strftime('%a %b %d %Y %H:%M:%S GMT%z (%Z)')
-    return s
+    return unicode(s)
 
 # 15.9.5.8
 def value_of(this, args):

@@ -94,13 +94,17 @@ class LOAD_FLOATCONSTANT(Opcode):
 class LOAD_STRINGCONSTANT(Opcode):
     _immutable_fields_ = ['w_stringvalue']
     def __init__(self, value):
-        self.w_stringvalue = W_String(value)
+        assert isinstance(value, unicode)
+        self.strval = value
 
     def eval(self, ctx):
-        ctx.stack_append(self.w_stringvalue)
+        strval = self.strval
+        assert isinstance(strval, unicode)
+        w_string = W_String(strval)
+        ctx.stack_append(w_string)
 
     def __str__(self):
-        return 'LOAD_STRINGCONSTANT "%s"' % (self.w_stringvalue.to_string())
+        return u'LOAD_STRINGCONSTANT "%s"' % (self.strval)
 
 class LOAD_UNDEFINED(Opcode):
     def eval(self, ctx):
@@ -142,7 +146,7 @@ class LOAD_ARRAY(Opcode):
         array = W__Array()
         list_w = ctx.stack_pop_n(self.counter) # [:] # pop_n returns a non-resizable list
         for index, el in enumerate(list_w):
-            array.put(str(index), el)
+            array.put(unicode(str(index)), el)
         ctx.stack_append(array)
 
     def stack_change(self):
@@ -152,7 +156,7 @@ class LOAD_ARRAY(Opcode):
         return 'LOAD_ARRAY %d' % (self.counter,)
 
 class LOAD_LIST(Opcode):
-    _immutable_fields_ = ['counter']
+    #_immutable_fields_ = ['counter']
     def __init__(self, counter):
         self.counter = counter
 
@@ -165,7 +169,7 @@ class LOAD_LIST(Opcode):
         return -1 * self.counter + 1
 
     def __str__(self):
-        return 'LOAD_LIST %d' % (self.counter,)
+        return u'LOAD_LIST %d' % (self.counter,)
 
 class LOAD_FUNCTION(Opcode):
     def __init__(self, funcobj):
@@ -227,7 +231,7 @@ class IN(BaseBinaryOperation):
     def operation(self, ctx, left, right):
         from js.jsobj import W_BasicObject
         if not isinstance(right, W_BasicObject):
-            raise ThrowException(W_String("TypeError: "+ repr(right)))
+            raise JsTypeError(u"TypeError: fffuuu!") #+ repr(right)
         name = left.to_string()
         has_name = right.has_property(name)
         return newbool(has_name)
@@ -236,8 +240,8 @@ class IN(BaseBinaryOperation):
 def type_of(var):
     var_type = var.type()
     if var_type == 'null':
-        return 'object'
-    return var_type
+        return u'object'
+    return unicode(var_type)
 
 class TYPEOF(BaseUnaryOperation):
     def eval(self, ctx):
@@ -253,11 +257,13 @@ class TYPEOF_VARIABLE(Opcode):
     def eval(self, ctx):
         ref = ctx.get_ref(self.name)
         if ref.is_unresolvable_reference():
-            var_type = 'undefined'
+            var_type = u'undefined'
         else:
             var = ref.get_value()
             var_type = type_of(var)
-        ctx.stack_append(W_String(var_type))
+
+        w_string = W_String(var_type)
+        ctx.stack_append(w_string)
 
     def __str__(self):
         return 'TYPEOF_VARIABLE %s' % (self.name)
@@ -393,6 +399,7 @@ class STORE_MEMBER(Opcode):
         left = ctx.stack_pop()
         member = ctx.stack_pop()
         name = member.to_string()
+        assert isinstance(name, unicode)
 
         value = ctx.stack_pop()
 
@@ -570,7 +577,8 @@ def common_call(ctx, r1, args, this, name):
     # TODO
     from js.jsobj import W_BasicFunction
     if not (isinstance(r1, W_BasicFunction)):
-        err = ("%s is not a callable (%s)"%(r1.to_string(), name.to_string()))
+        #err = (u"%s is not a callable (%s)"%(r1.to_string(), name.to_string()))
+        err = u"is not a callable (%s)"
         raise JsTypeError(err)
     argv = args.to_list()
     res = r1.Call(args = argv, this = this, calling_context = ctx)
@@ -616,25 +624,39 @@ class TRYCATCHBLOCK(Opcode):
         self.finallyexec = finallyfunc
 
     def eval(self, ctx):
-        from js.completion import is_return_completion
+        from js.completion import is_return_completion, is_completion, NormalCompletion
         from js.execution import JsException
+
+        tryexec = self.tryexec
+        catchexec = self.catchexec
+        finallyexec = self.finallyexec
+        catchparam = self.catchparam
+
         try:
-            b = self.tryexec.run(ctx)
+            b = tryexec.run(ctx)
+            assert is_completion(b)
         except JsException, e:
-            if self.catchexec is not None:
+            if catchexec is not None:
                 from js.execution_context import CatchExecutionContext
-                b = e.msg()
-                catch_ctx = CatchExecutionContext(self.catchexec, self.catchparam, b, ctx)
-                c = self.catchexec.run(catch_ctx)
+                msg = e.msg()
+                catch_ctx = CatchExecutionContext(catchexec, catchparam, msg, ctx)
+                res = catchexec.run(catch_ctx)
+                assert is_completion(res)
+                c = res
+            else:
+                c = NormalCompletion()
         else:
+            assert is_completion(b)
             c = b
 
-        if self.finallyexec is not None:
-            f = self.finallyexec.run(ctx)
-            if f is None:
+        if finallyexec is not None:
+            f = finallyexec.run(ctx)
+            if not is_return_completion(f):
                 f = c
         else:
             f = c
+
+        assert is_completion(f)
 
         if is_return_completion(f):
             return f
@@ -645,7 +667,7 @@ def commonnew(ctx, obj, args):
     from js.jsobj import W_BasicFunction
 
     if not isinstance(obj, W_BasicFunction):
-        raise JsTypeError('not a constructor')
+        raise JsTypeError(u'not a constructor')
     res = obj.Construct(args=args)
     return res
 
@@ -670,6 +692,9 @@ class NEW_NO_ARGS(Opcode):
 
 # ------------ iterator support ----------------
 
+from pypy.rlib.listsort import make_timsort_class
+TimSort = make_timsort_class()
+
 class LOAD_ITERATOR(Opcode):
     _stack_change = 0
     def eval(self, ctx):
@@ -680,8 +705,8 @@ class LOAD_ITERATOR(Opcode):
         from js.jsobj import W_BasicObject
         assert isinstance(obj, W_BasicObject)
 
-        properties = list(obj.named_properties())
-        properties.sort()
+        properties = obj.named_properties()
+        TimSort(properties).sort()
 
         for key in properties:
             prop = obj.get_property(key)
@@ -735,6 +760,7 @@ class WITH(Opcode):
         self.body = body
 
     def eval(self, ctx):
+        from js.completion import is_return_completion
         from execution_context import WithExecutionContext
         # 12.10
         expr = ctx.stack_pop()
@@ -743,7 +769,10 @@ class WITH(Opcode):
         with_ctx = WithExecutionContext(self.body, expr_obj, ctx)
 
         c = self.body.run(with_ctx)
-        ctx.stack_append(c)
+        if is_return_completion(c):
+            return c
+        else:
+            ctx.stack_append(c.value)
 
 # ------------------ delete -------------------------
 
@@ -752,9 +781,11 @@ class DELETE(Opcode):
         self.name = name
 
     def eval(self, ctx):
+        from js.lexical_environment import Reference
+        from js.execution import JsSyntaxError
+
         # 11.4.1
         ref = ctx.get_ref(self.name)
-        from js.lexical_environment import Reference
         if not isinstance(ref, Reference):
             res = True
         if ref.is_unresolvable_reference():
@@ -767,7 +798,7 @@ class DELETE(Opcode):
         else:
             if ref.is_strict_reference():
                 raise JsSyntaxError()
-            bindings = ref.get_base()
+            bindings = ref.base_env
             res = bindings.delete_binding(ref.get_referenced_name())
         ctx.stack_append(_w(res))
 
@@ -809,7 +840,7 @@ class INSTANCEOF(Opcode):
         lval = ctx.stack_pop()
         from js.jsobj import W_BasicObject
         if not isinstance(rval, W_BasicObject):
-            raise JsTypeError(str(rval))
+            raise JsTypeError(u'TypeError')
         res = rval.has_instance(lval)
         ctx.stack_append(_w(res))
 

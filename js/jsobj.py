@@ -11,7 +11,7 @@ class W_Root(object):
         return self.to_string()
 
     def to_string(self):
-        return ''
+        return u''
 
     def type(self):
         return self._type_
@@ -23,7 +23,7 @@ class W_Root(object):
         return self
 
     def ToObject(self):
-        raise JsTypeError()
+        raise JsTypeError(u'W_Root.ToObject')
 
     def ToNumber(self):
         return 0.0
@@ -85,10 +85,10 @@ class W_Undefined(W_Primitive):
         return NAN
 
     def to_string(self):
-        return self._type_
+        return unicode(self._type_)
 
     def check_object_coercible(self):
-        raise JsTypeError()
+        raise JsTypeError(u'W_Undefined.check_object_coercible')
 
 class W_Null(W_Primitive):
     _type_ = 'null'
@@ -97,36 +97,25 @@ class W_Null(W_Primitive):
         return False
 
     def to_string(self):
-        return 'null'
+        return u'null'
 
     def check_object_coercible(self):
-        raise JsTypeError()
+        raise JsTypeError(u'W_Null.check_object_coercible')
 
 w_Undefined = W_Undefined()
 w_Null = W_Null()
 
+NOT_SET = -1
+
 # 8.6.1
 class Property(object):
-    value = w_Undefined
-    getter = w_Undefined
-    setter = w_Undefined
-    writable = False
-    enumerable = False
-    configurable = False
-
-    def __init__(self, value = None, writable = None, getter = None, setter = None, enumerable = None, configurable = None):
-        if value is not None:
-            self.value = value
-        if writable is not None:
-            self.writable = writable
-        if getter is not None:
-            self.getter = getter
-        if setter is not None:
-            self.setter = setter
-        if enumerable is not None:
-            self.enumerable = enumerable
-        if configurable is not None:
-            self.configurable = configurable
+    def __init__(self, value = None, writable = NOT_SET, getter = None, setter = None, enumerable = NOT_SET, configurable = NOT_SET):
+        self.value = value
+        self.writable = writable
+        self.getter = getter
+        self.setter = setter
+        self.enumerable = enumerable
+        self.configurable = configurable
 
     def is_data_property(self):
         return False
@@ -137,56 +126,50 @@ class Property(object):
     def update_with(self, other):
         if other.value is not None:
             self.value = other.value
-        if other.writable is not None:
+        if other.writable is not NOT_SET:
             self.writable = other.writable
         if other.getter is not None:
             self.getter = other.getter
         if other.setter is not None:
             self.setter = other.setter
-        if other.writable is not None:
+        if other.writable is not NOT_SET:
             self.writable = other.writable
-        if other.configurable is not None:
+        if other.configurable is not NOT_SET:
             self.configurable = other.configurable
 
 class DataProperty(Property):
-    def __init__(self, value = None, writable = None, enumerable = None, configurable = None):
+    def __init__(self, value = None, writable = NOT_SET, enumerable = NOT_SET, configurable = NOT_SET):
         Property.__init__(self, value = value, writable = writable, enumerable = enumerable, configurable = configurable)
 
     def is_data_property(self):
         return True
 
 class AccessorProperty(Property):
-    def __init__(self, getter = None, setter = None, enumerable = None, configurable = None):
+    def __init__(self, getter = None, setter = None, enumerable = NOT_SET, configurable = NOT_SET):
         Property.__init__(self, getter = getter, setter = setter, enumerable = enumerable, configurable = configurable)
 
     def is_accessor_property(self):
         return True
 
 def is_data_descriptor(desc):
-    if desc is w_Undefined:
+    if desc is None:
         return False
     return desc.is_data_descriptor()
 
 def is_accessor_descriptor(desc):
-    if desc is w_Undefined:
+    if desc is None:
         return False
     return desc.is_accessor_descriptor()
 
 def is_generic_descriptor(desc):
-    if desc is w_Undefined:
+    if desc is None:
         return False
     return desc.is_generic_descriptor()
 
 # 8.10
 class PropertyDescriptor(object):
-    value = None
-    writable = None
-    getter = None
-    setter = None
-    configurable = None
-    enumerable = None
 
-    def __init__(self, value = None, writable = None, getter = None, setter = None, configurable = None, enumerable = None):
+    def __init__(self, value = None, writable = NOT_SET, getter = None, setter = None, configurable = NOT_SET, enumerable = NOT_SET):
         self.value = value
         self.writable = writable
         self.getter = getter
@@ -198,7 +181,7 @@ class PropertyDescriptor(object):
         return self.getter is not None and self.setter is not None
 
     def is_data_descriptor(self):
-        return self.value is not None and self.writable is not None
+        return self.value is not None and self.writable is not NOT_SET
 
     def is_generic_descriptor(self):
         return self.is_accessor_descriptor() is False and self.is_data_descriptor() is False
@@ -207,9 +190,9 @@ class PropertyDescriptor(object):
         return self.getter is None\
             and self.setter is None\
             and self.value is None\
-            and self.writable is None\
-            and self.enumerable is None\
-            and self.configurable is None
+            and self.writable is NOT_SET\
+            and self.enumerable is NOT_SET\
+            and self.configurable is NOT_SET
 
     def __eq__(self, other):
         assert isinstance(other, PropertyDescriptor)
@@ -220,31 +203,31 @@ class PropertyDescriptor(object):
         if self.getter is not None and self.getter != other.getter:
             return False
 
-        if self.writable is not None and self.writable != other.writable:
+        if self.writable is not NOT_SET and self.writable != other.writable:
             return False
 
         if self.value is not None and self.value != other.value:
             return False
 
-        if self.configurable is not None and self.configurable != other.configurable:
+        if self.configurable is not NOT_SET and self.configurable != other.configurable:
             return False
 
-        if self.enumerable is not None and self.enumerable != other.enumerable:
+        if self.enumerable is not NOT_SET and self.enumerable != other.enumerable:
             return False
 
     def update_with(self, other):
         assert isinstance(other, PropertyDescriptor)
 
-        if other.enumerable is not None:
+        if other.enumerable is not NOT_SET:
             self.enumerable = other.enumerable
 
-        if other.configurable is not None:
+        if other.configurable is not NOT_SET:
             self.configurable = other.configurable
 
         if other.value is not None:
             self.value = other.value
 
-        if other.writable is not None:
+        if other.writable is not NOT_SET:
             self.writable = other.writable
 
         if other.getter is not None:
@@ -264,7 +247,7 @@ class W_ProtoGetter(W_Root):
 
     def Call(self, args = [], this = None, calling_context = None):
         if not isinstance(this, W_BasicObject):
-            raise JsTypeError()
+            raise JsTypeError(u'')
 
         return this._prototype_
 
@@ -274,7 +257,7 @@ class W_ProtoSetter(W_Root):
 
     def Call(self, args = [], this = None, calling_context = None):
         if not isinstance(this, W_BasicObject):
-            raise JsTypeError()
+            raise JsTypeError(u'')
 
         proto = args[0]
         this._prototype_ = proto
@@ -282,6 +265,11 @@ class W_ProtoSetter(W_Root):
 w_proto_getter = W_ProtoGetter()
 w_proto_setter = W_ProtoSetter()
 proto_desc = PropertyDescriptor(getter = w_proto_getter, setter = w_proto_setter, enumerable = False, configurable = False)
+
+def reject(throw):
+    if throw:
+        raise JsTypeError(u'')
+    return False
 
 class W_BasicObject(W_Root):
     _type_ = 'object'
@@ -295,7 +283,7 @@ class W_BasicObject(W_Root):
 
         #desc = PropertyDescriptor(value = self._prototype_, writable = False, enumerable = False, configurable = False)
         desc = proto_desc
-        W_BasicObject.define_own_property(self, '__proto__', desc)
+        W_BasicObject.define_own_property(self, u'__proto__', desc)
 
     def __str__(self):
         return "%s: %s" % (object.__repr__(self), self.klass())
@@ -314,16 +302,17 @@ class W_BasicObject(W_Root):
 
     # 8.12.3
     def get(self, p):
+        assert isinstance(p, unicode)
         desc = self.get_property(p)
 
-        if desc is w_Undefined:
+        if desc is None:
             return w_Undefined
 
         if is_data_descriptor(desc):
             return desc.value
 
         getter = desc.getter
-        if getter is w_Undefined:
+        if getter is None:
             return w_Undefined
 
         res = getter.Call(this = self)
@@ -331,8 +320,9 @@ class W_BasicObject(W_Root):
 
     # 8.12.1
     def get_own_property(self, p):
+        assert isinstance(p, unicode)
         if p not in self._properties_:
-            return w_Undefined
+            return None
 
         d = PropertyDescriptor()
         x = self._properties_[p]
@@ -350,21 +340,24 @@ class W_BasicObject(W_Root):
 
     # 8.12.2
     def get_property(self, p):
-        prop = self.get_own_property(p)
-        if prop is not w_Undefined:
-            return prop
-        proto = self.prototype()
+        assert isinstance(p, unicode)
 
+        prop = self.get_own_property(p)
+        if prop is not None:
+            return prop
+
+        proto = self.prototype()
         if proto is w_Null:
-            return w_Undefined
+            return None
 
         return proto.get_property(p)
 
     # 8.12.5
     def put(self, p, v, throw = False):
+        assert isinstance(p, unicode)
         if self.can_put(p) is False:
             if throw is True:
-                raise JsTypeError()
+                raise JsTypeError(u'')
             else:
                 return
 
@@ -386,7 +379,7 @@ class W_BasicObject(W_Root):
     # 8.12.4
     def can_put(self, p):
         desc = self.get_own_property(p)
-        if desc is not w_Undefined:
+        if desc is not None:
             if is_accessor_descriptor(desc) is True:
                 if desc.setter is w_Undefined:
                     return False
@@ -400,7 +393,7 @@ class W_BasicObject(W_Root):
             return self.extensible()
 
         inherited = proto.get_property(p)
-        if inherited is w_Undefined:
+        if inherited is None:
             return self.extensible()
 
         if is_accessor_descriptor(inherited) is True:
@@ -416,22 +409,23 @@ class W_BasicObject(W_Root):
 
     # 8.12.6
     def has_property(self, p):
+        assert isinstance(p, unicode)
         desc = self.get_property(p)
-        if desc is w_Undefined:
+        if desc is None:
             return False
         return True
 
     # 8.12.7
     def delete(self, p, throw = False):
         desc = self.get_own_property(p)
-        if desc is w_Undefined:
+        if desc is None:
             return True
         if desc.configurable:
             del self._properties_[p]
             return True
 
         if throw is True:
-            raise JsTypeError()
+            raise JsTypeError(u'')
 
         return False
 
@@ -449,17 +443,17 @@ class W_BasicObject(W_Root):
         if res is not None:
             return res
 
-        raise JsTypeError()
+        raise JsTypeError(u'')
 
     def _default_value_string_(self):
-        to_string = self.get('toString')
+        to_string = self.get(u'toString')
         if to_string.is_callable():
             _str = to_string.Call(this = self)
             if isinstance(_str, W_Primitive):
                 return _str
 
     def _default_value_number_(self):
-        value_of = self.get('valueOf')
+        value_of = self.get(u'valueOf')
         if value_of.is_callable():
             val = value_of.Call(this = self)
             if isinstance(val, W_Primitive):
@@ -467,19 +461,13 @@ class W_BasicObject(W_Root):
 
     # 8.12.9
     def define_own_property(self, p, desc, throw = False):
-        def reject():
-            if throw:
-                raise JsTypeError()
-            else:
-                return False
-
         current = self.get_own_property(p)
         extensible = self.extensible()
         # 3.
-        if current is w_Undefined and extensible is False:
-            return reject()
+        if current is None and extensible is False:
+            return reject(throw)
         # 4.
-        if current is w_Undefined and extensible is True:
+        if current is None and extensible is True:
             # 4.a
             if is_generic_descriptor(desc) or is_data_descriptor(desc):
                 new_prop = DataProperty(\
@@ -513,9 +501,9 @@ class W_BasicObject(W_Root):
         # 7.
         if current.configurable is False:
             if desc.configurable is True:
-                return reject()
-            if desc.enumerable is not None and current.enumerable != desc.enumerable:
-                return reject()
+                return reject(throw)
+            if desc.enumerable is not NOT_SET and current.enumerable != desc.enumerable:
+                return reject(throw)
 
         # 8.
         if is_generic_descriptor(desc):
@@ -524,7 +512,7 @@ class W_BasicObject(W_Root):
         elif is_data_descriptor(current) != is_data_descriptor(desc):
             # 9.a
             if current.configurable is False:
-                return reject()
+                return reject(throw)
             # 9.b
             if is_data_descriptor(current):
                 raise NotImplementedError(self.__class__)
@@ -537,11 +525,11 @@ class W_BasicObject(W_Root):
             if current.configurable is False:
                 # 10.a.i
                 if current.writable is False and desc.writable is True:
-                    return reject()
+                    return reject(throw)
                 # 10.a.ii
                 if current.writable is False:
                     if desc.value is not None and desc.value != current.value:
-                        return reject()
+                        return reject(throw)
             # 10.b
             else:
                 pass
@@ -551,10 +539,10 @@ class W_BasicObject(W_Root):
             if current.configurable is False:
                 # 11.a.i
                 if desc.setter is not None and desc.setter != current.setter:
-                    return reject()
+                    return reject(throw)
                 # 11.a.ii
                 if desc.getter is not None and desc.getter != current.getter:
-                    return reject()
+                    return reject(throw)
         # 12
         prop = self._properties_[p]
         prop.update_with(desc)
@@ -579,14 +567,27 @@ class W_BasicObject(W_Root):
         return self
 
     def has_instance(self, other):
-        raise JsTypeError()
+        raise JsTypeError(u'has_instance')
     ###
 
+    def _named_properties_dict(self):
+        my_d = {}
+        for i in self._properties_.keys():
+            my_d[i] = None
+
+        proto = self.prototype()
+        if not isnull_or_undefined(proto):
+            proto_d = proto._named_properties_dict()
+        else:
+            proto_d = {}
+
+        my_d.update(proto_d)
+
+        return my_d
+
     def named_properties(self):
-        properties = set(self._properties_.keys())
-        if not isnull_or_undefined(self._prototype_):
-            properties.update(self._prototype_.named_properties())
-        return properties
+        prop_dict = self._named_properties_dict()
+        return prop_dict.keys()
 
 class W__PrimitiveObject(W_BasicObject):
     def __init__(self, primitive_value):
@@ -597,7 +598,8 @@ class W__PrimitiveObject(W_BasicObject):
         return self._primitive_value_
 
     def set_primitive_value(self, value):
-        self._primitive_value_ = _w(value)
+        assert isinstance(value, W_Root)
+        self._primitive_value_ = value
 
 class W_BooleanObject(W__PrimitiveObject):
     _class_ = 'Boolean'
@@ -614,22 +616,22 @@ class W_StringObject(W__PrimitiveObject):
         W__PrimitiveObject.__init__(self, primitive_value)
         length = len(self._primitive_value_.to_string())
         descr = PropertyDescriptor(value = _w(length), enumerable = False, configurable = False, writable = False)
-        self.define_own_property('length', descr)
+        self.define_own_property(u'length', descr)
 
     def get_own_property(self, p):
-        desc = super(W_StringObject, self).get_own_property(p)
-        if desc is not w_Undefined:
+        desc = W__PrimitiveObject.get_own_property(self, p)
+        if desc is not None:
             return desc
 
         if not is_array_index(p):
-            return w_Undefined
+            return None
 
         string = self.to_string()
         index = int(p)
         length = len(string)
 
-        if len <= index:
-            return w_Undefined
+        if length <= index:
+            return None
 
         result_string = string[index]
         d = PropertyDescriptor(value = _w(result_string), enumerable = True, writable = False, configurable = False)
@@ -658,7 +660,7 @@ class W_BasicFunction(W_BasicObject):
     # 13.2.2
     def Construct(self, args=[]):
         obj = W__Object()
-        proto = self.get('prototype')
+        proto = self.get(u'prototype')
         if isinstance(proto, W_BasicObject):
             obj._prototype_ = proto
         else:
@@ -683,10 +685,10 @@ class W_BasicFunction(W_BasicObject):
         if not isinstance(v, W_BasicObject):
             return False
 
-        o = self.get('prototype')
+        o = self.get(u'prototype')
 
         if not isinstance(o, W_BasicObject):
-            raise JsTypeError()
+            raise JsTypeError(u'has_instance')
 
         while True:
             v = v.prototype()
@@ -725,22 +727,23 @@ class W_FunctionConstructor(W_BasicFunction):
     # 15.3.2.1
     def Call(self, args = [], this = None, calling_context = None):
         arg_count = len(args)
-        p = ''
+        _args = u''
+        body = u''
         if arg_count == 0:
-            body = ''
+            pass
         elif arg_count == 1:
             body = args[0].to_string()
         else:
-            first_arg = args[0]
-            p = first_arg.to_string()
+            first_arg = args[0].to_string()
+            _args = first_arg
             k = 2
             while k < arg_count:
-                next_arg = args[k-1]
-                p = "%s, %s" % (p, next_arg.to_string())
+                next_arg = args[k-1].to_string()
+                _args = _args + u',' + next_arg
                 k = k + 1
             body = args[k-1].to_string()
 
-        src = "function (%s) { %s }" % (p, body)
+        src = u'function (' + _args + u') { ' + body + u' };'
 
         from js.astbuilder import parse_to_ast
         from js.jscode import ast_to_bytecode
@@ -751,8 +754,8 @@ class W_FunctionConstructor(W_BasicFunction):
         # TODO hackish
         func = code.opcodes[0].funcobj
 
-        from js.execution_context import get_global_environment
-        scope = get_global_environment()
+        from js.object_space import object_space
+        scope = object_space.get_global_environment()
         strict = func.strict
         params = func.params()
         w_func = W__Function(func, formal_parameter_list = params, scope = scope, strict = strict)
@@ -778,21 +781,21 @@ class W_NumberConstructor(W_BasicFunction):
         return self.Call(args).ToObject()
 
     def _to_string_(self):
-        return "function Number() { [native code] }"
+        return u'function Number() { [native code] }'
 
 # 15.5.2
 class W_StringConstructor(W_BasicFunction):
     def Call(self, args = [], this = None, calling_context = None):
-        if len(args) >= 1:
-            return W_String(args[0].to_string())
-        else:
-            return W_String('')
+        from js.builtins import get_arg
+        arg0 = get_arg(args, 0)
+        strval = arg0.to_string()
+        return W_String(strval)
 
     def Construct(self, args=[]):
         return self.Call(args).ToObject()
 
     def _to_string_(self):
-        return "function String() { [native code] }"
+        return u'function String() { [native code] }'
 
 # 15.6.2
 class W_BooleanConstructor(W_BasicFunction):
@@ -807,7 +810,7 @@ class W_BooleanConstructor(W_BasicFunction):
         return self.Call(args).ToObject()
 
     def _to_string_(self):
-        return "function Boolean() { [native code] }"
+        return u'function Boolean() { [native code] }'
 
 # 15.9.2
 class W_DateConstructor(W_BasicFunction):
@@ -836,7 +839,7 @@ class W_DateConstructor(W_BasicFunction):
             else:
                 num = arg0.ToNumber()
                 if isnan(num) or isinf(num):
-                    raise JsTypeError(num)
+                    raise JsTypeError(unicode(num))
                 value = _w(int(num))
         else:
             value = _w(int(time.time() * 1000))
@@ -848,7 +851,7 @@ class W_DateConstructor(W_BasicFunction):
         return self.Call(args).ToObject()
 
     def _to_string_(self):
-        return "function Date() { [native code] }"
+        return u'function Date() { [native code] }'
 
 
 class W__Function(W_BasicFunction):
@@ -864,19 +867,19 @@ class W__Function(W_BasicFunction):
         # 14.
         _len = len(formal_parameter_list)
         # 15.
-        put_property(self, 'length', _w(_len), writable = False, enumerable = False, configurable = False)
+        put_property(self, u'length', _w(_len), writable = False, enumerable = False, configurable = False)
         # 16.
         proto_obj = W__Object()
         # 17.
-        put_property(proto_obj, 'constructor', self, writable = True, enumerable = False, configurable = True)
+        put_property(proto_obj, u'constructor', self, writable = True, enumerable = False, configurable = True)
         # 18.
-        put_property(self, 'prototype', proto_obj, writable = True, enumerable = False, configurable = False)
+        put_property(self, u'prototype', proto_obj, writable = True, enumerable = False, configurable = False)
 
         if strict is True:
             raise NotImplementedError()
         else:
-            put_property(self, 'caller', w_Null, writable = True, enumerable = False, configurable = False)
-            put_property(self, 'arguments', w_Null, writable = True, enumerable = False, configurable = False)
+            put_property(self, u'caller', w_Null, writable = True, enumerable = False, configurable = False)
+            put_property(self, u'arguments', w_Null, writable = True, enumerable = False, configurable = False)
 
 
     def _to_string(self):
@@ -914,8 +917,8 @@ class W__Function(W_BasicFunction):
     # 15.3.5.4
     def get(self, p):
         v = W_BasicObject.get(self, p)
-        if p is 'caller' and isinstance(v, W__Function) and v.is_strict():
-            raise JsTypeError()
+        if p is u'caller' and isinstance(v, W__Function) and v.is_strict():
+            raise JsTypeError(u'')
         return v
 
     def scope(self):
@@ -932,14 +935,14 @@ class W_Arguments(W__Object):
         W__Object.__init__(self)
         self.strict = strict
         _len = len(args)
-        put_property(self, 'length', _w(_len), writable = True, enumerable = False, configurable = True)
+        put_property(self, u'length', _w(_len), writable = True, enumerable = False, configurable = True)
 
         _map = W__Object()
         mapped_names = []
         indx = _len - 1
         while indx >= 0:
             val = args[indx]
-            put_property(self, str(indx), val, writable = True, enumerable = True, configurable = True)
+            put_property(self, unicode(str(indx)), val, writable = True, enumerable = True, configurable = True)
             if indx < len(names):
                 name = names[indx]
                 if strict is False and name not in mapped_names:
@@ -947,95 +950,30 @@ class W_Arguments(W__Object):
                     g = make_arg_getter(name, env)
                     p = make_arg_setter(name, env)
                     desc = PropertyDescriptor(setter = p, getter = g, configurable = True)
-                    _map.define_own_property(str(indx), desc, False)
+                    _map.define_own_property(unicode(str(indx)), desc, False)
             indx = indx - 1
 
         if len(mapped_names) > 0:
             self._paramenter_map_ = _map
 
         if strict is False:
-            put_property(self, 'callee', _w(func), writable = True, enumerable = False, configurable = True)
+            put_property(self, u'callee', _w(func), writable = True, enumerable = False, configurable = True)
         else:
             # 10.6 14 thrower
             pass
 
-    #def get(self, p):
-        #if self.strict:
-            #return super(W_Arguments, self).get(p)
-
-        #_map = self._paramenter_map_
-        #is_mapped = _map.get_own_property(p)
-        #if is_mapped is w_Undefined:
-            #v = super(W_Arguments, self).get(p)
-            #return v
-        #else:
-            #return _map.get(p)
-
-    #def get_own_property(self, p):
-        #if self.strict:
-            #return super(W_Arguments, self).get_own_property(p)
-
-        #desc = super(W_Arguments, self).get_own_property(p)
-        #if desc is w_Undefined:
-            #return desc
-
-        #_map = self._paramenter_map_
-        #is_mapped = _map.get_own_property(p)
-        #if not is_mapped is w_Undefined:
-            #value = _map.get(p)
-            #desc.value = value
-
-        #return desc
-
-    #def define_own_property(self, p, desc, throw = False):
-        #if self.strict:
-            #return super(W_Arguments, self).define_own_property(p, desc, throw)
-
-        #_map = self._paramenter_map_
-        #is_mapped = _map.get_own_property(p)
-        #allowed = super(W_Arguments, self).define_own_property(p, desc, False)
-
-        #if allowed is False:
-            #if throw:
-                #raise JsTypeError()
-            #else:
-                #return False
-
-        #if is_mapped is not w_Undefined:
-            #if is_accessor_descriptor(desc):
-                #_map.delete(p, False)
-            #else:
-                #if desc.value is not None:
-                    #_map.put(p, desc.value, throw)
-                #if desc.writable is False:
-                    #_map.delete(p, False)
-
-        #return True
-
-    #def delete(self, p, throw = False):
-        #if self.strict:
-            #return super(W_Arguments, self).delete(p, throw)
-
-        #_map = self._paramenter_map_
-        #is_mapped = _map.get_own_property(p)
-        #result = super(W_Arguments, self).delete(p, throw)
-        #if result is True and is_mapped is not w_Undefined:
-            #_map.delete(p, False)
-
-        #return result
-
 def make_arg_getter(name, env):
-    code = 'return %s;' % (name)
+    code = u'return %s;' % (name)
 
 def make_arg_setter(name, env):
-    param = '%s_arg' % (name)
-    code = '%s = %s;' % (name, param)
+    param = u'%s_arg' % (name)
+    code = u'%s = %s;' % (name, param)
 
 # 15.4.2
 class W_ArrayConstructor(W_BasicFunction):
     def __init__(self):
         W_BasicFunction.__init__(self)
-        put_property(self, 'length', _w(1), writable = False, enumerable = False, configurable = False)
+        put_property(self, u'length', _w(1), writable = False, enumerable = False, configurable = False)
 
     def is_callable(self):
         return True
@@ -1051,13 +989,13 @@ class W_ArrayConstructor(W_BasicFunction):
             else:
                 length = 1
                 array = W__Array(length)
-                array.put('0', _len)
+                array.put(u'0', _len)
 
             return array
         else:
             array = W__Array()
             for index, obj in enumerate(args):
-                array.put(str(index), obj)
+                array.put(unicode(str(index)), obj)
             return array
 
     def Construct(self, args=[]):
@@ -1070,26 +1008,25 @@ class W__Array(W_BasicObject):
         W_BasicObject.__init__(self)
 
         desc = PropertyDescriptor(value = _w(length), writable = True, enumerable = False, configurable = False)
-        W_BasicObject.define_own_property(self, 'length', desc)
+        W_BasicObject.define_own_property(self, u'length', desc)
 
     # 15.4.5.1
     def define_own_property(self, p, desc, throw = False):
-        def reject():
-            if throw:
-                raise JsTypeError()
-            else:
-                return False
-
-        old_len_desc = self.get_own_property('length')
-        assert old_len_desc is not w_Undefined
+        old_len_desc = self.get_own_property(u'length')
+        assert old_len_desc is not None
         old_len = old_len_desc.value.ToUInt32()
 
         # 3
-        if p == 'length':
+        if p == u'length':
             if desc.value is None:
-                return W_BasicObject.define_own_property(self, 'length', desc, throw)
-            import copy
-            new_len_desc = copy.deepcopy(desc)
+                return W_BasicObject.define_own_property(self, u'length', desc, throw)
+            new_len_desc = PropertyDescriptor()
+            new_len_desc.value = desc.value
+            new_len_desc.writable = desc.writable
+            new_len_desc.getter = desc.getter
+            new_len_desc.setter = desc.setter
+            new_len_desc.configurable = desc.configurable
+            new_len_desc.enumerable = desc.enumerable
             new_len = desc.value.ToUInt32()
 
             if new_len != desc.value.ToNumber():
@@ -1099,13 +1036,13 @@ class W__Array(W_BasicObject):
 
             # f
             if new_len >= old_len:
-                return W_BasicObject.define_own_property(self, 'length', new_len_desc, throw)
+                return W_BasicObject.define_own_property(self, u'length', new_len_desc, throw)
             # g
             if old_len_desc.writable is False:
-                return reject()
+                return reject(throw)
 
             # h
-            if new_len_desc.writable is None or new_len_desc.writable is true:
+            if new_len_desc.writable is None or new_len_desc.writable is True:
                 new_writable = True
             # i
             else:
@@ -1113,7 +1050,7 @@ class W__Array(W_BasicObject):
                 new_writable = False
 
             # j
-            succeeded = W_BasicObject.define_own_property(self, 'length', new_len_desc, throw)
+            succeeded = W_BasicObject.define_own_property(self, u'length', new_len_desc, throw)
             # k
             if succeeded is False:
                 return False
@@ -1121,40 +1058,41 @@ class W__Array(W_BasicObject):
             # l
             while new_len < old_len:
                 old_len = old_len - 1
-                delete_succeeded = self.delete(str(old_len), False)
+                delete_succeeded = self.delete(unicode(str(old_len)), False)
                 if delete_succeeded is False:
                     new_len_desc.value = _w(old_len + 1)
                     if new_writable is False:
                         new_len_desc.writable = False
-                    W_BasicObject.define_own_property(self, 'length', new_len_desc, False)
-                    return reject()
+                    W_BasicObject.define_own_property(self, u'length', new_len_desc, False)
+                    return reject(throw)
 
             # m
             if new_writable is False:
                 desc = PropertyDescriptor(writable = False)
-                res = W_BasicObject.define_own_property(self, 'length', desc, False)
+                res = W_BasicObject.define_own_property(self, u'length', desc, False)
                 assert res is True
 
             return True
 
         # 4
         elif is_array_index(p):
+            assert isinstance(p, unicode)
             # a
             index = r_uint32(int(p))
             # b
             if index >= old_len and old_len_desc.writable is False:
-                return reject()
+                return reject(throw)
 
             # c
             succeeded = W_BasicObject.define_own_property(self, p, desc, False)
             # d
             if succeeded is False:
-                return reject()
+                return reject(throw)
 
             # e
             if index >= old_len:
                 old_len_desc.value = _w(index + 1)
-                res = W_BasicObject.define_own_property(self, 'length', old_len_desc, False)
+                res = W_BasicObject.define_own_property(self, u'length', old_len_desc, False)
                 assert res is True
             # f
             return True
@@ -1163,7 +1101,7 @@ class W__Array(W_BasicObject):
 
 def is_array_index(p):
     try:
-        return str(r_uint32(abs(int(p)))) == p
+        return unicode(str(r_uint32(abs(int(p))))) == p
     except ValueError:
         return False
 
@@ -1186,8 +1124,8 @@ class W_Boolean(W_Primitive):
 
     def to_string(self):
         if self._boolval_ == True:
-            return "true"
-        return "false"
+            return u'true'
+        return u'false'
 
     def ToNumber(self):
         if self._boolval_ == True:
@@ -1201,7 +1139,7 @@ class W_String(W_Primitive):
     _type_ = 'string'
 
     def __init__(self, strval):
-        assert isinstance(strval, str) or isinstance(strval, unicode)
+        assert isinstance(strval, unicode)
         W_Primitive.__init__(self)
         self._strval_ = strval
 
@@ -1210,7 +1148,7 @@ class W_String(W_Primitive):
         return self.to_string() == other_string
 
     def __str__(self):
-        return u'W_String("%s")' % (unicode(self._strval_),)
+        return u'W_String("%s")' % (self._strval_)
 
     def ToObject(self):
         return W_StringObject(self)
@@ -1225,18 +1163,24 @@ class W_String(W_Primitive):
             return True
 
     def ToNumber(self):
-        if not self._strval_:
+        u_strval = self._strval_
+        assert isinstance(u_strval, unicode)
+
+        if u_strval == u'':
             return 0.0
-        if self._strval_.isspace():
+        if u_strval.strip(' ') == u'':
             return 0.0
+
+        strval = str(u_strval)
+
         try:
-            return float(self._strval_)
+            return float(strval)
         except ValueError:
             try:
-                return float(int(self._strval_, 16))
+                return float(int(strval, 16))
             except ValueError:
                 try:
-                    return float(int(self._strval_, 8))
+                    return float(int(strval, 8))
                 except ValueError:
                     return NAN
                 except OverflowError:
@@ -1287,7 +1231,7 @@ class W_IntNumber(W_Number):
 
     def to_string(self):
         # XXX incomplete, this doesn't follow the 9.8.1 recommendation
-        return str(self.ToInteger())
+        return unicode(str(self.ToInteger()))
 
 def r_int32(n):
     return intmask(rffi.cast(rffi.INT, n))
@@ -1309,19 +1253,19 @@ class W_FloatNumber(W_Number):
     def to_string(self):
         # XXX incomplete, this doesn't follow the 9.8.1 recommendation
         if isnan(self._floatval_):
-            return 'NaN'
+            return u'NaN'
         if isinf(self._floatval_):
             if self._floatval_ > 0:
-                return 'Infinity'
+                return u'Infinity'
             else:
-                return '-Infinity'
+                return u'-Infinity'
 
         if self._floatval_ == 0:
-            return '0'
+            return u'0'
 
-        res = ''
+        res = u''
         try:
-            res = formatd(self._floatval_, 'g', 10)
+            res = unicode(formatd(self._floatval_, 'g', 10))
         except OverflowError:
             raise
 
@@ -1379,23 +1323,27 @@ class W_Iterator(W_Root):
         return len(self.elements_w) == 0
 
     def to_string(self):
-        return '<Iterator>'
+        return u'<Iterator>'
 
+from pypy.rlib.objectmodel import specialize
+@specialize.argtype(0)
 def _w(value):
     if isinstance(value, W_Root):
         return value
     elif isinstance(value, bool):
         return newbool(value)
-    elif isinstance(value, (int, long)):
+    elif isinstance(value, int) or isinstance(value, long):
         return W_IntNumber(value)
     elif isinstance(value, float):
         return W_FloatNumber(value)
-    elif isinstance(value, basestring):
+    elif isinstance(value, unicode):
         return W_String(value)
+    elif isinstance(value, str):
+        return W_String(unicode(value))
     elif isinstance(value, list):
         a = W__Array()
         for index, item in enumerate(value):
-            put_property(a, str(index), _w(item), writable = True, enumerable = True, configurable = True)
+            put_property(a, unicode(index), _w(item), writable = True, enumerable = True, configurable = True)
         return a
 
     elif value is None:

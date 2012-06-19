@@ -310,10 +310,14 @@ class Member(Expression):
 class MemberDot(Expression):
     "this is for object.name"
     def __init__(self, pos, left, name):
-        self.name = name.get_literal()
+        n = name.get_literal()
+        uname = unicode(n)
+        assert isinstance(uname, unicode)
+        self.name = uname
         self.left = left
         self.pos = pos
-        self.expr = String(pos, "'%s'" % (self.name))
+        strval = u"'" + uname + u"'"
+        self.expr = String(pos, strval)
 
     def __repr__(self):
         return "MemberDot %s.%s" % (repr(self.left), self.name)
@@ -350,7 +354,7 @@ class FunctionStatement(Statement):
 class Identifier(Expression):
     def __init__(self, pos, name, index):
         self.pos = pos
-        self.name = name
+        self.name = unicode(name)
         self.index = index
 
     def __repr__(self):
@@ -362,8 +366,10 @@ class Identifier(Expression):
     def get_literal(self):
         return self.name
 
-
 class This(Identifier):
+    def __init__(self, pos):
+        self.pos = pos
+
     def emit(self, bytecode):
         bytecode.emit('LOAD_THIS')
 
@@ -545,8 +551,6 @@ class Delete(Expression):
         what = self.what
         if isinstance(what, Identifier):
             bytecode.emit('DELETE', what.name)
-        elif isinstance(what, VariableIdentifier):
-            bytecode.emit('DELETE', what.identifier)
         elif isinstance(what, MemberDot):
             what.left.emit(bytecode)
             # XXX optimize
@@ -638,6 +642,7 @@ class FloatNumber(BaseNumber):
 
 class String(Expression):
     def __init__(self, pos, strval):
+        assert isinstance(strval, unicode)
         self.pos = pos
         self.strval = self.string_unquote(strval)
 
@@ -645,18 +650,40 @@ class String(Expression):
         return "String %s" % (self.strval)
 
     def emit(self, bytecode):
-        bytecode.emit('LOAD_STRINGCONSTANT', self.strval)
+        strval = self.strval
+        assert isinstance(strval, unicode)
+        bytecode.emit('LOAD_STRINGCONSTANT', strval)
 
     def string_unquote(self, string):
-        s = string.decode('unicode_escape')
+        #s = decode_unicode_escape(string)
+        s = string
         if s.startswith('"'):
             assert s.endswith('"')
         else:
             assert s.startswith("'")
             assert s.endswith("'")
-        s = s[1:-1]
-        s = s.replace('\\ ', ' ')
-        return s
+        s = s[:-1]
+        s = s[1:]
+        s = u''.join(s.split(u'\\'))
+        return unicode(s)
+
+def decode_unicode_escape(string):
+    assert isinstance(string, unicode)
+    from pypy.rlib.runicode import str_decode_unicode_escape, str_decode_raw_unicode_escape
+    result, consumed = str_decode_unicode_escape(string, len(string), "strict")
+    return result
+
+def decode_str_utf8(string):
+    assert isinstance(string, str)
+    from pypy.rlib.runicode import str_decode_utf_8
+    result, consumed = str_decode_utf_8(string, len(string), "strict")
+    return result
+
+def encode_unicode_utf8(string):
+    assert isinstance(string, unicode)
+    from pypy.rlib.runicode import unicode_encode_utf_8
+    result, consumed = str_decode_utf_8(string, len(string), "strict")
+    return result
 
 class ObjectInit(ListOp):
     def emit(self, bytecode):
@@ -807,22 +834,6 @@ class VariableDeclaration(Expression):
 #    def get_local(self):
 #        return self.local
 
-class VariableIdentifier(Expression):
-    pass
-    #def __init__(self, index, identifier):
-        #self.pos = pos
-        #self.index = index
-        #self.identifier = identifier
-
-    #def __repr__(self):
-        #return "VariableIdentifier %s" % (self.identifier)
-
-    #def emit(self, bytecode):
-        #bytecode.emit('LOAD_VARIABLE', self.index, self.identifier)
-
-    #def get_literal(self):
-        #return self.identifier
-
 class VariableDeclList(Statement):
     def __init__(self, pos, nodes):
         self.pos = pos
@@ -967,7 +978,7 @@ class ForIn(Statement):
             bytecode.emit('STORE_MEMBER')
             bytecode.emit('POP')
         else:
-            raise JsTypeError('unsupported')
+            raise JsTypeError(u'unsupported')
 
         body.emit(bytecode)
         bytecode.emit('JUMP', precond)

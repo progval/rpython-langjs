@@ -9,52 +9,52 @@ def setup(global_object):
     from js.jsobj import W_Math
     # 15.8
     w_Math = W_Math()
-    put_property(global_object, 'Math', w_Math)
+    put_property(global_object, u'Math', w_Math)
 
-    put_native_function(w_Math, 'abs', js_abs, params = ['x'])
-    put_native_function(w_Math, 'floor', floor, params = ['x'])
-    put_native_function(w_Math, 'round', js_round, params = ['x'])
-    put_native_function(w_Math, 'random', random)
-    put_native_function(w_Math, 'min', js_min, params = ['value1', 'value2'])
-    put_native_function(w_Math, 'max', js_max, params = ['value1', 'value2'])
-    put_native_function(w_Math, 'pow', js_pow, params = ['x', 'y'])
-    put_native_function(w_Math, 'sqrt', js_sqrt, params = ['x'])
-    put_native_function(w_Math, 'log', js_log, params = ['x'])
-    put_native_function(w_Math, 'sin', js_sin, params = ['x'])
-    put_native_function(w_Math, 'tan', js_tan, params = ['x'])
-    put_native_function(w_Math, 'acos', js_acos, params = ['x'])
-    put_native_function(w_Math, 'asin', js_asin, params = ['x'])
-    put_native_function(w_Math, 'atan', js_atan, params = ['x'])
-    put_native_function(w_Math, 'atan2', js_atan2, params = ['y', 'x'])
-    put_native_function(w_Math, 'ceil', js_ceil, params = ['x'])
-    put_native_function(w_Math, 'cos', js_cos, params = ['x'])
-    put_native_function(w_Math, 'exp', js_exp, params = ['x'])
+    put_native_function(w_Math, u'abs', js_abs, params = [u'x'])
+    put_native_function(w_Math, u'floor', floor, params = [u'x'])
+    put_native_function(w_Math, u'round', js_round, params = [u'x'])
+    put_native_function(w_Math, u'random', random)
+    put_native_function(w_Math, u'min', js_min, params = [u'value1', u'value2'])
+    put_native_function(w_Math, u'max', js_max, params = [u'value1', u'value2'])
+    put_native_function(w_Math, u'pow', js_pow, params = [u'x', u'y'])
+    put_native_function(w_Math, u'sqrt', js_sqrt, params = [u'x'])
+    put_native_function(w_Math, u'log', js_log, params = [u'x'])
+    put_native_function(w_Math, u'sin', js_sin, params = [u'x'])
+    put_native_function(w_Math, u'tan', js_tan, params = [u'x'])
+    put_native_function(w_Math, u'acos', js_acos, params = [u'x'])
+    put_native_function(w_Math, u'asin', js_asin, params = [u'x'])
+    put_native_function(w_Math, u'atan', js_atan, params = [u'x'])
+    put_native_function(w_Math, u'atan2', js_atan2, params = [u'y', u'x'])
+    put_native_function(w_Math, u'ceil', js_ceil, params = [u'x'])
+    put_native_function(w_Math, u'cos', js_cos, params = [u'x'])
+    put_native_function(w_Math, u'exp', js_exp, params = [u'x'])
 
     # 15.8.1
 
     # 15.8.1.1
-    put_property(w_Math, 'E', _w(E), writable = False, enumerable = False, configurable = False)
+    put_property(w_Math, u'E', _w(E), writable = False, enumerable = False, configurable = False)
 
     # 15.8.1.2
-    put_property(w_Math, 'LN10', _w(LN10), writable = False, enumerable = False, configurable = False)
+    put_property(w_Math, u'LN10', _w(LN10), writable = False, enumerable = False, configurable = False)
 
     # 15.8.1.3
-    put_property(w_Math, 'LN2', _w(LN2), writable = False, enumerable = False, configurable = False)
+    put_property(w_Math, u'LN2', _w(LN2), writable = False, enumerable = False, configurable = False)
 
     # 15.8.1.4
-    put_property(w_Math, 'LOG2E', _w(LOG2E), writable = False, enumerable = False, configurable = False)
+    put_property(w_Math, u'LOG2E', _w(LOG2E), writable = False, enumerable = False, configurable = False)
 
     # 15.8.1.5
-    put_property(w_Math, 'LOG10E', _w(LOG10E), writable = False, enumerable = False, configurable = False)
+    put_property(w_Math, u'LOG10E', _w(LOG10E), writable = False, enumerable = False, configurable = False)
 
     # 15.8.1.6
-    put_property(w_Math, 'PI', _w(PI), writable = False, enumerable = False, configurable = False)
+    put_property(w_Math, u'PI', _w(PI), writable = False, enumerable = False, configurable = False)
 
     # 15.8.1.7
-    put_property(w_Math, 'SQRT1_2', _w(SQRT1_2), writable = False, enumerable = False, configurable = False)
+    put_property(w_Math, u'SQRT1_2', _w(SQRT1_2), writable = False, enumerable = False, configurable = False)
 
     # 15.8.1.8
-    put_property(w_Math, 'SQRT2', _w(SQRT2), writable = False, enumerable = False, configurable = False)
+    put_property(w_Math, u'SQRT2', _w(SQRT2), writable = False, enumerable = False, configurable = False)
 
 # 15.8.2.9
 def floor(this, args):

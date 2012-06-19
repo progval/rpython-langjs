@@ -8,19 +8,19 @@ class EnvironmentRecord(object):
         return False
 
     def create_mutuable_binding(self, identifier, deletable):
-        pass
+        raise NotImplementedError
 
-    def set_mutable_binding(self, identifier, value, strict=False):
-        pass
+    def set_mutable_binding(self, identifier, value, strict):
+        raise NotImplementedError
 
     def get_binding_value(self, identifier, strict=False):
-        pass
+        raise NotImplementedError
 
     def delete_binding(self, identifier):
-        pass
+        raise NotImplementedError
 
     def implicit_this_value(self):
-        pass
+        raise NotImplementedError
 
 class DeclarativeEnvironmentRecord(EnvironmentRecord):
     def __init__(self):
@@ -43,7 +43,7 @@ class DeclarativeEnvironmentRecord(EnvironmentRecord):
 
     # 10.2.1.1.1
     def has_binding(self, identifier):
-        return self.bindings.has_key(identifier)
+        return identifier in self.bindings
 
     # 10.2.1.1.2
     def create_mutuable_binding(self, identifier, deletable):
@@ -54,10 +54,12 @@ class DeclarativeEnvironmentRecord(EnvironmentRecord):
             self._set_deletable_binding(identifier)
 
     # 10.2.1.1.3
-    def set_mutable_binding(self, identifier, value, strict=False):
+    def set_mutable_binding(self, identifier, value, strict):
+        assert isinstance(identifier, unicode)
         assert self.has_binding(identifier)
         if not self._is_mutable_binding(identifier):
-            raise JsTypeError('immutable binding')
+            from js.execution import JsTypeError
+            raise JsTypeError(u'immutable binding')
         self.bindings[identifier] = value
 
     # 10.2.1.1.4
@@ -65,10 +67,11 @@ class DeclarativeEnvironmentRecord(EnvironmentRecord):
         assert self.has_binding(identifier)
         if not identifier in self.bindings:
             if strict:
+                from js.execution import JsReferenceError
                 raise JsReferenceError
             else:
                 return w_Undefined
-        return self.bindings.get(identifier)
+        return self.bindings[identifier]
 
     # 10.2.1.1.5
     def delete_binding(self, identifier):
@@ -121,7 +124,8 @@ class ObjectEnvironmentRecord(EnvironmentRecord):
         bindings.define_own_property(n, desc, True)
 
     # 10.2.1.2.3
-    def set_mutable_binding(self, n, v, s = False):
+    def set_mutable_binding(self, n, v, s):
+        assert isinstance(n, unicode)
         bindings = self.binding_object
         bindings.put(n, v, s)
 
@@ -133,6 +137,7 @@ class ObjectEnvironmentRecord(EnvironmentRecord):
             if s is False:
                 return w_Undefined
             else:
+                from execution import JsReferenceError
                 raise JsReferenceError(self.__class__)
 
         return bindings.get(n)

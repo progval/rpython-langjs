@@ -21,3 +21,12 @@ class ThrowCompletion(Completion):
 
 def is_return_completion(c):
     return isinstance(c, ReturnCompletion)
+
+def is_normal_completion(c):
+    return isinstance(c, NormalCompletion)
+
+def is_empty_completion(c):
+    return is_normal_completion(c) and c.value is None
+
+def is_completion(c):
+    return isinstance(c, Completion)

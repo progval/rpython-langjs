@@ -25,48 +25,45 @@ class ThrowException(JsBaseExcept):
 
 class JsException(Exception):
     def _msg(self):
-        return 'Exception'
+        return u'Exception'
 
     def msg(self):
         from js.jsobj import _w
         return _w(self._msg())
 
 class JsThrowException(JsException):
-    def __init__(self, value = None):
-        JsException.__init__(self)
-        from js.jsobj import _w
-        self.value = _w(value)
+    def __init__(self, value):
+        from js.jsobj import W_Root
+        assert isinstance(value, W_Root)
+        self.value = value
 
     def _msg(self):
         return self.value
 
 class JsTypeError(JsException):
-    def __init__(self, value = None):
-        JsException.__init__(self)
+    def __init__(self, value):
+        assert isinstance(value, unicode)
         self.value = value
 
     def _msg(self):
-        return 'TypeError: %s' % (self.value)
+        return u'TypeError: %s' % (self.value)
 
 class JsReferenceError(JsException):
     def __init__(self, identifier):
-        JsException.__init__(self)
         self.identifier = identifier
 
     def _msg(self):
-        return 'ReferenceError: %s is not defined' % (self.identifier)
+        return u'ReferenceError: %s is not defined' % (self.identifier)
 
 class JsRangeError(JsException):
     def __init__(self, value = None):
-        JsException.__init__(self)
         self.value = value
 
     def _msg(self):
-        return 'RangeError: %s' %(str(self.value))
+        return u'RangeError: %s' %(self.value)
 
 class JsSyntaxError(JsException):
-    def __init__(self, msg = '', src = '', line = 0, column = 0):
-        JsException.__init__(self)
+    def __init__(self, msg = u'', src = u'', line = 0, column = 0):
         self.error_msg = msg
         self.src = src
         self.line = line
@@ -75,6 +72,6 @@ class JsSyntaxError(JsException):
     def _msg(self):
         error_src = self.src.encode('unicode_escape')
         if self.error_msg:
-            return 'SyntaxError: "%s" in "%s" at line:%d, column:%d' %(self.error_msg, error_src, self.line, self.column)
+            return u'SyntaxError: "%s" in "%s" at line:%d, column:%d' %(self.error_msg, error_src, self.line, self.column)
         else:
-            return 'SyntaxError: in "%s" at line:%d, column:%d' %(error_src, self.line, self.column)
+            return u'SyntaxError: in "%s" at line:%d, column:%d' %(error_src, self.line, self.column)

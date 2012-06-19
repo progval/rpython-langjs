@@ -3,12 +3,12 @@ from js.execution import JsReferenceError
 
 def get_identifier_reference(lex, identifier, strict = False):
     if lex is None:
-        return Reference(w_Undefined, identifier, strict)
+        return Reference(referenced = identifier, strict = strict)
 
     envRec = lex.environment_record
     exists = envRec.has_binding(identifier)
     if exists:
-        return Reference(envRec, identifier, strict)
+        return Reference(base_env = envRec, referenced = identifier, strict = strict)
     else:
         outer = lex.outer_environment
         return get_identifier_reference(outer, identifier, strict)
@@ -35,7 +35,8 @@ class ObjectEnvironment(LexicalEnvironment):
         self.environment_record = ObjectEnvironmentRecord(obj)
 
 class Reference(object):
-    def __init__(self, base_value, referenced, strict):
+    def __init__(self, base_value = None, base_env = None, referenced = None, strict = False):
+        self.base_env = base_env
         self.base_value = base_value
         self.referenced = referenced
         self.strict = strict
@@ -47,7 +48,7 @@ class Reference(object):
         return self.referenced
 
     def is_strict_reference(self):
-        return self.strict
+        return self.strict == True
 
     def has_primitive_base(self):
         b = self.base_value
@@ -63,7 +64,7 @@ class Reference(object):
         return False
 
     def is_unresolvable_reference(self):
-        if self.base_value == w_Undefined:
+        if self.base_value is None and self.base_env is None:
             return True
         return False
 
@@ -76,9 +77,7 @@ class Reference(object):
 # 8.7.1
 def get_value(v):
     if not isinstance(v, Reference):
-        return ref
-
-    base = v.get_base()
+        return v
 
     if v.is_unresolvable_reference():
         referenced = v.get_referenced_name()
@@ -87,18 +86,18 @@ def get_value(v):
     if v.is_property_reference():
         raise NotImplementedError('8.7.1 4.')
     else:
+        base_env = v.base_env
         from js.environment_record import EnvironmentRecord
-        assert isinstance(base, EnvironmentRecord)
+        assert isinstance(base_env, EnvironmentRecord)
         name = v.get_referenced_name()
         strict = v.is_strict_reference()
-        return base.get_binding_value(name, strict)
+        return base_env.get_binding_value(name, strict)
 
 # 8.7.2
 def put_value(v, w):
     if not isinstance(v, Reference):
         raise JsReferenceError()
 
-    base = v.get_base()
     if v.is_unresolvable_reference():
         if v.is_strict_reference():
             referenced = v.get_referenced_name()
@@ -106,16 +105,17 @@ def put_value(v, w):
         else:
             name = v.get_referenced_name()
             # TODO how to solve this ????
-            from js.execution_context import get_global_object
-            global_object = get_global_object()
+            from js.object_space import object_space
+            global_object = object_space.get_global_object()
 
             global_object.put(name, w, throw = False)
     elif v.is_property_reference():
         raise NotImplementedError('8.7.2 4.')
     else:
+        base_env = v.base_env
         from js.environment_record import EnvironmentRecord
-        assert isinstance(base, EnvironmentRecord)
+        assert isinstance(base_env, EnvironmentRecord)
         name = v.get_referenced_name()
         strict = v.is_strict_reference()
-        base.set_mutable_binding(name, w, strict)
+        base_env.set_mutable_binding(name, w, strict)
 

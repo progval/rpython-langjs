@@ -80,7 +80,7 @@ class JSInterpreter(code.InteractiveConsole):
         3) The input is complete. Executes the source code.
         """
         try:
-            ast = parse_to_ast(str(source))
+            ast = parse_to_ast(unicode(source))
         except ParseError, exc:
             if exc.source_pos.i == len(source):
                 # Case 2

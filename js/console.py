@@ -40,14 +40,15 @@ class W_Load(W_NewBuiltin):
                 assert filename is not None
                 program = load_file(filename)
             except EnvironmentError, e:
-                msg = W_String("Can't open %s: %s" % (filename, e))
+                msg = W_String(u"Can't open %s: %s" % (filename, e))
                 raise ThrowException(msg)
             self.interpreter.run(program)
         return w_Undefined
 
 class W_ReadLine(W_NewBuiltin):
     def Call(self, ctx, args=[], this=None):
-        return W_String(readline())
+        line = unicode(readline())
+        return W_String(line)
 
 class JSConsole(object):
     prompt_ok = 'js> '

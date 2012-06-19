@@ -1,15 +1,5 @@
 from js.jsobj import w_Undefined
 
-
-def get_global_object():
-    return GlobalExecutionContext.global_object
-
-def get_global_context():
-    return GlobalExecutionContext.global_context
-
-def get_global_environment():
-    return get_global_context().variable_environment()
-
 class ExecutionContext(object):
     def __init__(self):
         self._stack_ = []
@@ -30,10 +20,13 @@ class ExecutionContext(object):
         if n < 1:
             return []
 
-        i = -1 * n
-        r = self._stack_[i:]
-        s = self._stack_[:i]
-        self._stack_  = s
+        r = []
+        i = n
+        while i > 0:
+            i -= 1
+            e = self.stack_pop()
+            r = [e] + r
+
         return r
 
     def this_binding(self):
@@ -75,7 +68,7 @@ class ExecutionContext(object):
                 arg_already_declared = env.has_binding(arg_name)
                 if arg_already_declared is False:
                     env.create_mutuable_binding(arg_name, configurable_bindings)
-                env.set_mutable_binding(arg_name, v)
+                env.set_mutable_binding(arg_name, v, False)
 
         # 5.
         func_declarations = code.functions()
@@ -86,9 +79,9 @@ class ExecutionContext(object):
                 env.create_mutuable_binding(fn, configurable_bindings)
             else:
                 pass #see 10.5 5.e
-            env.set_mutable_binding(fn, fo)
+            env.set_mutable_binding(fn, fo, False)
 
-        arguments_already_declared = env.has_binding('arguments')
+        arguments_already_declared = env.has_binding(u'arguments')
         # 7.
         if code.is_function_code() and arguments_already_declared is False:
             from js.jsobj import W_Arguments
@@ -98,11 +91,11 @@ class ExecutionContext(object):
             names = self._formal_parameters_
             args_obj = W_Arguments(func, names, arguments, env, strict)
             if strict is True:
-                env.create_immutable_bining('arguments')
-                env.initialize_immutable_binding('arguments', args_obj)
+                env.create_immutable_bining(u'arguments')
+                env.initialize_immutable_binding(u'arguments', args_obj)
             else:
-                env.create_mutuable_binding('arguments', False) # TODO not sure if mutable binding is deletable
-                env.set_mutable_binding('arguments', args_obj, False)
+                env.create_mutuable_binding(u'arguments', False) # TODO not sure if mutable binding is deletable
+                env.set_mutable_binding(u'arguments', args_obj, False)
 
         # 8.
         var_declarations = code.variables()
@@ -110,7 +103,7 @@ class ExecutionContext(object):
             var_already_declared = env.has_binding(dn)
             if var_already_declared == False:
                 env.create_mutuable_binding(dn, configurable_bindings)
-                env.set_mutable_binding(dn, w_Undefined)
+                env.set_mutable_binding(dn, w_Undefined, False)
 
     def get_ref(self, symbol):
         ## TODO pre-bind symbols, work with idndex, does not work, see test_foo18
@@ -119,8 +112,6 @@ class ExecutionContext(object):
         return ref
 
 class GlobalExecutionContext(ExecutionContext):
-    global_object = None
-    global_context = None
     def __init__(self, code, global_object, strict = False):
         ExecutionContext.__init__(self)
         self._code_ = code
@@ -130,8 +121,6 @@ class GlobalExecutionContext(ExecutionContext):
         localEnv = ObjectEnvironment(global_object)
         self._lexical_environment_ = localEnv
         self._variable_environment_ = localEnv
-        GlobalExecutionContext.global_object = global_object
-        GlobalExecutionContext.global_context = self
         self._this_binding_ = global_object
 
         self.declaration_binding_initialization()
@@ -179,7 +168,8 @@ class FunctionExecutionContext(ExecutionContext):
         if strict:
             self._this_binding_ = this
         elif this is None or isnull_or_undefined(this):
-            self._this_binding_ = get_global_object()
+            from js.object_space import object_space
+            self._this_binding_ = object_space.get_global_object()
         elif this.klass() is not 'Object':
             self._this_binding_ = this.ToObject()
         else:

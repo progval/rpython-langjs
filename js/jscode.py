@@ -109,12 +109,12 @@ class JsCode(object):
 
     def emit_break(self):
         if not self.endlooplabel:
-            raise ThrowException(W_String("Break outside loop"))
+            raise ThrowException(W_String(u"Break outside loop"))
         self.emit('JUMP', self.endlooplabel[-1])
 
     def emit_continue(self):
         if not self.startlooplabel:
-            raise ThrowException(W_String("Continue outside loop"))
+            raise ThrowException(W_String(u"Continue outside loop"))
         self.emit('JUMP', self.updatelooplabel[-1])
 
     def continue_at_label(self, label):
@@ -207,14 +207,14 @@ class JsCode(object):
 
     def run(self, ctx):
         from js.globals import DEBUG
-        from js.completion import ReturnCompletion, NormalCompletion
+        from js.completion import NormalCompletion, is_completion, is_return_completion, is_empty_completion
         from js.opcodes import RETURN, BaseJump
         from js.jsobj import w_Undefined
 
         self.unlabel()
 
         if len(self.opcodes) == 0:
-            return w_Undefined
+            return NormalCompletion()
 
         if DEBUG:
             print('start running %s' % (str(self)))
@@ -230,8 +230,10 @@ class JsCode(object):
             if DEBUG:
                 print(u'%3d %25s %s %s' % (pc, str(opcode), unicode([unicode(s) for s in ctx._stack_]), str(result)))
 
-            if isinstance(result, ReturnCompletion):
+            if is_return_completion(result):
                 break;
+            elif not is_completion(result):
+                result = NormalCompletion()
 
             if isinstance(opcode, BaseJump):
                 new_pc = opcode.do_jump(ctx, pc)
@@ -240,7 +242,8 @@ class JsCode(object):
             else:
                 pc += 1
 
-        if result is None:
+        assert is_completion(result)
+        if is_empty_completion(result):
             result = NormalCompletion(value = ctx.stack_top())
 
         return result

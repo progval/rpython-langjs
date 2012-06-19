@@ -5,7 +5,7 @@ def setup(global_object):
     from js.builtins import put_property, put_native_function
     from js.jsobj import W_ArrayConstructor, W__Array, W__Object
     w_Array = W_ArrayConstructor()
-    put_property(global_object, 'Array', w_Array)
+    put_property(global_object, u'Array', w_Array)
 
     # 15.4.4
     w_ArrayPrototype = W__Array()
@@ -14,43 +14,43 @@ def setup(global_object):
 
     # 15.4.3.1
     W__Array._prototype_ = w_ArrayPrototype
-    put_property(w_Array, 'prototype', w_ArrayPrototype, writable = False, enumerable = False, configurable = False)
+    put_property(w_Array, u'prototype', w_ArrayPrototype, writable = False, enumerable = False, configurable = False)
 
     # 15.4.4.1
-    put_property(w_ArrayPrototype, 'constructor', w_Array)
+    put_property(w_ArrayPrototype, u'constructor', w_Array)
 
     # 15.4.4.2
-    put_native_function(w_ArrayPrototype, 'toString', to_string)
+    put_native_function(w_ArrayPrototype, u'toString', to_string)
     # 15.4.4.5
-    put_native_function(w_ArrayPrototype, 'join', join, params = ['separator'])
+    put_native_function(w_ArrayPrototype, u'join', join, params = [u'separator'])
     # 15.4.4.6
-    put_native_function(w_ArrayPrototype, 'pop', pop)
+    put_native_function(w_ArrayPrototype, u'pop', pop)
     # 15.4.4.7
-    put_native_function(w_ArrayPrototype, 'push', push)
+    put_native_function(w_ArrayPrototype, u'push', push)
     # 15.4.4.8
-    put_native_function(w_ArrayPrototype, 'reverse', reverse)
+    put_native_function(w_ArrayPrototype, u'reverse', reverse)
     # 15.4.4.11
-    put_native_function(w_ArrayPrototype, 'sort', sort)
+    put_native_function(w_ArrayPrototype, u'sort', sort)
 
 # 15.4.4.7
 def push(this, args):
     o = this.ToObject()
-    len_val = o.get('length')
+    len_val = o.get(u'length')
     n = len_val.ToUInt32()
 
     for item in args:
         e = item
-        o.put(str(n), e, True)
+        o.put(unicode(n), e, True)
         n = n + 1
 
-    o.put('length', _w(n), True)
+    o.put(u'length', _w(n), True)
 
     return n
 
 # 15.4.4.2
 def to_string(this, args):
     array = this.ToObject()
-    func = array.get('join')
+    func = array.get(u'join')
     if func.is_callable():
         return func.Call(this = this).to_string()
     else:
@@ -61,20 +61,20 @@ def join(this, args):
     separator = get_arg(args, 0)
 
     o = this.ToObject()
-    len_val = o.get('length')
+    len_val = o.get(u'length')
     length = len_val.ToUInt32()
 
     if separator is w_Undefined:
-        sep = ','
+        sep = u','
     else:
         sep = separator.to_string()
 
     if length == 0:
-        return ''
+        return u''
 
-    element0 = o.get('0')
+    element0 = o.get(u'0')
     if isnull_or_undefined(element0):
-        r = ''
+        r = u''
     else:
         r = element0.to_string()
 
@@ -82,7 +82,7 @@ def join(this, args):
 
     while(k < length):
         s = r + sep
-        element = o.get(str(k))
+        element = o.get(unicode(k))
         if isnull_or_undefined(element):
             _next = ''
         else:
@@ -95,24 +95,24 @@ def join(this, args):
 # 15.4.4.6
 def pop(this, args):
     o = this.ToObject()
-    lenVal = o.get('length')
+    lenVal = o.get(u'length')
     l = lenVal.ToUInt32()
 
     if l == 0:
-        o.put('length', _w(0))
+        o.put(u'length', _w(0))
         return w_Undefined
     else:
         indx = l - 1
-        indxs = str(indx)
+        indxs = unicode(indx)
         element = o.get(indxs)
         o.delete(indxs, True)
-        o.put('length', _w(indx))
+        o.put(u'length', _w(indx))
         return element
 
 # 15.4.4.8
 def reverse(this, args):
     o = this.ToObject()
-    length = o.get('length').ToUInt32()
+    length = o.get(u'length').ToUInt32()
 
     import math
     middle = math.floor(length/2)
@@ -120,8 +120,8 @@ def reverse(this, args):
     lower = 0
     while lower != middle:
         upper = length - lower - 1
-        lower_p = str(lower)
-        upper_p = str(upper)
+        lower_p = unicode(lower)
+        upper_p = unicode(upper)
         lower_value = o.get(lower_p)
         upper_value = o.get(upper_p)
         lower_exists = o.has_property(lower_p)
@@ -142,7 +142,7 @@ def reverse(this, args):
 # 15.4.4.11
 def sort(this, args):
     obj = this
-    length = this.get('length').ToUInt32()
+    length = this.get(u'length').ToUInt32()
 
     comparefn = get_arg(args, 0)
 
@@ -152,8 +152,8 @@ def sort(this, args):
     while True:
         swapped = False
         for i in xrange(1, length):
-            x = str(i - 1)
-            y = str(i)
+            x = unicode(i - 1)
+            y = unicode(i)
             comp = sort_compare(obj, x, y, comparefn)
             if  comp == 1:
                 tmp_x = obj.get(x)
@@ -191,7 +191,7 @@ def sort_compare(obj, j, k, comparefn = w_Undefined):
 
     if comparefn is not w_Undefined:
         if not comparefn.is_callable():
-            raise JsTypeError()
+            raise JsTypeError(u'')
 
         res = comparefn.Call(args = [x, y], this = w_Undefined)
         return res.ToInteger()
