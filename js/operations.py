@@ -655,8 +655,8 @@ class String(Expression):
         bytecode.emit('LOAD_STRINGCONSTANT', strval)
 
     def string_unquote(self, string):
-        #s = decode_unicode_escape(string)
-        s = string
+        s = decode_unicode_escape(string)
+        #s = string
         if s.startswith('"'):
             assert s.endswith('"')
         else:
@@ -664,7 +664,7 @@ class String(Expression):
             assert s.endswith("'")
         s = s[:-1]
         s = s[1:]
-        s = u''.join(s.split(u'\\'))
+        #s = u''.join(s.split(u'\\'))
         return unicode(s)
 
 def decode_unicode_escape(string):

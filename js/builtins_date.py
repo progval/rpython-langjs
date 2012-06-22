@@ -12,7 +12,9 @@ def setup(global_object):
     ##Date
     # 15.9.5
 
-    w_DatePrototype = object_space.new_obj_with_proto(W_DateObject, object_space.proto_object, w_NAN)
+    w_DatePrototype = W_DateObject(w_NAN)
+    object_space.assign_proto(w_DatePrototype, object_space.proto_object)
+
     object_space.proto_date = w_DatePrototype
 
     def putf(name, func):
@@ -81,6 +83,7 @@ def setup(global_object):
 
     # 15.9.3
     w_Date = W_DateConstructor()
+    object_space.assign_proto(w_Date, object_space.proto_function)
     put_property(global_object, u'Date', w_Date)
 
     put_property(w_Date, u'prototype', w_DatePrototype, writable = False, enumerable = False, configurable = False)

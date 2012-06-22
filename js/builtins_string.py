@@ -5,20 +5,21 @@ from js.builtins import get_arg
 
 def setup(global_object):
     from js.builtins import put_native_function, put_property
+    from js.object_space import object_space
 
     #String
     # 15.5.1
     from js.jsobj import W_StringConstructor
     w_String = W_StringConstructor()
+    object_space.assign_proto(w_String, object_space.proto_function)
     put_property(w_String, u'length', _w(1), writable = False, enumerable = False, configurable = False)
-
     put_property(global_object, u'String', w_String)
 
 
     # 15.5.4
     from js.jsobj import W_StringObject
-    from js.object_space import object_space
-    w_StringPrototype = object_space.new_obj_with_proto(W_StringObject, object_space.proto_object, _w(u''))
+    w_StringPrototype = W_StringObject(_w(u''))
+    object_space.assign_proto(w_StringPrototype, object_space.proto_object)
 
     # 15.5.3.1
     object_space.proto_string = w_StringPrototype
@@ -115,10 +116,7 @@ def char_at(this, args):
 
 #15.5.4.5
 def char_code_at(this, args):
-    pos = w_Undefined
-
-    if len(args) > 0:
-        pos = args[0]
+    pos = get_arg(args, 0)
 
     this.check_object_coercible()
     string = this.to_string()

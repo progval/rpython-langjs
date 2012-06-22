@@ -21,6 +21,10 @@ class Interpreter(object):
         from js.builtins import setup_builtins
         setup_builtins(self.global_object)
         self.setup_interpreter_builtins()
+        from js.object_space import object_space
+        object_space.global_object = self.global_object
+        object_space.assign_proto(self.global_object)
+
 
     def setup_interpreter_builtins(self):
         global_object = self.global_object
@@ -72,7 +76,6 @@ class Interpreter(object):
 
         ctx = GlobalExecutionContext(c, self.global_object)
         object_space.global_context = ctx
-        object_space.global_object = self.global_object
 
         result = c.run(ctx)
         return result.value

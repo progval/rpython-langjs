@@ -18,7 +18,7 @@ def new_native_function(function, name = None, params = []):
     from js.object_space import object_space
 
     jsfunc = JsNativeFunction(function, name)
-    obj = object_space.new_obj(W__Function, jsfunc, formal_parameter_list = params)
+    obj = object_space.new_func(jsfunc, formal_parameter_list = params)
     return obj
 
 # 15
@@ -33,7 +33,7 @@ def put_intimate_function(obj, name, func, writable = True, configurable = True,
     from js.object_space import object_space
 
     jsfunc = JsIntimateFunction(func, name)
-    w_func = object_space.new_obj(W__Function, jsfunc, formal_parameter_list = params)
+    w_func = object_space.new_func(jsfunc, formal_parameter_list = params)
     put_property(obj, name, w_func, writable = writable, configurable = configurable, enumerable = enumerable)
 
 # 15
@@ -46,7 +46,7 @@ def setup_builtins(global_object):
 
     # 15.2.4 Properties of the Object Prototype Object
     from js.jsobj import W_BasicObject
-    w_ObjectPrototype = object_space.new_obj_with_proto(W_BasicObject, w_Null)
+    w_ObjectPrototype = W_BasicObject()
     object_space.proto_object = w_ObjectPrototype
 
     # 15.3.2
@@ -60,13 +60,19 @@ def setup_builtins(global_object):
     from js.functions import JsNativeFunction
 
     empty_func = JsNativeFunction(function_builtins.empty, u'Empty')
-    w_FunctionPrototype = object_space.new_obj_with_proto(W__Function, w_ObjectPrototype, empty_func, formal_parameter_list = [])
+    w_FunctionPrototype = W__Function(empty_func, formal_parameter_list = [])
+    object_space.assign_proto(w_FunctionPrototype, object_space.proto_object)
     object_space.proto_function = w_FunctionPrototype
+
+    # 15.3.3
+    object_space.assign_proto(w_Function, object_space.proto_function)
 
     # 15.2 Object Objects
     # 15.2.3 Properties of the Object Constructor
     from js.jsobj import W_ObjectConstructor
-    w_Object = object_space.new_obj_with_proto(W_ObjectConstructor, object_space.proto_function)
+    w_Object = W_ObjectConstructor()
+    object_space.assign_proto(w_Object, object_space.proto_function)
+
     put_property(w_Object, u'length', _w(1))
 
     put_property(global_object, u'Object', w_Object)

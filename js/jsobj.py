@@ -661,11 +661,12 @@ class W_BasicFunction(W_BasicObject):
 
         proto = self.get(u'prototype')
         if isinstance(proto, W_BasicObject):
-            obj = object_space.new_obj_with_proto(W__Object, proto)
+            obj = object_space.new_obj()
+            object_space.assign_proto(obj, proto)
         else:
             # would love to test this
             # but I fail to find a case that falls into this
-            obj = object_space.new_obj(W__Object)
+            obj = object_space.new_obj()
 
         result = self.Call(args, this=obj)
         if isinstance(result, W__Object):
@@ -713,7 +714,7 @@ class W_ObjectConstructor(W_BasicFunction):
         assert isnull_or_undefined(value)
 
         from js.object_space import object_space
-        obj = object_space.new_obj(W__Object)
+        obj = object_space.new_obj()
         return obj
 
     # TODO
@@ -758,7 +759,7 @@ class W_FunctionConstructor(W_BasicFunction):
         scope = object_space.get_global_environment()
         strict = func.strict
         params = func.params()
-        w_func = object_space.new_obj(W__Function, func, formal_parameter_list = params, scope = scope, strict = strict)
+        w_func = object_space.new_func(func, formal_parameter_list = params, scope = scope, strict = strict)
         return w_func
 
     # TODO
@@ -787,7 +788,7 @@ class W_NumberConstructor(W_BasicFunction):
 class W_StringConstructor(W_BasicFunction):
     def Call(self, args = [], this = None, calling_context = None):
         from js.builtins import get_arg
-        arg0 = get_arg(args, 0)
+        arg0 = get_arg(args, 0, _w(u""))
         strval = arg0.to_string()
         return W_String(strval)
 
@@ -845,7 +846,7 @@ class W_DateConstructor(W_BasicFunction):
             value = _w(int(time.time() * 1000))
 
         from js.object_space import object_space
-        obj = object_space.new_obj(W_DateObject, value)
+        obj = object_space.new_date(value)
         return obj
 
     # 15.7.2.1
@@ -872,7 +873,7 @@ class W__Function(W_BasicFunction):
         # 15.
         put_property(self, u'length', _w(_len), writable = False, enumerable = False, configurable = False)
         # 16.
-        proto_obj = object_space.new_obj(W__Object)
+        proto_obj = object_space.new_obj()
         # 17.
         put_property(proto_obj, u'constructor', self, writable = True, enumerable = False, configurable = True)
         # 18.
@@ -941,7 +942,7 @@ class W_Arguments(W__Object):
         put_property(self, u'length', _w(_len), writable = True, enumerable = False, configurable = True)
 
         from js.object_space import object_space
-        _map = object_space.new_obj(W__Object)
+        _map = object_space.new_obj()
         mapped_names = []
         indx = _len - 1
         while indx >= 0:
@@ -991,15 +992,15 @@ class W_ArrayConstructor(W_BasicFunction):
                 length = _len.ToUInt32()
                 if length != _len.ToNumber():
                     raise JsRangeError()
-                array = object_space.new_obj(W__Array, length)
+                array = object_space.new_array(_w(length))
             else:
                 length = 1
-                array = object_space.new_obj(W__Array, length)
+                array = object_space.new_array(_w(length))
                 array.put(u'0', _len)
 
             return array
         else:
-            array = object_space.new_obj(W__Array)
+            array = object_space.new_array()
             for index, obj in enumerate(args):
                 array.put(unicode(str(index)), obj)
             return array
@@ -1007,109 +1008,6 @@ class W_ArrayConstructor(W_BasicFunction):
     def Construct(self, args=[]):
         return self.Call(args)
 
-class W__Array(W_BasicObject):
-    _class_ = 'Array'
-
-    def __init__(self, length = 0):
-        W_BasicObject.__init__(self)
-
-        desc = PropertyDescriptor(value = _w(length), writable = True, enumerable = False, configurable = False)
-        W_BasicObject.define_own_property(self, u'length', desc)
-
-    # 15.4.5.1
-    def define_own_property(self, p, desc, throw = False):
-        old_len_desc = self.get_own_property(u'length')
-        assert old_len_desc is not None
-        old_len = old_len_desc.value.ToUInt32()
-
-        # 3
-        if p == u'length':
-            if desc.value is None:
-                return W_BasicObject.define_own_property(self, u'length', desc, throw)
-            new_len_desc = PropertyDescriptor()
-            new_len_desc.value = desc.value
-            new_len_desc.writable = desc.writable
-            new_len_desc.getter = desc.getter
-            new_len_desc.setter = desc.setter
-            new_len_desc.configurable = desc.configurable
-            new_len_desc.enumerable = desc.enumerable
-            new_len = desc.value.ToUInt32()
-
-            if new_len != desc.value.ToNumber():
-                raise JsRangeError()
-
-            new_len_desc.value = _w(new_len)
-
-            # f
-            if new_len >= old_len:
-                return W_BasicObject.define_own_property(self, u'length', new_len_desc, throw)
-            # g
-            if old_len_desc.writable is False:
-                return reject(throw)
-
-            # h
-            if new_len_desc.writable is None or new_len_desc.writable is True:
-                new_writable = True
-            # i
-            else:
-                new_len_desc.writable = True
-                new_writable = False
-
-            # j
-            succeeded = W_BasicObject.define_own_property(self, u'length', new_len_desc, throw)
-            # k
-            if succeeded is False:
-                return False
-
-            # l
-            while new_len < old_len:
-                old_len = old_len - 1
-                delete_succeeded = self.delete(unicode(str(old_len)), False)
-                if delete_succeeded is False:
-                    new_len_desc.value = _w(old_len + 1)
-                    if new_writable is False:
-                        new_len_desc.writable = False
-                    W_BasicObject.define_own_property(self, u'length', new_len_desc, False)
-                    return reject(throw)
-
-            # m
-            if new_writable is False:
-                desc = PropertyDescriptor(writable = False)
-                res = W_BasicObject.define_own_property(self, u'length', desc, False)
-                assert res is True
-
-            return True
-
-        # 4
-        elif is_array_index(p):
-            assert isinstance(p, unicode)
-            # a
-            index = r_uint32(int(p))
-            # b
-            if index >= old_len and old_len_desc.writable is False:
-                return reject(throw)
-
-            # c
-            succeeded = W_BasicObject.define_own_property(self, p, desc, False)
-            # d
-            if succeeded is False:
-                return reject(throw)
-
-            # e
-            if index >= old_len:
-                old_len_desc.value = _w(index + 1)
-                res = W_BasicObject.define_own_property(self, u'length', old_len_desc, False)
-                assert res is True
-            # f
-            return True
-        # 5
-        return W_BasicObject.define_own_property(self, p, desc, throw)
-
-def is_array_index(p):
-    try:
-        return unicode(str(r_uint32(abs(int(p))))) == p
-    except ValueError:
-        return False
 
 # 15.8
 class W_Math(W__Object):
@@ -1127,7 +1025,7 @@ class W_Boolean(W_Primitive):
 
     def ToObject(self):
         from js.object_space import object_space
-        return object_space.new_obj(W_BooleanObject, self)
+        return object_space.new_bool(self)
 
     def to_string(self):
         if self._boolval_ == True:
@@ -1159,7 +1057,7 @@ class W_String(W_Primitive):
 
     def ToObject(self):
         from js.object_space import object_space
-        return object_space.new_obj(W_StringObject, self)
+        return object_space.new_string(self)
 
     def to_string(self):
         return self._strval_
@@ -1173,10 +1071,10 @@ class W_String(W_Primitive):
     def ToNumber(self):
         u_strval = self._strval_
         assert isinstance(u_strval, unicode)
-
+        import re
         if u_strval == u'':
             return 0.0
-        if u_strval.strip(' ') == u'':
+        if re.match('^\s*$', u_strval):
             return 0.0
 
         strval = str(u_strval)
@@ -1207,7 +1105,7 @@ class W_Number(W_Primitive):
     # 9.9
     def ToObject(self):
         from js.object_space import object_space
-        obj = object_space.new_obj(W_NumericObject, self)
+        obj = object_space.new_number(self)
         return obj
 
     def to_boolean(self):
@@ -1335,6 +1233,112 @@ class W_Iterator(W_Root):
     def to_string(self):
         return u'<Iterator>'
 
+w_0 = W_IntNumber(0)
+class W__Array(W_BasicObject):
+    _class_ = 'Array'
+
+    def __init__(self, length = w_0):
+        assert isinstance(length, W_Root)
+        W_BasicObject.__init__(self)
+
+        desc = PropertyDescriptor(value = length, writable = True, enumerable = False, configurable = False)
+        W_BasicObject.define_own_property(self, u'length', desc)
+
+    # 15.4.5.1
+    def define_own_property(self, p, desc, throw = False):
+        old_len_desc = self.get_own_property(u'length')
+        assert old_len_desc is not None
+        old_len = old_len_desc.value.ToUInt32()
+
+        # 3
+        if p == u'length':
+            if desc.value is None:
+                return W_BasicObject.define_own_property(self, u'length', desc, throw)
+            new_len_desc = PropertyDescriptor()
+            new_len_desc.value = desc.value
+            new_len_desc.writable = desc.writable
+            new_len_desc.getter = desc.getter
+            new_len_desc.setter = desc.setter
+            new_len_desc.configurable = desc.configurable
+            new_len_desc.enumerable = desc.enumerable
+            new_len = desc.value.ToUInt32()
+
+            if new_len != desc.value.ToNumber():
+                raise JsRangeError()
+
+            new_len_desc.value = _w(new_len)
+
+            # f
+            if new_len >= old_len:
+                return W_BasicObject.define_own_property(self, u'length', new_len_desc, throw)
+            # g
+            if old_len_desc.writable is False:
+                return reject(throw)
+
+            # h
+            if new_len_desc.writable is None or new_len_desc.writable is True:
+                new_writable = True
+            # i
+            else:
+                new_len_desc.writable = True
+                new_writable = False
+
+            # j
+            succeeded = W_BasicObject.define_own_property(self, u'length', new_len_desc, throw)
+            # k
+            if succeeded is False:
+                return False
+
+            # l
+            while new_len < old_len:
+                old_len = old_len - 1
+                delete_succeeded = self.delete(unicode(str(old_len)), False)
+                if delete_succeeded is False:
+                    new_len_desc.value = _w(old_len + 1)
+                    if new_writable is False:
+                        new_len_desc.writable = False
+                    W_BasicObject.define_own_property(self, u'length', new_len_desc, False)
+                    return reject(throw)
+
+            # m
+            if new_writable is False:
+                desc = PropertyDescriptor(writable = False)
+                res = W_BasicObject.define_own_property(self, u'length', desc, False)
+                assert res is True
+
+            return True
+
+        # 4
+        elif is_array_index(p):
+            assert isinstance(p, unicode)
+            # a
+            index = r_uint32(int(p))
+            # b
+            if index >= old_len and old_len_desc.writable is False:
+                return reject(throw)
+
+            # c
+            succeeded = W_BasicObject.define_own_property(self, p, desc, False)
+            # d
+            if succeeded is False:
+                return reject(throw)
+
+            # e
+            if index >= old_len:
+                old_len_desc.value = _w(index + 1)
+                res = W_BasicObject.define_own_property(self, u'length', old_len_desc, False)
+                assert res is True
+            # f
+            return True
+        # 5
+        return W_BasicObject.define_own_property(self, p, desc, throw)
+
+def is_array_index(p):
+    try:
+        return unicode(str(r_uint32(abs(int(p))))) == p
+    except ValueError:
+        return False
+
 from pypy.rlib.objectmodel import specialize
 @specialize.argtype(0)
 def _w(value):
@@ -1352,7 +1356,7 @@ def _w(value):
         return W_String(unicode(value))
     elif isinstance(value, list):
         from js.object_space import object_space
-        a = object_space.new_obj(W__Array)
+        a = object_space.new_array()
         for index, item in enumerate(value):
             put_property(a, unicode(index), _w(item), writable = True, enumerable = True, configurable = True)
         return a

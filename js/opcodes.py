@@ -142,9 +142,8 @@ class LOAD_ARRAY(Opcode):
         self.counter = counter
 
     def eval(self, ctx):
-        from js.jsobj import W__Array
         from js.object_space import object_space
-        array = object_space.new_obj(W__Array)
+        array = object_space.new_array()
 
         list_w = ctx.stack_pop_n(self.counter) # [:] # pop_n returns a non-resizable list
         for index, el in enumerate(list_w):
@@ -179,13 +178,13 @@ class LOAD_FUNCTION(Opcode):
 
     # 13.2 Creating Function Objects
     def eval(self, ctx):
-        from js.jsobj import W__Object
         from js.object_space import object_space
+
         func = self.funcobj
         scope = ctx.lexical_environment()
         params = func.params()
         strict = func.strict
-        w_func = object_space.new_obj(W__Function, func, formal_parameter_list = params, scope = scope, strict = strict)
+        w_func = object_space.new_func(func, formal_parameter_list = params, scope = scope, strict = strict)
 
         ctx.stack_append(w_func)
 
@@ -199,7 +198,7 @@ class LOAD_OBJECT(Opcode):
 
     def eval(self, ctx):
         from js.object_space import object_space
-        w_obj = object_space.new_obj(W__Object)
+        w_obj = object_space.new_obj()
         for _ in range(self.counter):
             name = ctx.stack_pop().to_string()
             w_elem = ctx.stack_pop()

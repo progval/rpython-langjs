@@ -4,18 +4,20 @@ from js.jsobj import W_Number, W_NumericObject, _w
 
 def setup(global_object):
     from js.builtins import put_property, put_native_function
+    from js.object_space import object_space
 
     # 15.7.2
     from js.jsobj import W_NumberConstructor
     w_Number = W_NumberConstructor()
+    object_space.assign_proto(w_Number, object_space.proto_function)
     put_property(global_object, u'Number', w_Number)
 
     # 15.7.3
     put_property(w_Number, u'length', _w(1), writable = False, enumerable = False, configurable = False)
 
     # 15.7.4
-    from js.object_space import object_space
-    w_NumberPrototype = object_space.new_obj_with_proto(W_NumericObject, object_space.proto_object, _w(0))
+    w_NumberPrototype = W_NumericObject(_w(0))
+    object_space.assign_proto(W_NumericObject, object_space.proto_object)
     object_space.proto_number = w_NumberPrototype
 
     # 15.7.4.1

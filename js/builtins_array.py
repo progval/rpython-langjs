@@ -7,10 +7,12 @@ def setup(global_object):
     from js.object_space import object_space
 
     w_Array = W_ArrayConstructor()
+    object_space.assign_proto(w_Array, object_space.proto_function)
     put_property(global_object, u'Array', w_Array)
 
     # 15.4.4
-    w_ArrayPrototype = object_space.new_obj_with_proto(W__Array, object_space.proto_object)
+    w_ArrayPrototype = W__Array()
+    object_space.assign_proto(w_ArrayPrototype, object_space.proto_object)
     object_space.proto_array = w_ArrayPrototype
 
     # 15.4.3.1
