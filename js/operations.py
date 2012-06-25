@@ -312,7 +312,7 @@ class MemberDot(Expression):
     def __init__(self, pos, left, name):
         n = name.get_literal()
         uname = unicode(n)
-        assert isinstance(uname, unicode)
+        #assert isinstance(uname, unicode)
         self.name = uname
         self.left = left
         self.pos = pos
@@ -642,7 +642,7 @@ class FloatNumber(BaseNumber):
 
 class String(Expression):
     def __init__(self, pos, strval):
-        assert isinstance(strval, unicode)
+        #assert isinstance(strval, unicode)
         self.pos = pos
         self.strval = self.string_unquote(strval)
 
@@ -651,12 +651,12 @@ class String(Expression):
 
     def emit(self, bytecode):
         strval = self.strval
-        assert isinstance(strval, unicode)
+        #assert isinstance(strval, unicode)
         bytecode.emit('LOAD_STRINGCONSTANT', strval)
 
     def string_unquote(self, string):
-        s = decode_unicode_escape(string)
-        #s = string
+        #s = decode_unicode_escape(string)
+        s = string
         if s.startswith('"'):
             assert s.endswith('"')
         else:
@@ -668,7 +668,7 @@ class String(Expression):
         return unicode(s)
 
 def decode_unicode_escape(string):
-    assert isinstance(string, unicode)
+    #assert isinstance(string, unicode)
     from pypy.rlib.runicode import str_decode_unicode_escape, str_decode_raw_unicode_escape
     result, consumed = str_decode_unicode_escape(string, len(string), "strict")
     return result
@@ -680,7 +680,7 @@ def decode_str_utf8(string):
     return result
 
 def encode_unicode_utf8(string):
-    assert isinstance(string, unicode)
+    #assert isinstance(string, unicode)
     from pypy.rlib.runicode import unicode_encode_utf_8
     result, consumed = str_decode_utf_8(string, len(string), "strict")
     return result

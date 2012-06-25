@@ -1,6 +1,17 @@
-from js.jsobj import _w, W_BasicObject, W__Object, W_BasicFunction, W__Function, W_DateObject, W_BooleanObject, W_StringObject, W_NumericObject, W__Array
+from js.jsobj import _w, W_BasicObject, W__Object, W_BasicFunction, W__Function, W_DateObject, W_BooleanObject, W_StringObject, W_NumericObject, W__Array, w_Null
 
 class ObjectSpace(object):
+    def __init__(self):
+        self.global_context = None
+        self.global_object = None
+        self.proto_function = w_Null
+        self.proto_boolean = w_Null
+        self.proto_number = w_Null
+        self.proto_string = w_Null
+        self.proto_array = w_Null
+        self.proto_date = w_Null
+        self.proto_object = w_Null
+
     def get_global_environment(self):
         return self.global_context.variable_environment()
 

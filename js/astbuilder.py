@@ -17,7 +17,7 @@ class SymbolMap(object):
         self.next_index = 0
 
     def add_symbol(self, identifyer):
-        assert isinstance(identifyer, unicode)
+        #assert isinstance(identifyer, unicode)
         if identifyer not in self.symbols:
             self.symbols[identifyer] = self.next_index
             self.next_index += 1
@@ -38,9 +38,9 @@ class SymbolMap(object):
         return idx
 
     def add_parameter(self, identifyer):
-        assert isinstance(identifyer, unicode)
+        #assert isinstance(identifyer, unicode)
         f = unicode(identifyer)
-        assert isinstance(f, unicode)
+        #assert isinstance(f, unicode)
         idx = self.add_symbol(f)
         self.parameters.append(f)
         return idx
@@ -111,7 +111,6 @@ class ASTBuilder(RPythonVisitor):
         self.funclists = []
         self.scopes = []
         self.sourcename = ""
-        RPythonVisitor.__init__(self)
         self.depth = -1
 
     def enter_scope(self):
@@ -123,21 +122,21 @@ class ASTBuilder(RPythonVisitor):
 
     def declare_symbol(self, symbol):
         s = unicode(symbol)
-        assert isinstance(s, unicode)
+        #assert isinstance(s, unicode)
         idx = self.scopes[-1].add_symbol(s)
         #print 'symbol "%s"@%d in scope %d' % (symbol, idx, self.depth,)
         return idx
 
     def declare_variable(self, symbol):
         s = unicode(symbol)
-        assert isinstance(s, unicode)
+        #assert isinstance(s, unicode)
         idx = self.scopes[-1].add_variable(s)
         #print 'var declaration "%s"@%d in scope %d' % (symbol, idx, self.depth,)
         return idx
 
     def declare_function(self, symbol, funcobj):
         s = unicode(symbol)
-        assert isinstance(s, unicode)
+        #assert isinstance(s, unicode)
         self.funclists[-1][s] = funcobj
         idx = self.scopes[-1].add_function(s)
         #print 'func declaration "%s"@%d in scope %d' % (symbol, idx, self.depth,)
@@ -335,7 +334,7 @@ class ASTBuilder(RPythonVisitor):
         if l.symbol == "IDENTIFIERNAME":
             identifier = l.additional_info
             i = unicode(identifier)
-            assert isinstance(i, unicode)
+            #assert isinstance(i, unicode)
             index = self.declare_symbol(i)
             lpos = self.get_pos(l)
             left = operations.Identifier(lpos, i, index)
@@ -348,7 +347,7 @@ class ASTBuilder(RPythonVisitor):
         pos = self.get_pos(node)
         name = node.additional_info
         n = unicode(name)
-        assert isinstance(n, unicode)
+        #assert isinstance(n, unicode)
         index = self.declare_symbol(n)
         #if self.scopes.is_local(name):
             #local = self.scopes.get_local(name)
@@ -414,7 +413,7 @@ class ASTBuilder(RPythonVisitor):
         funcindex = -1
         if declaration:
             f = unicode(funcname)
-            assert isinstance(f, unicode)
+            #assert isinstance(f, unicode)
             funcindex = self.declare_symbol(f)
 
         funcobj = operations.FunctionStatement(pos, funcname, funcindex, functionbody, scope)
@@ -493,7 +492,7 @@ class ASTBuilder(RPythonVisitor):
         elif self.is_identifier(left):
             identifier = left.get_literal()
             i = unicode(identifier)
-            assert isinstance(i, unicode)
+            #assert isinstance(i, unicode)
             index = self.declare_symbol(i)
             return operations.AssignmentOperation(pos, left, identifier, index, right, operation)
         elif self.is_member(left):
@@ -705,7 +704,7 @@ def parse_tree_to_ast(parse_tree):
     return tree
 
 def parse_to_ast(code):
-    assert isinstance(code, unicode)
+    #assert isinstance(code, unicode)
     from js.jsparser import parse, ParseError
     parse_tree = parse(str(code))
     ast = parse_tree_to_ast(parse_tree)

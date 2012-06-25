@@ -55,7 +55,7 @@ class DeclarativeEnvironmentRecord(EnvironmentRecord):
 
     # 10.2.1.1.3
     def set_mutable_binding(self, identifier, value, strict):
-        assert isinstance(identifier, unicode)
+        #assert isinstance(identifier, unicode)
         assert self.has_binding(identifier)
         if not self._is_mutable_binding(identifier):
             from js.execution import JsTypeError
@@ -81,7 +81,7 @@ class DeclarativeEnvironmentRecord(EnvironmentRecord):
             return False
         if self._is_deletable_binding(identifier) is False:
             return False
-        del(self.delete_binding[identifier])
+        del(self.deletable_bindings[identifier])
         del(self.mutable_bindings[identifier])
         del(self.bindings[identifier])
         return False
@@ -125,7 +125,7 @@ class ObjectEnvironmentRecord(EnvironmentRecord):
 
     # 10.2.1.2.3
     def set_mutable_binding(self, n, v, s):
-        assert isinstance(n, unicode)
+        #assert isinstance(n, unicode)
         bindings = self.binding_object
         bindings.put(n, v, s)
 

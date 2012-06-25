@@ -4,6 +4,15 @@ from pypy.rlib.rarithmetic import r_uint, intmask, ovfcheck_float_to_int
 from pypy.rlib.rfloat import isnan, isinf, NAN, formatd, INFINITY
 from js.execution import JsTypeError, JsRangeError, ReturnException
 
+def is_array_index(p):
+    try:
+        return unicode(str(r_uint32(abs(int(p))))) == p
+    except ValueError:
+        return False
+
+def isunicode(s):
+    return unicode(s) is s
+
 class W_Root(object):
     _type_ = ''
 
@@ -277,11 +286,10 @@ class W_BasicObject(W_Root):
     _extensible_ = True
 
     def __init__(self):
-        W_Root.__init__(self)
         self._properties_ = {}
         self._prototype_ = w_Null
         desc = proto_desc
-        W_BasicObject.define_own_property(self, u'__proto__', desc)
+        #W_BasicObject.define_own_property(self, u'__proto__', desc)
 
     def __str__(self):
         return "%s: %s" % (object.__repr__(self), self.klass())
@@ -300,7 +308,8 @@ class W_BasicObject(W_Root):
 
     # 8.12.3
     def get(self, p):
-        assert isinstance(p, unicode)
+        #assert isinstance(p, unicode)
+        assert isunicode(p)
         desc = self.get_property(p)
 
         if desc is None:
@@ -318,7 +327,8 @@ class W_BasicObject(W_Root):
 
     # 8.12.1
     def get_own_property(self, p):
-        assert isinstance(p, unicode)
+        #assert isinstance(p, unicode)
+        assert isunicode(p)
         if p not in self._properties_:
             return None
 
@@ -338,7 +348,8 @@ class W_BasicObject(W_Root):
 
     # 8.12.2
     def get_property(self, p):
-        assert isinstance(p, unicode)
+        #assert isinstance(p, unicode)
+        assert isunicode(p)
 
         prop = self.get_own_property(p)
         if prop is not None:
@@ -352,7 +363,9 @@ class W_BasicObject(W_Root):
 
     # 8.12.5
     def put(self, p, v, throw = False):
-        assert isinstance(p, unicode)
+        #assert isinstance(p, unicode)
+        assert isunicode(p)
+
         if self.can_put(p) is False:
             if throw is True:
                 raise JsTypeError(u'')
@@ -407,7 +420,9 @@ class W_BasicObject(W_Root):
 
     # 8.12.6
     def has_property(self, p):
-        assert isinstance(p, unicode)
+        #assert isinstance(p, unicode)
+        assert isunicode(p)
+
         desc = self.get_property(p)
         if desc is None:
             return False
@@ -589,7 +604,6 @@ class W_BasicObject(W_Root):
 
 class W__PrimitiveObject(W_BasicObject):
     def __init__(self, primitive_value):
-        W_BasicObject.__init__(self)
         self.set_primitive_value(primitive_value)
 
     def PrimitiveValue(self):
@@ -861,7 +875,6 @@ class W__Function(W_BasicFunction):
 
     def __init__(self, function_body, formal_parameter_list=[], scope=None, strict=False):
         from js.object_space import object_space
-        W_BasicFunction.__init__(self)
         self._function_ = function_body
         self._scope_ = scope
         self._params_ = formal_parameter_list
@@ -936,7 +949,6 @@ class W_Arguments(W__Object):
     _class_ = 'Arguments'
 
     def __init__(self, func, names, args, env, strict = False):
-        W__Object.__init__(self)
         self.strict = strict
         _len = len(args)
         put_property(self, u'length', _w(_len), writable = True, enumerable = False, configurable = True)
@@ -977,7 +989,6 @@ def make_arg_setter(name, env):
 # 15.4.2
 class W_ArrayConstructor(W_BasicFunction):
     def __init__(self):
-        W_BasicFunction.__init__(self)
         put_property(self, u'length', _w(1), writable = False, enumerable = False, configurable = False)
 
     def is_callable(self):
@@ -1017,7 +1028,6 @@ class W_Boolean(W_Primitive):
     _type_ = 'boolean'
 
     def __init__(self, boolval):
-        W_Primitive.__init__(self)
         self._boolval_ = bool(boolval)
 
     def __str__(self):
@@ -1040,12 +1050,19 @@ class W_Boolean(W_Primitive):
     def to_boolean(self):
         return self._boolval_
 
+def _isspace(s):
+    whitespace = {u' ':None, u'\n':None, u'\t':None, u'\r':None}
+    for i in xrange(len(s)):
+        if s[i] not in whitespace:
+            return False
+    return True
+
 class W_String(W_Primitive):
     _type_ = 'string'
 
     def __init__(self, strval):
-        assert isinstance(strval, unicode)
-        W_Primitive.__init__(self)
+        #assert isinstance(strval, unicode)
+        assert isunicode(strval)
         self._strval_ = strval
 
     def __eq__(self, other):
@@ -1070,11 +1087,11 @@ class W_String(W_Primitive):
 
     def ToNumber(self):
         u_strval = self._strval_
-        assert isinstance(u_strval, unicode)
-        import re
+
         if u_strval == u'':
             return 0.0
-        if re.match('^\s*$', u_strval):
+
+        if _isspace(u_strval):
             return 0.0
 
         strval = str(u_strval)
@@ -1124,7 +1141,6 @@ class W_IntNumber(W_Number):
     """ Number known to be an integer
     """
     def __init__(self, intval):
-        W_Number.__init__(self)
         self._intval_ = intmask(intval)
 
     def __str__(self):
@@ -1152,8 +1168,7 @@ class W_FloatNumber(W_Number):
     """
     def __init__(self, floatval):
         assert isinstance(floatval, float)
-        W_Number.__init__(self)
-        self._floatval_ = float(floatval)
+        self._floatval_ = floatval
 
     def __str__(self):
         return 'W_FloatNumber(%s)' % (self._floatval_,)
@@ -1239,7 +1254,6 @@ class W__Array(W_BasicObject):
 
     def __init__(self, length = w_0):
         assert isinstance(length, W_Root)
-        W_BasicObject.__init__(self)
 
         desc = PropertyDescriptor(value = length, writable = True, enumerable = False, configurable = False)
         W_BasicObject.define_own_property(self, u'length', desc)
@@ -1310,7 +1324,9 @@ class W__Array(W_BasicObject):
 
         # 4
         elif is_array_index(p):
-            assert isinstance(p, unicode)
+            #assert isinstance(p, unicode)
+            assert isunicode(p)
+
             # a
             index = r_uint32(int(p))
             # b
@@ -1333,12 +1349,6 @@ class W__Array(W_BasicObject):
         # 5
         return W_BasicObject.define_own_property(self, p, desc, throw)
 
-def is_array_index(p):
-    try:
-        return unicode(str(r_uint32(abs(int(p))))) == p
-    except ValueError:
-        return False
-
 from pypy.rlib.objectmodel import specialize
 @specialize.argtype(0)
 def _w(value):
@@ -1350,7 +1360,9 @@ def _w(value):
         return W_IntNumber(value)
     elif isinstance(value, float):
         return W_FloatNumber(value)
-    elif isinstance(value, unicode):
+    #elif isinstance(value, unicode):
+        #return W_String(value)
+    elif isunicode(value):
         return W_String(value)
     elif isinstance(value, str):
         return W_String(unicode(value))

@@ -56,13 +56,15 @@ class JsNativeFunction(JsBaseFunction):
 
     def run(self, ctx):
         from js.completion import ReturnCompletion
-        from js.jsobj import W_Root
+        #from js.jsobj import W_Root
 
-        args = ctx.argv()
-        this = ctx.this_binding()
-        res = self._function_(this, args)
-        w_res = _w(res)
+        #args = ctx.argv()
+        #this = ctx.this_binding()
+        #res = self._function_(this, args)
+        ##w_res = _w(res)
         #w_res = res
+        from js.jsobj import w_Undefined, W_Root
+        w_res = w_Undefined
         assert isinstance(w_res, W_Root)
         compl = ReturnCompletion(value = w_res)
         return compl

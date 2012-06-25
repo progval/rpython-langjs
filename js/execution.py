@@ -38,29 +38,30 @@ class JsThrowException(JsException):
         self.value = value
 
     def _msg(self):
-        return self.value
+        s = self.value.to_string()
+        return s
 
 class JsTypeError(JsException):
     def __init__(self, value):
-        assert isinstance(value, unicode)
+        #assert isinstance(value, unicode)
         self.value = value
 
     def _msg(self):
-        return u'TypeError: %s' % (self.value)
+        return u'TypeError: %s' #% (self.value)
 
 class JsReferenceError(JsException):
     def __init__(self, identifier):
         self.identifier = identifier
 
     def _msg(self):
-        return u'ReferenceError: %s is not defined' % (self.identifier)
+        return u'ReferenceError: %s is not defined' #% (self.identifier)
 
 class JsRangeError(JsException):
     def __init__(self, value = None):
         self.value = value
 
     def _msg(self):
-        return u'RangeError: %s' %(self.value)
+        return u'RangeError: %s' #%(self.value)
 
 class JsSyntaxError(JsException):
     def __init__(self, msg = u'', src = u'', line = 0, column = 0):
@@ -72,6 +73,6 @@ class JsSyntaxError(JsException):
     def _msg(self):
         error_src = self.src.encode('unicode_escape')
         if self.error_msg:
-            return u'SyntaxError: "%s" in "%s" at line:%d, column:%d' %(self.error_msg, error_src, self.line, self.column)
+            return u'SyntaxError: "%s" in "%s" at line:%d, column:%d' #%(self.error_msg, error_src, self.line, self.column)
         else:
-            return u'SyntaxError: in "%s" at line:%d, column:%d' %(error_src, self.line, self.column)
+            return u'SyntaxError: in "%s" at line:%d, column:%d' #%(error_src, self.line, self.column)

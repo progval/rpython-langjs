@@ -94,12 +94,12 @@ class LOAD_FLOATCONSTANT(Opcode):
 class LOAD_STRINGCONSTANT(Opcode):
     _immutable_fields_ = ['w_stringvalue']
     def __init__(self, value):
-        assert isinstance(value, unicode)
+        #assert isinstance(value, unicode)
         self.strval = value
 
     def eval(self, ctx):
         strval = self.strval
-        assert isinstance(strval, unicode)
+        #assert isinstance(strval, unicode)
         w_string = W_String(strval)
         ctx.stack_append(w_string)
 
@@ -402,7 +402,7 @@ class STORE_MEMBER(Opcode):
         left = ctx.stack_pop()
         member = ctx.stack_pop()
         name = member.to_string()
-        assert isinstance(name, unicode)
+        #assert isinstance(name, unicode)
 
         value = ctx.stack_pop()
 
