@@ -47,21 +47,21 @@ class JsTypeError(JsException):
         self.value = value
 
     def _msg(self):
-        return u'TypeError: %s' #% (self.value)
+        return u'TypeError: %s' #% (self.value, )
 
 class JsReferenceError(JsException):
     def __init__(self, identifier):
         self.identifier = identifier
 
     def _msg(self):
-        return u'ReferenceError: %s is not defined' #% (self.identifier)
+        return u'ReferenceError: %s is not defined' #% (self.identifier, )
 
 class JsRangeError(JsException):
     def __init__(self, value = None):
         self.value = value
 
     def _msg(self):
-        return u'RangeError: %s' #%(self.value)
+        return u'RangeError: %s' #% (self.value, )
 
 class JsSyntaxError(JsException):
     def __init__(self, msg = u'', src = u'', line = 0, column = 0):

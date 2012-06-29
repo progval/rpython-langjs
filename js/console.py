@@ -3,7 +3,7 @@
 import os, sys
 from js.interpreter import load_source, Interpreter, load_file
 from js.jsparser import parse, ParseError
-from js.jsobj import W_NewBuiltin, W_String, ThrowException, w_Undefined
+from js.jsobj import W_NewBuiltin, W_String, JsThrowException, w_Undefined
 from pypy.rlib.streamio import open_file_as_stream
 
 def printmessage(msg):
@@ -41,7 +41,7 @@ class W_Load(W_NewBuiltin):
                 program = load_file(filename)
             except EnvironmentError, e:
                 msg = W_String(u"Can't open %s: %s" % (filename, e))
-                raise ThrowException(msg)
+                raise JsThrowException(msg)
             self.interpreter.run(program)
         return w_Undefined
 

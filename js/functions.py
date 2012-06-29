@@ -6,9 +6,6 @@ class JsBaseFunction(object):
     configurable_bindings = False
     strict = False
 
-    def __init__(self):
-        pass
-
     def run(self, ctx):
         raise NotImplementedError
 
@@ -46,8 +43,7 @@ class JsBaseFunction(object):
         return False
 
 class JsNativeFunction(JsBaseFunction):
-    def __init__(self, function, name = None):
-        JsBaseFunction.__init__(self)
+    def __init__(self, function, name = u''):
         self._name_ = name
         self._function_ = function
 
@@ -56,16 +52,11 @@ class JsNativeFunction(JsBaseFunction):
 
     def run(self, ctx):
         from js.completion import ReturnCompletion
-        #from js.jsobj import W_Root
 
-        #args = ctx.argv()
-        #this = ctx.this_binding()
-        #res = self._function_(this, args)
-        ##w_res = _w(res)
-        #w_res = res
-        from js.jsobj import w_Undefined, W_Root
-        w_res = w_Undefined
-        assert isinstance(w_res, W_Root)
+        args = ctx.argv()
+        this = ctx.this_binding()
+        res = self._function_(this, args)
+        w_res = _w(res)
         compl = ReturnCompletion(value = w_res)
         return compl
 
@@ -77,12 +68,18 @@ class JsNativeFunction(JsBaseFunction):
             return u'function () { [native code] }'
 
 class JsIntimateFunction(JsNativeFunction):
+    def __init__(self, function, name = u''):
+        self._name_ = name
+        self._intimate_function_ = function
+
     def run(self, ctx):
-        return self._function_(ctx)
+        from js.completion import Completion
+        compl = self._intimate_function_(ctx)
+        assert isinstance(compl, Completion)
+        return compl
 
 class JsExecutableCode(JsBaseFunction):
     def __init__(self, js_code):
-        JsBaseFunction.__init__(self)
         from js.jscode import JsCode
         assert isinstance(js_code, JsCode)
         self._js_code_ = js_code
@@ -124,12 +121,9 @@ class JsExecutableCode(JsBaseFunction):
             return u'function () { }'
 
 class JsGlobalCode(JsExecutableCode):
-    def __init__(self, js_code):
-        return JsExecutableCode.__init__(self, js_code)
+    pass
 
 class JsEvalCode(JsExecutableCode):
-    def __init__(self, js_code):
-        return JsExecutableCode.__init__(self, js_code)
     def is_eval_code(self):
         return True
 

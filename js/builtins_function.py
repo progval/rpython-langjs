@@ -9,13 +9,13 @@ def to_string(this, args):
     if not isinstance(this, W_BasicFunction):
         raise JsTypeError(u'')
 
-    return this._to_string_()
+    return _w(this._to_string_())
 
 def empty(this, args):
     return w_Undefined
 
 # 15.3.4.4 Function.prototype.call
-def call(ctx):
+def js_call(ctx):
     func = ctx.this_binding()
     args = ctx.argv()
 
@@ -30,7 +30,7 @@ def call(ctx):
     return compl
 
 # 15.3.4.3 Function.prototype.apply (thisArg, argArray)
-def apply(ctx):
+def js_apply(ctx):
     func = ctx.this_binding()
     args = ctx.argv()
 
@@ -39,7 +39,8 @@ def apply(ctx):
 
     if isnull_or_undefined(arg_array):
         res = func.Call(args = [], this = this_arg, calling_context = ctx)
-        return _w(res)
+        compl = NormalCompletion(value = _w(res))
+        return compl
 
     from js.jsobj import W_BasicObject
     if not isinstance(arg_array, W_BasicObject):
@@ -50,7 +51,7 @@ def apply(ctx):
     arg_list = []
     index = 0
     while index < n:
-        index_name = unicode(index)
+        index_name = unicode(str(index))
         next_arg = arg_array.get(index_name)
         arg_list.append(next_arg)
         index += 1

@@ -10,9 +10,6 @@ def is_array_index(p):
     except ValueError:
         return False
 
-def isunicode(s):
-    return unicode(s) is s
-
 class W_Root(object):
     _type_ = ''
 
@@ -309,7 +306,7 @@ class W_BasicObject(W_Root):
     # 8.12.3
     def get(self, p):
         #assert isinstance(p, unicode)
-        assert isunicode(p)
+        assert p is not None and isinstance(p, unicode)
         desc = self.get_property(p)
 
         if desc is None:
@@ -328,7 +325,7 @@ class W_BasicObject(W_Root):
     # 8.12.1
     def get_own_property(self, p):
         #assert isinstance(p, unicode)
-        assert isunicode(p)
+        assert p is not None and isinstance(p, unicode)
         if p not in self._properties_:
             return None
 
@@ -349,7 +346,7 @@ class W_BasicObject(W_Root):
     # 8.12.2
     def get_property(self, p):
         #assert isinstance(p, unicode)
-        assert isunicode(p)
+        assert p is not None and isinstance(p, unicode)
 
         prop = self.get_own_property(p)
         if prop is not None:
@@ -364,7 +361,7 @@ class W_BasicObject(W_Root):
     # 8.12.5
     def put(self, p, v, throw = False):
         #assert isinstance(p, unicode)
-        assert isunicode(p)
+        assert p is not None and isinstance(p, unicode)
 
         if self.can_put(p) is False:
             if throw is True:
@@ -421,7 +418,7 @@ class W_BasicObject(W_Root):
     # 8.12.6
     def has_property(self, p):
         #assert isinstance(p, unicode)
-        assert isunicode(p)
+        assert p is not None and isinstance(p, unicode)
 
         desc = self.get_property(p)
         if desc is None:
@@ -604,6 +601,7 @@ class W_BasicObject(W_Root):
 
 class W__PrimitiveObject(W_BasicObject):
     def __init__(self, primitive_value):
+        W_BasicObject.__init__(self)
         self.set_primitive_value(primitive_value)
 
     def PrimitiveValue(self):
@@ -874,6 +872,7 @@ class W_DateConstructor(W_BasicFunction):
 class W__Function(W_BasicFunction):
 
     def __init__(self, function_body, formal_parameter_list=[], scope=None, strict=False):
+        W_BasicFunction.__init__(self)
         from js.object_space import object_space
         self._function_ = function_body
         self._scope_ = scope
@@ -949,6 +948,7 @@ class W_Arguments(W__Object):
     _class_ = 'Arguments'
 
     def __init__(self, func, names, args, env, strict = False):
+        W__Object.__init__(self)
         self.strict = strict
         _len = len(args)
         put_property(self, u'length', _w(_len), writable = True, enumerable = False, configurable = True)
@@ -989,6 +989,7 @@ def make_arg_setter(name, env):
 # 15.4.2
 class W_ArrayConstructor(W_BasicFunction):
     def __init__(self):
+        W_BasicFunction.__init__(self)
         put_property(self, u'length', _w(1), writable = False, enumerable = False, configurable = False)
 
     def is_callable(self):
@@ -1062,7 +1063,7 @@ class W_String(W_Primitive):
 
     def __init__(self, strval):
         #assert isinstance(strval, unicode)
-        assert isunicode(strval)
+        assert strval is not None and isinstance(strval, unicode)
         self._strval_ = strval
 
     def __eq__(self, other):
@@ -1253,6 +1254,7 @@ class W__Array(W_BasicObject):
     _class_ = 'Array'
 
     def __init__(self, length = w_0):
+        W_BasicObject.__init__(self)
         assert isinstance(length, W_Root)
 
         desc = PropertyDescriptor(value = length, writable = True, enumerable = False, configurable = False)
@@ -1325,7 +1327,7 @@ class W__Array(W_BasicObject):
         # 4
         elif is_array_index(p):
             #assert isinstance(p, unicode)
-            assert isunicode(p)
+            assert p is not None and isinstance(p, unicode)
 
             # a
             index = r_uint32(int(p))
@@ -1352,20 +1354,21 @@ class W__Array(W_BasicObject):
 from pypy.rlib.objectmodel import specialize
 @specialize.argtype(0)
 def _w(value):
-    if isinstance(value, W_Root):
+    if value is None:
+        return w_Null
+    elif isinstance(value, W_Root):
         return value
     elif isinstance(value, bool):
         return newbool(value)
-    elif isinstance(value, int) or isinstance(value, long):
+    elif isinstance(value, int):
         return W_IntNumber(value)
     elif isinstance(value, float):
         return W_FloatNumber(value)
-    #elif isinstance(value, unicode):
-        #return W_String(value)
-    elif isunicode(value):
+    elif isinstance(value, unicode):
         return W_String(value)
     elif isinstance(value, str):
-        return W_String(unicode(value))
+        u_str = unicode(value)
+        return W_String(u_str)
     elif isinstance(value, list):
         from js.object_space import object_space
         a = object_space.new_array()
@@ -1373,9 +1376,7 @@ def _w(value):
             put_property(a, unicode(index), _w(item), writable = True, enumerable = True, configurable = True)
         return a
 
-    elif value is None:
-        return w_Null
-    raise TypeError(value)
+    raise TypeError, ("ffffuuu %s" % (value,))
 
 def put_property(obj, name, value, writable = False, configurable = False, enumerable = False, throw = False):
     descriptor = PropertyDescriptor(value = value, writable = writable, configurable = configurable, enumerable = enumerable)

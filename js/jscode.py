@@ -2,7 +2,7 @@ from pypy.rlib.jit import hint
 from pypy.rlib.objectmodel import we_are_translated
 from pypy.rlib.jit import JitDriver, purefunction
 
-from js.execution import JsTypeError, ReturnException, ThrowException, JsReferenceError
+from js.execution import JsTypeError, ReturnException, JsThrowException, JsReferenceError
 from js.opcodes import opcodes, LABEL, BaseJump
 from js.jsobj import W_Root, W_String, _w, w_Null, w_Undefined
 
@@ -109,12 +109,12 @@ class JsCode(object):
 
     def emit_break(self):
         if not self.endlooplabel:
-            raise ThrowException(W_String(u"Break outside loop"))
+            raise JsThrowException(W_String(u"Break outside loop"))
         self.emit('JUMP', self.endlooplabel[-1])
 
     def emit_continue(self):
         if not self.startlooplabel:
-            raise ThrowException(W_String(u"Continue outside loop"))
+            raise JsThrowException(W_String(u"Continue outside loop"))
         self.emit('JUMP', self.updatelooplabel[-1])
 
     def continue_at_label(self, label):

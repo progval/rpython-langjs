@@ -17,14 +17,15 @@ class Interpreter(object):
     """Creates a js interpreter"""
     def __init__(self):
         from js.jsobj import W_GlobalObject
-        self.global_object = W_GlobalObject()
-        from js.builtins import setup_builtins
-        setup_builtins(self.global_object)
-        self.setup_interpreter_builtins()
         from js.object_space import object_space
-        object_space.global_object = self.global_object
-        object_space.assign_proto(self.global_object)
+        from js.builtins import setup_builtins
 
+        self.global_object = W_GlobalObject()
+        object_space.global_object = self.global_object
+
+        setup_builtins(self.global_object)
+        #self.setup_interpreter_builtins()
+        object_space.assign_proto(self.global_object)
 
     def setup_interpreter_builtins(self):
         global_object = self.global_object
