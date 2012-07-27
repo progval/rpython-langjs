@@ -1,6 +1,7 @@
 from js.jsobj import W_Boolean, W_BooleanObject
 from js.execution import JsTypeError
 from js.jsobj import _w
+from js.object_space import w_return
 
 def setup(global_object):
     from js.builtins import put_property, put_native_function
@@ -35,6 +36,7 @@ def setup(global_object):
     put_native_function(w_BooleanPrototype, u'valueOf', value_of)
 
 # 15.6.4.2
+@w_return
 def to_string(this, args):
     if isinstance(this, W_Boolean):
         b = this
@@ -44,11 +46,12 @@ def to_string(this, args):
         raise JsTypeError(u'')
 
     if b.to_boolean() == True:
-        return 'true'
+        return u'true'
     else:
-        return 'false'
+        return u'false'
 
 # 15.6.4.3
+@w_return
 def value_of(this, args):
     if isinstance(this, W_Boolean):
         b = this

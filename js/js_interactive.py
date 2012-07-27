@@ -115,8 +115,8 @@ class JSInterpreter(code.InteractiveConsole):
         code.InteractiveConsole.interact(self, banner)
 
 def main(inspect = False, debug = False, files=[]):
-    import js.globals
-    js.globals.DEBUG = debug
+    from js.object_space import object_space
+    object_space.DEBUG = debug
     jsi = JSInterpreter()
     for filename in files:
         jsi.runcodefromfile(filename)

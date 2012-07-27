@@ -3,14 +3,17 @@ from js.execution import JsTypeError
 from js.jsobj import w_Undefined, _w, isnull_or_undefined
 from js.builtins import get_arg
 from js.completion import NormalCompletion
+from js.object_space import w_return
 
+@w_return
 def to_string(this, args):
     from js.jsobj import W_BasicFunction
     if not isinstance(this, W_BasicFunction):
         raise JsTypeError(u'')
 
-    return _w(this._to_string_())
+    return this._to_string_()
 
+@w_return
 def empty(this, args):
     return w_Undefined
 

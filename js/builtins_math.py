@@ -3,6 +3,7 @@ from js.jsobj import _w
 
 from pypy.rlib.rfloat import NAN, INFINITY, isnan, isinf
 from js.builtins import get_arg
+from js.object_space import w_return
 
 def setup(global_object):
     from js.builtins import put_native_function, put_property
@@ -13,10 +14,11 @@ def setup(global_object):
     object_space.assign_proto(w_Math)
     put_property(global_object, u'Math', w_Math)
 
+
     put_native_function(w_Math, u'abs', js_abs, params = [u'x'])
     put_native_function(w_Math, u'floor', floor, params = [u'x'])
     put_native_function(w_Math, u'round', js_round, params = [u'x'])
-    put_native_function(w_Math, u'random', random)
+    put_native_function(w_Math, u'random', js_random)
     put_native_function(w_Math, u'min', js_min, params = [u'value1', u'value2'])
     put_native_function(w_Math, u'max', js_max, params = [u'value1', u'value2'])
     put_native_function(w_Math, u'pow', js_pow, params = [u'x', u'y'])
@@ -59,6 +61,7 @@ def setup(global_object):
     put_property(w_Math, u'SQRT2', _w(SQRT2), writable = False, enumerable = False, configurable = False)
 
 # 15.8.2.9
+@w_return
 def floor(this, args):
     arg0 = get_arg(args, 0)
     x = arg0.ToNumber()
@@ -69,6 +72,7 @@ def floor(this, args):
     return math.floor(x)
 
 # 15.8.2.1
+@w_return
 def js_abs(this, args):
     arg0 = get_arg(args, 0)
     x = arg0.ToNumber()
@@ -78,7 +82,9 @@ def js_abs(this, args):
 
     return abs(x)
 
+
 # 15.8.2.15
+@w_return
 def js_round(this, args):
     arg0 = get_arg(args, 0)
     x = arg0.ToNumber()
@@ -101,7 +107,8 @@ def js_round(this, args):
     return math.floor(x + 0.5)
 
 def isodd(i):
-    return i % 2 == 1
+    import math
+    return math.fmod(i, 2.0) == 1.0
 
 CMP_LT = -1
 CMP_GT = 1
@@ -128,6 +135,7 @@ def eq_signed_zero(a, b):
     return cmp_signed_zero(a, b) is CMP_EQ
 
 # 15.8.2.13
+@w_return
 def js_pow(this, args):
     w_x = get_arg(args, 0)
     w_y = get_arg(args, 1)
@@ -183,6 +191,7 @@ def js_pow(this, args):
         return INFINITY
 
 # 15.8.2.17
+@w_return
 def js_sqrt(this, args):
     arg0 = get_arg(args, 0)
     x = arg0.ToNumber()
@@ -199,6 +208,7 @@ def js_sqrt(this, args):
     return math.sqrt(x)
 
 # 15.8.2.10
+@w_return
 def js_log(this, args):
     arg0 = get_arg(args, 0)
     x = arg0.ToNumber()
@@ -218,6 +228,7 @@ def js_log(this, args):
     return math.log(x)
 
 # 15.8.2.11
+@w_return
 def js_min(this, args):
     values = []
     for arg in args:
@@ -226,16 +237,24 @@ def js_min(this, args):
             return NAN
         values.append(value)
 
-    if not values:
+    if len(values) == 0:
         return INFINITY
 
-    result = min(values)
-    if result == 0 and -0.0 in values:
-        return -0.0
+    if len(values) == 1:
+        return values[0]
 
-    return result
+    min_ = min(values[0], values[1])
+
+    for i in xrange(2, len(values)):
+        min_ = min(values[i], min_)
+
+    if min_ == 0 and -0.0 in values:
+        min_ = -0.0
+
+    return min_
 
 # 15.8.2.12
+@w_return
 def js_max(this, args):
     values = []
     for arg in args:
@@ -244,12 +263,21 @@ def js_max(this, args):
             return NAN
         values.append(value)
 
-    if not values:
+    if len(values) == 0:
         return -INFINITY
 
-    return max(values)
+    if len(values) == 1:
+        return values[0]
+
+    max_ = max(values[0], values[1])
+
+    for i in xrange(2, len(values)):
+        max_ = max(values[i], max_)
+
+    return max_
 
 # 15.8.2.17
+@w_return
 def js_sin(this, args):
     arg0 = get_arg(args, 0)
     x = arg0.ToNumber()
@@ -263,6 +291,7 @@ def js_sin(this, args):
     return math.sin(x)
 
 # 15.8.2.18
+@w_return
 def js_tan(this, args):
     arg0 = get_arg(args, 0)
     x = arg0.ToNumber()
@@ -276,6 +305,7 @@ def js_tan(this, args):
     return math.tan(x)
 
 # 15.8.2.2
+@w_return
 def js_acos(this, args):
     arg0 = get_arg(args, 0)
     x = arg0.ToNumber()
@@ -289,6 +319,7 @@ def js_acos(this, args):
     return math.acos(x)
 
 # 15.8.2.3
+@w_return
 def js_asin(this, args):
     arg0 = get_arg(args, 0)
     x = arg0.ToNumber()
@@ -302,6 +333,7 @@ def js_asin(this, args):
     return math.asin(x)
 
 # 15.8.2.4
+@w_return
 def js_atan(this, args):
     arg0 = get_arg(args, 0)
     x = arg0.ToNumber()
@@ -318,6 +350,7 @@ def js_atan(this, args):
     return math.atan(x)
 
 # 15.8.2.5
+@w_return
 def js_atan2(this, args):
     arg0 = get_arg(args, 0)
     arg1 = get_arg(args, 1)
@@ -330,6 +363,7 @@ def js_atan2(this, args):
     return math.atan2(y, x)
 
 # 15.8.2.6
+@w_return
 def js_ceil(this, args):
     arg0 = get_arg(args, 0)
     x = arg0.ToNumber()
@@ -346,6 +380,7 @@ def js_ceil(this, args):
     return math.ceil(x)
 
 # 15.8.2.7
+@w_return
 def js_cos(this, args):
     arg0 = get_arg(args, 0)
     x = arg0.ToNumber()
@@ -356,6 +391,7 @@ def js_cos(this, args):
     return math.cos(x)
 
 # 15.8.2.8
+@w_return
 def js_exp(this, args):
     arg0 = get_arg(args, 0)
     x = arg0.ToNumber()
@@ -373,11 +409,12 @@ def js_exp(this, args):
 
 import time
 from pypy.rlib import rrandom
-_random = rrandom.Random(int(time.time()))
+random = rrandom.Random(int(time.time()))
 
 # 15.8.2.14
-def random(this, args):
-    return _random.random()
+@w_return
+def js_random(this, args):
+    return random.random()
 
 # 15.8.1.1
 E = math.e

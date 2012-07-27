@@ -10,6 +10,14 @@ def is_array_index(p):
     except ValueError:
         return False
 
+def sign(i):
+    if i > 0:
+        return 1
+    if i < 0:
+        return -1
+    return 0
+
+
 class W_Root(object):
     _type_ = ''
 
@@ -57,21 +65,11 @@ class W_Root(object):
         return r_uint32(num)
 
     def ToInt16(self):
-        def sign(i):
-            if i > 0:
-                return 1
-            if i < 0:
-                return -1
-            return 0
-
         num = self.ToInteger()
-        if num == NAN or num == INFINITY or num == -INFINITY:
+        if num == NAN or num == INFINITY or num == -INFINITY or num == 0:
             return 0
 
-        import math
-        pos_int = sign(num) * math.floor(abs(num))
-        int_16_bit = pos_int % math.pow(2, 16)
-        return int(int_16_bit)
+        return r_uint16(num)
 
     def is_callable(self):
         return False
@@ -96,6 +94,9 @@ class W_Undefined(W_Primitive):
     def check_object_coercible(self):
         raise JsTypeError(u'W_Undefined.check_object_coercible')
 
+    def ToObject(self):
+        raise JsTypeError(u'W_Undefined.ToObject')
+
 class W_Null(W_Primitive):
     _type_ = 'null'
 
@@ -107,6 +108,9 @@ class W_Null(W_Primitive):
 
     def check_object_coercible(self):
         raise JsTypeError(u'W_Null.check_object_coercible')
+
+    def ToObject(self):
+        raise JsTypeError(u'W_Null.ToObject')
 
 w_Undefined = W_Undefined()
 w_Null = W_Null()
@@ -286,7 +290,7 @@ class W_BasicObject(W_Root):
         self._properties_ = {}
         self._prototype_ = w_Null
         desc = proto_desc
-        #W_BasicObject.define_own_property(self, u'__proto__', desc)
+        W_BasicObject.define_own_property(self, u'__proto__', desc)
 
     def __str__(self):
         return "%s: %s" % (object.__repr__(self), self.klass())
@@ -655,6 +659,7 @@ class W_GlobalObject(W__Object):
 
 class W_DateObject(W__PrimitiveObject):
     _class_ = 'Date'
+
     def default_value(self, hint = 'String'):
         if hint is None:
             hint = 'String'
@@ -690,7 +695,7 @@ class W_BasicFunction(W_BasicObject):
         return True
 
     def _to_string_(self):
-        return 'function() {}'
+        return u'function() {}'
 
     # 15.3.5.3
     def has_instance(self, v):
@@ -729,13 +734,16 @@ class W_ObjectConstructor(W_BasicFunction):
         obj = object_space.new_obj()
         return obj
 
+    def _to_string_(self):
+        return u'function Object() { [native code] }'
+
     # TODO
     def Construct(self, args=[]):
         return self.Call(args, this=None)
 
 class W_FunctionConstructor(W_BasicFunction):
     def _to_string_(self):
-        return "function Function() { [native code] }"
+        return u'function Function() { [native code] }'
 
     # 15.3.2.1
     def Call(self, args = [], this = None, calling_context = None):
@@ -827,35 +835,37 @@ class W_BooleanConstructor(W_BasicFunction):
 
 # 15.9.2
 class W_DateConstructor(W_BasicFunction):
-    def Call(self, args=[], this=None):
+    def Call(self, args = [], this = None, calling_context = None):
         from js.builtins import get_arg
         import time
-        import datetime
+        # TODO
+        #import datetime
 
-        if len(args) > 1:
-            arg0 = get_arg(args, 0);
-            arg1 = get_arg(args, 1, _w(0));
-            arg2 = get_arg(args, 2, _w(0));
+        #if len(args) > 1:
+        #    arg0 = get_arg(args, 0);
+        #    arg1 = get_arg(args, 1, _w(0));
+        #    arg2 = get_arg(args, 2, _w(0));
 
-            year = arg0.ToInteger()
-            month = arg1.ToInteger() + 1
-            day = arg2.ToInteger() + 1
+        #    year = arg0.ToInteger()
+        #    month = arg1.ToInteger() + 1
+        #    day = arg2.ToInteger() + 1
 
-            d = datetime.date(year, month, day)
-            sec = time.mktime(d.timetuple())
-            value = _w(int(sec * 1000))
+        #    d = datetime.date(year, month, day)
+        #    sec = time.mktime(d.timetuple())
+        #    value = _w(int(sec * 1000))
 
-        elif len(args) == 1:
-            arg0 = get_arg(args, 0);
-            if isinstance(arg0, W_String):
-                raise NotImplementedError()
-            else:
-                num = arg0.ToNumber()
-                if isnan(num) or isinf(num):
-                    raise JsTypeError(unicode(num))
-                value = _w(int(num))
-        else:
-            value = _w(int(time.time() * 1000))
+        #elif len(args) == 1:
+        #    arg0 = get_arg(args, 0);
+        #    if isinstance(arg0, W_String):
+        #        raise NotImplementedError()
+        #    else:
+        #        num = arg0.ToNumber()
+        #        if isnan(num) or isinf(num):
+        #            raise JsTypeError(unicode(num))
+        #        value = _w(int(num))
+        #else:
+        #    value = _w(int(time.time() * 1000))
+        value = _w(int(time.time() * 1000))
 
         from js.object_space import object_space
         obj = object_space.new_date(value)
@@ -1062,7 +1072,6 @@ class W_String(W_Primitive):
     _type_ = 'string'
 
     def __init__(self, strval):
-        #assert isinstance(strval, unicode)
         assert strval is not None and isinstance(strval, unicode)
         self._strval_ = strval
 
@@ -1164,6 +1173,9 @@ def r_int32(n):
 def r_uint32(n):
     return intmask(rffi.cast(rffi.UINT, n))
 
+def r_uint16(n):
+    return intmask(rffi.cast(rffi.USHORT, n))
+
 class W_FloatNumber(W_Number):
     """ Number known to be a float
     """
@@ -1210,7 +1222,6 @@ class W_FloatNumber(W_Number):
             return self._floatval_
 
         return intmask(int(self._floatval_))
-
 
 def isnull_or_undefined(obj):
     if obj is w_Null or obj is w_Undefined:
@@ -1373,7 +1384,7 @@ def _w(value):
         from js.object_space import object_space
         a = object_space.new_array()
         for index, item in enumerate(value):
-            put_property(a, unicode(index), _w(item), writable = True, enumerable = True, configurable = True)
+            put_property(a, unicode(str(index)), _w(item), writable = True, enumerable = True, configurable = True)
         return a
 
     raise TypeError, ("ffffuuu %s" % (value,))

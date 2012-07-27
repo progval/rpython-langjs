@@ -68,7 +68,7 @@ class DeclarativeEnvironmentRecord(EnvironmentRecord):
         if not identifier in self.bindings:
             if strict:
                 from js.execution import JsReferenceError
-                raise JsReferenceError
+                raise JsReferenceError(identifier)
             else:
                 return w_Undefined
         return self.bindings[identifier]

@@ -2,6 +2,8 @@ from js.jsobj import _w, w_Undefined, W_String, W_StringObject
 from pypy.rlib.rfloat import NAN, INFINITY, isnan
 from js.execution import ThrowException, JsTypeError
 from js.builtins import get_arg
+from js.object_space import w_return
+from pypy.rlib.rstring import UnicodeBuilder
 
 def setup(global_object):
     from js.builtins import put_native_function, put_property
@@ -23,6 +25,7 @@ def setup(global_object):
 
     # 15.5.3.1
     object_space.proto_string = w_StringPrototype
+
     put_property(w_String, u'prototype', w_StringPrototype, writable = False, enumerable = False, configurable = False)
 
     # 15.5.3.2
@@ -65,14 +68,20 @@ def setup(global_object):
     put_native_function(w_StringPrototype, u'toUpperCase', to_upper_case)
 
 # 15.5.3.2
+@w_return
 def from_char_code(this, args):
-    temp = []
+    builder = UnicodeBuilder(len(args))
+
     for arg in args:
         i = arg.ToInt16()
-        temp.append(unichr(i))
-    return u''.join(temp)
+        c = unichr(i)
+        builder.append(c)
+
+    s = builder.build()
+    return s
 
 # 15.5.4.2
+@w_return
 def to_string(this, args):
     if isinstance(this, W_String):
         s = this
@@ -81,10 +90,10 @@ def to_string(this, args):
     else:
         raise JsTypeError(u'')
 
-    assert isinstance(s, W_String)
     return s.to_string()
 
 # 15.5.4.3
+@w_return
 def value_of(this, args):
     if isinstance(this, W_String):
         s = this
@@ -97,6 +106,7 @@ def value_of(this, args):
     return s
 
 # 15.5.4.4
+@w_return
 def char_at(this, args):
     pos = w_Undefined
 
@@ -115,6 +125,7 @@ def char_at(this, args):
     return string[position]
 
 #15.5.4.5
+@w_return
 def char_code_at(this, args):
     pos = get_arg(args, 0)
 
@@ -130,6 +141,7 @@ def char_code_at(this, args):
     return ord(char)
 
 #15.5.4.6
+@w_return
 def concat(this, args):
     string = this.to_string()
     others = [obj.to_string() for obj in args]
@@ -137,10 +149,12 @@ def concat(this, args):
     return string
 
 # 15.5.4.7
+@w_return
 def index_of(this, args):
     string = this.to_string()
     if len(args) < 1:
         return -1
+
     substr = args[0].to_string()
     size = len(string)
     subsize = len(substr)
@@ -148,11 +162,14 @@ def index_of(this, args):
         pos = 0
     else:
         pos = args[1].ToInteger()
+
     pos = int(min(max(pos, 0), size))
+
     assert pos >= 0
     return string.find(substr, pos)
 
 # 15.5.4.8
+@w_return
 def last_index_of(this, args):
     search_string = get_arg(args,0)
     position = get_arg(args, 1)
@@ -175,15 +192,36 @@ def last_index_of(this, args):
     search_len = len(search_str)
 
     if isinf(start):
-        return s.rfind(search_str)
+        idx = s.rfind(search_str)
+        return idx
 
-    return s.rfind(search_str, 0, start + search_len)
+    end = int(start + search_len)
+    assert end >= 0
+    idx = s.rfind(search_str, 0, end)
+    return idx
+
+# pypy/rlib/rstring
+def _rsplit(value, by, maxsplit=-1):
+    bylen = len(by)
+    if bylen == 0:
+        raise ValueError("empty separator")
+
+    res = []
+    start = 0
+    while maxsplit != 0:
+        next = value.find(by, start)
+        if next < 0:
+            break
+        res.append(value[start:next])
+        start = next + bylen
+        maxsplit -= 1   # NB. if it's already < 0, it stays < 0
+
+    res.append(value[start:len(value)])
+    return res
 
 # 15.5.4.14
+@w_return
 def split(this, args):
-    from js.jsobj import W__Array, w_Null
-    from js.jsobj import put_property
-
     this.check_object_coercible()
 
     separator = get_arg(args, 0, None)
@@ -200,43 +238,69 @@ def split(this, args):
     if lim == 0 or separator is None:
         return [string]
 
+
     r = separator.to_string()
 
-    if r == '':
-        return list(string)
+    if r == u'':
+        i = 0
+        splitted = []
+        while i < len(string):
+            splitted += [string[i]]
+            i += 1
+        return splitted
     else:
-        splitted = string.split(r, lim)
+        splitted = _rsplit(string, r, lim)
         return splitted
 
-    return a
-
 # 15.5.4.15
+@w_return
 def substring(this, args):
     string = this.to_string()
     size = len(string)
+
     if len(args) < 1:
         start = 0
     else:
         start = args[0].ToInteger()
+
     if len(args) < 2:
         end = size
     else:
         end = args[1].ToInteger()
+
     tmp1 = min(max(start, 0), size)
     tmp2 = min(max(end, 0), size)
     start = min(tmp1, tmp2)
     end = max(tmp1, tmp2)
     start = int(start)
     end = int(end)
+
+    assert start >= 0
+    assert end >= 0
     return string[start:end]
 
 # 15.5.4.16
+@w_return
 def to_lower_case(this, args):
+    from pypy.module.unicodedata import unicodedb
+
     string = this.to_string()
-    return string.lower()
+    builder = UnicodeBuilder(len(string))
+
+    for char in string:
+        builder.append(unichr(unicodedb.tolower(ord(char))))
+
+    return builder.build()
 
 # 15.5.4.18
+@w_return
 def to_upper_case(this, args):
-    string = this.to_string()
-    return string.upper()
+    from pypy.module.unicodedata import unicodedb
 
+    string = this.to_string()
+    builder = UnicodeBuilder(len(string))
+
+    for char in string:
+        builder.append(unichr(unicodedb.toupper(ord(char))))
+
+    return builder.build()

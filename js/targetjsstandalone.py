@@ -3,16 +3,26 @@ A simple standalone target for the javascript interpreter.
 """
 
 import sys
-from js.interpreter import load_file, Interpreter
+from js.interpreter import Interpreter
 from js.execution import ExecutionReturned
 
 # __________  Entry point  __________
 
 
 def entry_point(argv):
+    debug = False
+
+    for i in xrange(len(argv)):
+        if argv[i] == '-d':
+            debug = True
+            del(argv[i])
+            break
+
     if len(argv) == 2:
+        from js.object_space import object_space
+        object_space.DEBUG = debug
         interp = Interpreter()
-        interp.js_load(argv[1])
+        interp.run_file(argv[1])
         return 0
     elif argv[0] == 'foo':
         raise ExecutionReturned(None)

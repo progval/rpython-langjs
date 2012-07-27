@@ -1,5 +1,6 @@
 from js.jsobj import isnull_or_undefined, _w, w_Undefined
 from js.builtins import get_arg
+from js.object_space import w_return
 
 def setup(global_object):
     from js.builtins import put_property, put_native_function
@@ -23,18 +24,24 @@ def setup(global_object):
 
     # 15.4.4.2
     put_native_function(w_ArrayPrototype, u'toString', to_string)
+
     # 15.4.4.5
     put_native_function(w_ArrayPrototype, u'join', join, params = [u'separator'])
+
     # 15.4.4.6
     put_native_function(w_ArrayPrototype, u'pop', pop)
+
     # 15.4.4.7
     put_native_function(w_ArrayPrototype, u'push', push)
+
     # 15.4.4.8
     put_native_function(w_ArrayPrototype, u'reverse', reverse)
+
     # 15.4.4.11
     put_native_function(w_ArrayPrototype, u'sort', sort)
 
 # 15.4.4.7
+@w_return
 def push(this, args):
     o = this.ToObject()
     len_val = o.get(u'length')
@@ -42,7 +49,7 @@ def push(this, args):
 
     for item in args:
         e = item
-        o.put(unicode(n), e, True)
+        o.put(unicode(str(n)), e, True)
         n = n + 1
 
     o.put(u'length', _w(n), True)
@@ -50,6 +57,7 @@ def push(this, args):
     return n
 
 # 15.4.4.2
+@w_return
 def to_string(this, args):
     array = this.ToObject()
     func = array.get(u'join')
@@ -59,6 +67,7 @@ def to_string(this, args):
         return this.to_string()
 
 # 15.4.4.5
+@w_return
 def join(this, args):
     separator = get_arg(args, 0)
 
@@ -84,9 +93,9 @@ def join(this, args):
 
     while(k < length):
         s = r + sep
-        element = o.get(unicode(k))
+        element = o.get(unicode(str(k)))
         if isnull_or_undefined(element):
-            _next = ''
+            _next = u''
         else:
             _next = element.to_string()
         r = s + _next
@@ -95,6 +104,7 @@ def join(this, args):
     return r
 
 # 15.4.4.6
+@w_return
 def pop(this, args):
     o = this.ToObject()
     lenVal = o.get(u'length')
@@ -105,13 +115,14 @@ def pop(this, args):
         return w_Undefined
     else:
         indx = l - 1
-        indxs = unicode(indx)
+        indxs = unicode(str(indx))
         element = o.get(indxs)
         o.delete(indxs, True)
         o.put(u'length', _w(indx))
         return element
 
 # 15.4.4.8
+@w_return
 def reverse(this, args):
     o = this.ToObject()
     length = o.get(u'length').ToUInt32()
@@ -122,8 +133,8 @@ def reverse(this, args):
     lower = 0
     while lower != middle:
         upper = length - lower - 1
-        lower_p = unicode(lower)
-        upper_p = unicode(upper)
+        lower_p = unicode(str(lower))
+        upper_p = unicode(str(upper))
         lower_value = o.get(lower_p)
         upper_value = o.get(upper_p)
         lower_exists = o.has_property(lower_p)
@@ -142,6 +153,7 @@ def reverse(this, args):
         lower = lower + 1
 
 # 15.4.4.11
+@w_return
 def sort(this, args):
     obj = this
     length = this.get(u'length').ToUInt32()
@@ -154,8 +166,8 @@ def sort(this, args):
     while True:
         swapped = False
         for i in xrange(1, length):
-            x = unicode(i - 1)
-            y = unicode(i)
+            x = unicode(str(i - 1))
+            y = unicode(str(i))
             comp = sort_compare(obj, x, y, comparefn)
             if  comp == 1:
                 tmp_x = obj.get(x)
@@ -193,6 +205,7 @@ def sort_compare(obj, j, k, comparefn = w_Undefined):
 
     if comparefn is not w_Undefined:
         if not comparefn.is_callable():
+            from js.execution import JsTypeError
             raise JsTypeError(u'')
 
         res = comparefn.Call(args = [x, y], this = w_Undefined)
@@ -206,51 +219,3 @@ def sort_compare(obj, j, k, comparefn = w_Undefined):
         return 1
     return 0
 
-
-#class W_ArraySort(W_NewBuiltin):
-    #length = 1
-    ##XXX: further optimize this function
-    #def Call(self, args=[], this=None):
-        #length = this.Get('length').ToUInt32()
-
-        ## According to ECMA-262 15.4.4.11, non-existing properties always come after
-        ## existing values. Undefined is always greater than any other value.
-        ## So we create a list of non-undefined values, sort them, and append undefined again.
-        #values = []
-        #undefs = r_uint(0)
-
-        #for i in range(length):
-            #P = str(i)
-            #if not this.HasProperty(P):
-                ## non existing property
-                #continue
-            #obj = this.Get(str(i))
-            #if obj is w_Undefined:
-                #undefs += 1
-                #continue
-            #values.append(obj)
-
-        ## sort all values
-        #if len(args) > 0 and args[0] is not w_Undefined:
-            #sorter = Sorter(values, compare_fn=args[0])
-        #else:
-            #sorter = Sorter(values)
-        #sorter.sort()
-
-        ## put sorted values back
-        #values = sorter.list
-        #for i in range(len(values)):
-            #this.Put(str(i), values[i])
-
-        ## append undefined values
-        #newlength = len(values)
-        #while undefs > 0:
-            #undefs -= 1
-            #this.Put(str(newlength), w_Undefined)
-            #newlength += 1
-
-        ## delete non-existing elements on the end
-        #while length > newlength:
-            #this.Delete(str(newlength))
-            #newlength += 1
-        #return this

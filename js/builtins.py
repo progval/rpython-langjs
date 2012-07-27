@@ -110,7 +110,6 @@ def setup_builtins(global_object):
 
     # 15.3.4.3 Function.prototype.apply
     put_intimate_function(w_FunctionPrototype, u'apply', function_builtins.js_apply)
-    return
 
     # 15.3.4.4 Function.prototype.call
     put_intimate_function(w_FunctionPrototype, u'call', function_builtins.js_call)

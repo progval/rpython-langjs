@@ -138,6 +138,7 @@ class EvalExecutionContext(ExecutionContext):
             self._variable_environment_ = calling_context.variable_environment()
             self._lexical_environment_ = calling_context.lexical_environment()
         if self._strict_:
+            from js.lexical_environment import DeclarativeEnvironment
             strict_var_env = DeclarativeEnvironment(self._lexical_environment_)
             self._variable_environment_ = strict_var_env
             self._lexical_environment_ = strict_var_env

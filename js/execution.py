@@ -47,14 +47,14 @@ class JsTypeError(JsException):
         self.value = value
 
     def _msg(self):
-        return u'TypeError: %s' #% (self.value, )
+        return u'TypeError: ' + self.value #% (self.value, )
 
 class JsReferenceError(JsException):
     def __init__(self, identifier):
         self.identifier = identifier
 
     def _msg(self):
-        return u'ReferenceError: %s is not defined' #% (self.identifier, )
+        return u'ReferenceError: '+ self.identifier +u' is not defined'
 
 class JsRangeError(JsException):
     def __init__(self, value = None):
@@ -71,7 +71,7 @@ class JsSyntaxError(JsException):
         self.column = column
 
     def _msg(self):
-        error_src = self.src.encode('unicode_escape')
+        error_src = self.src #self.src.encode('unicode_escape')
         if self.error_msg:
             return u'SyntaxError: "%s" in "%s" at line:%d, column:%d' #%(self.error_msg, error_src, self.line, self.column)
         else:

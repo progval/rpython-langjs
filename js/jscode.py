@@ -206,7 +206,8 @@ class JsCode(object):
         return self.opcodes[pc]
 
     def run(self, ctx):
-        from js.globals import DEBUG
+        from js.object_space import object_space
+        debug = object_space.DEBUG
         from js.completion import NormalCompletion, is_completion, is_return_completion, is_empty_completion
         from js.opcodes import RETURN, BaseJump
         from js.jsobj import w_Undefined
@@ -216,7 +217,7 @@ class JsCode(object):
         if len(self.opcodes) == 0:
             return NormalCompletion()
 
-        if DEBUG:
+        if debug:
             print('start running %s' % (str(self)))
 
         pc = 0
@@ -227,8 +228,11 @@ class JsCode(object):
             opcode = self._get_opcode(pc)
             result = opcode.eval(ctx)
 
-            if DEBUG:
-                print(u'%3d %25s %s %s' % (pc, str(opcode), unicode([unicode(s) for s in ctx._stack_]), str(result)))
+            if debug:
+                d = '%s\t%s' % (str(pc), str(opcode))
+                #d = u'%s' % (unicode(str(pc)))
+                #d = u'%3d %25s %s %s' % (pc, unicode(opcode), unicode([unicode(s) for s in ctx._stack_]), unicode(result))
+                print(d)
 
             if is_return_completion(result):
                 break;

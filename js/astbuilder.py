@@ -1,6 +1,7 @@
 from pypy.rlib.rarithmetic import intmask, ovfcheck, ovfcheck_float_to_int
 from pypy.rlib.parsing.tree import RPythonVisitor, Symbol, Nonterminal
 from pypy.rlib.parsing.parsing import ParseError
+from pypy.rlib.objectmodel import enforceargs
 
 from js import operations
 from js.object_map import ROOT_MAP
@@ -207,15 +208,27 @@ class ASTBuilder(RPythonVisitor):
 
     def visit_HEXINTEGERLITERAL(self, node):
         pos = self.get_pos(node)
-        return operations.IntNumber(pos, int(node.additional_info, 16))
+        hexlit = node.additional_info
+        if hexlit.startswith('0x') or hexlit.startswith('0X'):
+            hexlit = hexlit[2:]
+        return operations.IntNumber(pos, int(hexlit, 16))
 
     def visit_OCTALLITERAL(self, node):
         pos = self.get_pos(node)
         return operations.IntNumber(pos, int(node.additional_info, 8))
 
     def string(self,node):
+        from operations import string_unquote
+        from runistr import unicode_unescape, decode_str_utf8
+
+        # TODO decode utf-8
         pos = self.get_pos(node)
-        return operations.String(pos, unicode(node.additional_info))
+        s = node.additional_info
+        strval = decode_str_utf8(s)
+        strval = string_unquote(strval)
+        strval = unicode_unescape(strval)
+
+        return operations.String(pos, strval)
     visit_DOUBLESTRING = string
     visit_SINGLESTRING = string
 
@@ -703,9 +716,12 @@ def parse_tree_to_ast(parse_tree):
     tree = builder.dispatch(parse_tree)
     return tree
 
+@enforceargs(unicode)
 def parse_to_ast(code):
     #assert isinstance(code, unicode)
     from js.jsparser import parse, ParseError
-    parse_tree = parse(str(code))
+    from runistr import encode_unicode_utf8
+    src = encode_unicode_utf8(code)
+    parse_tree = parse(src)
     ast = parse_tree_to_ast(parse_tree)
     return ast

@@ -1,6 +1,7 @@
 from pypy.rlib.rfloat import NAN, INFINITY
 from js.execution import JsRangeError, JsTypeError
 from js.jsobj import W_Number, W_NumericObject, _w
+from js.object_space import w_return
 
 def setup(global_object):
     from js.builtins import put_property, put_native_function
@@ -15,9 +16,10 @@ def setup(global_object):
     # 15.7.3
     put_property(w_Number, u'length', _w(1), writable = False, enumerable = False, configurable = False)
 
+
     # 15.7.4
     w_NumberPrototype = W_NumericObject(_w(0))
-    object_space.assign_proto(W_NumericObject, object_space.proto_object)
+    object_space.assign_proto(w_NumberPrototype, object_space.proto_object)
     object_space.proto_number = w_NumberPrototype
 
     # 15.7.4.1
@@ -63,6 +65,7 @@ w_POSITIVE_INFINITY = _w(INFINITY)
 w_NEGATIVE_INFINITY = _w(-INFINITY)
 
 # 15.7.4.2
+@w_return
 def to_string(this, args):
     if len(args) > 0:
         radix = args[0].ToInteger()
@@ -80,6 +83,7 @@ def to_string(this, args):
     return num.to_string()
 
 # 15.7.4.4
+@w_return
 def value_of(this, args):
     if isinstance(this, W_Number):
         num = this
