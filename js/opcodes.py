@@ -294,21 +294,40 @@ class BITNOT(BaseUnaryOperation):
 
 class URSH(BaseBinaryBitwiseOp):
     def eval(self, ctx):
-        op2 = ctx.stack_pop().ToUInt32()
-        op1 = ctx.stack_pop().ToUInt32()
-        # XXX check if it could fit into int
-        f = float(op1 >> (op2 & 0x1F))
-        ctx.stack_append(W_FloatNumber(f))
+        rval = ctx.stack_pop()
+        lval = ctx.stack_pop()
+
+        rnum = rval.ToUInt32()
+        lnum = lval.ToUInt32()
+
+        from pypy.rlib.rarithmetic import ovfcheck_float_to_int
+
+        shift_count = rnum & 0x1F
+        res = lnum >> shift_count
+
+        try:
+            ovfcheck_float_to_int(res)
+            w_res = _w(res)
+        except OverflowError:
+            w_res = _w(float(res))
+
+        ctx.stack_append(w_res)
 
 class RSH(BaseBinaryBitwiseOp):
     def eval(self, ctx):
-        op2 = ctx.stack_pop().ToUInt32()
-        op1 = ctx.stack_pop().ToInt32()
-        ctx.stack_append(W_IntNumber(op1 >> intmask(op2 & 0x1F)))
+        rval = ctx.stack_pop()
+        lval = ctx.stack_pop()
+
+        rnum = rval.ToUInt32()
+        lnum = lval.ToInt32()
+        shift_count = rnum & 0x1F
+        res = lnum >> shift_count
+
+        ctx.stack_append(_w(res))
 
 class LSH(BaseBinaryBitwiseOp):
     def eval(self, ctx):
-        from js.jsobj import r_int32
+        from js.jsobj import int32
         rval = ctx.stack_pop()
         lval = ctx.stack_pop()
 
@@ -316,7 +335,7 @@ class LSH(BaseBinaryBitwiseOp):
         rnum = rval.ToUInt32()
 
         shift_count = intmask(rnum & 0x1F)
-        res = r_int32(lnum << shift_count)
+        res = int32(lnum << shift_count)
 
         ctx.stack_append(_w(res))
 

@@ -164,30 +164,30 @@ def parse_int(this, args):
 # 15.1.2.3
 @w_return
 def parse_float(this, args):
+    from pypy.rlib.rsre import rsre_re as re
+    from runistr import encode_unicode_utf8
+
     string = get_arg(args, 0)
     input_string = string.to_string()
     trimmed_string = _strip(input_string)
+    str_trimmed_string = encode_unicode_utf8(trimmed_string)
+
+    number_string = str_trimmed_string
+
+    #rexp = r'(?:[+-]?((?:(?:\d+)(?:\.\d*)?)|Infinity|(?:\.[0-9]+))(?:[eE][\+\-]?[0-9]*)?)'
+    #match_data = re.match(rexp, str_trimmed_string)
+    #if match_data is not None:
+        #number_string = match_data.group()
+    #else:
+        #number_string = ''
 
     try:
-        result = float(str(trimmed_string))
-        return result
+        number = float(number_string)
+        return number
     except ValueError:
         pass
 
     return NAN
-
-    ## pypy/rlib/rsre
-    #import re
-    #match_data = re.match(r'(?:[+-]?((?:(?:\d+)(?:\.\d*)?)|Infinity|(?:\.[0-9]+))(?:[eE][\+\-]?[0-9]*)?)', trimmed_string)
-    #if match_data is not None:
-    #    try:
-    #        number_string = match_data.group()
-    #        number = float(number_string)
-    #        return number
-    #    except ValueError:
-    #        pass
-
-    #return NAN
 
 @w_return
 def alert(this, args):
@@ -213,8 +213,8 @@ def printjs(this, args):
     print(print_str)
 
 def hexing(i, length):
-    h = unicode(hex(i))
-    assert h.startswith('0x')
+    h = unicode(hex(i).upper())
+    assert h.startswith('0X')
     h = h[2:]
 
     while(len(h) < length):

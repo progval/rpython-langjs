@@ -1,12 +1,13 @@
 # encoding: utf-8
 from pypy.rpython.lltypesystem import rffi
-from pypy.rlib.rarithmetic import r_uint, intmask, ovfcheck_float_to_int
+from pypy.rlib.rarithmetic import intmask, ovfcheck_float_to_int
 from pypy.rlib.rfloat import isnan, isinf, NAN, formatd, INFINITY
 from js.execution import JsTypeError, JsRangeError, ReturnException
+from pypy.rlib.objectmodel import enforceargs
 
 def is_array_index(p):
     try:
-        return unicode(str(r_uint32(abs(int(p))))) == p
+        return unicode(str(uint32(abs(int(p))))) == p
     except ValueError:
         return False
 
@@ -16,7 +17,6 @@ def sign(i):
     if i < 0:
         return -1
     return 0
-
 
 class W_Root(object):
     _type_ = ''
@@ -47,29 +47,30 @@ class W_Root(object):
         if num == NAN:
             return 0
         if num == INFINITY or num == -INFINITY:
-            return num
+            raise Exception('dafuq?')
+            return 0
 
         return int(num)
 
     def ToInt32(self):
         num = self.ToInteger()
-        if num == NAN or num == INFINITY or num == -INFINITY:
-            return 0
+        #if num == NAN or num == INFINITY or num == -INFINITY:
+            #return 0
 
-        return r_int32(num)
+        return int32(num)
 
     def ToUInt32(self):
         num = self.ToInteger()
-        if num == NAN or num == INFINITY or num == -INFINITY:
-            return 0
-        return r_uint32(num)
+        #if num == NAN or num == INFINITY or num == -INFINITY:
+            #return 0
+        return uint32(num)
 
     def ToInt16(self):
         num = self.ToInteger()
-        if num == NAN or num == INFINITY or num == -INFINITY or num == 0:
-            return 0
+        #if num == NAN or num == INFINITY or num == -INFINITY or num == 0:
+            #return 0
 
-        return r_uint16(num)
+        return uint16(num)
 
     def is_callable(self):
         return False
@@ -1105,12 +1106,16 @@ class W_String(W_Primitive):
             return 0.0
 
         strval = str(u_strval)
+        print(strval)
 
         try:
             return float(strval)
         except ValueError:
             try:
-                return float(int(strval, 16))
+                s = strval
+                if len(s) > 2 and (s.startswith('0x') or s.startswith('0X')):
+                  s = s[2:]
+                return float(int(s, 16))
             except ValueError:
                 try:
                     return float(int(strval, 8))
@@ -1167,14 +1172,25 @@ class W_IntNumber(W_Number):
         # XXX incomplete, this doesn't follow the 9.8.1 recommendation
         return unicode(str(self.ToInteger()))
 
-def r_int32(n):
-    return intmask(rffi.cast(rffi.INT, n))
+MASK_32 = (2 ** 32) - 1
+MASK_16 = (2 ** 16) - 1
 
-def r_uint32(n):
-    return intmask(rffi.cast(rffi.UINT, n))
+@enforceargs(int)
+def int32(n):
+    if n & (1 << (32 - 1)):
+      res = n | ~MASK_32
+    else:
+      res = n & MASK_32
 
-def r_uint16(n):
-    return intmask(rffi.cast(rffi.USHORT, n))
+    return res
+
+@enforceargs(int)
+def uint32(n):
+    return n & MASK_32
+
+@enforceargs(int)
+def uint16(n):
+    return n & MASK_16
 
 class W_FloatNumber(W_Number):
     """ Number known to be a float
@@ -1219,7 +1235,7 @@ class W_FloatNumber(W_Number):
             return 0
 
         if self._floatval_ == 0 or isinf(self._floatval_):
-            return self._floatval_
+            return int(self._floatval_)
 
         return intmask(int(self._floatval_))
 
@@ -1341,7 +1357,7 @@ class W__Array(W_BasicObject):
             assert p is not None and isinstance(p, unicode)
 
             # a
-            index = r_uint32(int(p))
+            index = uint32(int(p))
             # b
             if index >= old_len and old_len_desc.writable is False:
                 return reject(throw)
