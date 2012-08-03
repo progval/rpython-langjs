@@ -1069,6 +1069,7 @@ def _isspace(s):
             return False
     return True
 
+
 class W_String(W_Primitive):
     _type_ = 'string'
 
@@ -1097,36 +1098,46 @@ class W_String(W_Primitive):
             return True
 
     def ToNumber(self):
+        from js.builtins_global import _strip
+        from runistr import encode_unicode_utf8
+        from js.constants import hex_rexp, oct_rexp, num_rexp
+
         u_strval = self._strval_
 
-        if u_strval == u'':
+        u_strval = _strip(u_strval)
+        s = encode_unicode_utf8(u_strval)
+
+        if s == '':
             return 0.0
 
-        if _isspace(u_strval):
-            return 0.0
+        match_data = num_rexp.match(s)
+        if match_data is not None:
+            num_lit = match_data.group()
+            assert num_lit is not None
+            assert isinstance(num_lit, str)
 
-        strval = str(u_strval)
-        print(strval)
-
-        try:
-            return float(strval)
-        except ValueError:
-            try:
-                s = strval
-                if len(s) > 2 and (s.startswith('0x') or s.startswith('0X')):
-                  s = s[2:]
-                return float(int(s, 16))
-            except ValueError:
-                try:
-                    return float(int(strval, 8))
-                except ValueError:
-                    return NAN
-                except OverflowError:
-                    return INFINITY
-            except OverflowError:
+            if num_lit == 'Infinity' or num_lit == '+Infinity':
                 return INFINITY
-        except OverflowError:
-            return INFINITY
+            elif num_lit == '-Infinity':
+                return -INFINITY
+
+            return float(num_lit)
+
+        match_data = hex_rexp.match(s)
+        if match_data is not None:
+            hex_lit = match_data.group(1)
+            assert hex_lit is not None
+            assert hex_lit.startswith('0x') is False
+            assert hex_lit.startswith('0X') is False
+            return int(hex_lit, 16)
+
+        match_data = oct_rexp.match(s)
+        if match_data is not None:
+            oct_lit = match_data.group(1)
+            assert oct_lit is not None
+            return int(oct_lit, 8)
+
+        return NAN
 
 class W_Number(W_Primitive):
     """ Base class for numbers, both known to be floats

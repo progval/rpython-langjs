@@ -1,29 +1,7 @@
-escapes = [
-    r'\n',
-    r'\r',
-    r'\f',
-    r'\v',
-    r'\ ',
-    r'\t',
-    r"\'",
-    r'\b',
-    r'\"',
-    r'\\',
-    r'\u'] #don't know what to do with these
+from pypy.rlib.rsre.rsre_re import compile
 
-codes = [
-    '\n',
-    '\r',
-    '\f',
-    '\v',
-    '\ ',
-    '\t',
-    "'",
-    "\b",
-    '"',
-    '\\',
-    '\u']
-
-escapedict = dict(zip(codes, escapes))
-unescapedict = dict(zip(escapes, codes))
-
+num_lit_exp = r'(?:[+-]?((?:(?:\d+)(?:\.\d*)?)|Infinity|(?:\.[0-9]+))(?:[eE][\+\-]?[0-9]*)?)'
+num_lit_rexp = compile(num_lit_exp)
+num_rexp = compile(r'^%s$' % num_lit_exp)
+hex_rexp = compile(r'^0[xX]([\dA-Fa-f]+)$')
+oct_rexp = compile(r'^0([0-7]+)$')

@@ -88,7 +88,7 @@ def _strip(unistr, left = True, right = True):
            rpos -= 1
 
     assert rpos >= 0
-    result = unistr[lpos: rpos]
+    result = unistr[lpos:rpos]
     return result
 
 def _lstrip(unistr):
@@ -161,25 +161,29 @@ def parse_int(this, args):
 
     return NAN
 
+
 # 15.1.2.3
 @w_return
 def parse_float(this, args):
-    from pypy.rlib.rsre import rsre_re as re
+    from pypy.rlib.rsre import rsre_core as re
     from runistr import encode_unicode_utf8
+    from js.constants import num_lit_rexp
 
     string = get_arg(args, 0)
     input_string = string.to_string()
     trimmed_string = _strip(input_string)
     str_trimmed_string = encode_unicode_utf8(trimmed_string)
 
-    number_string = str_trimmed_string
+    match_data = num_lit_rexp.match(str_trimmed_string)
+    if match_data is not None:
+        number_string = match_data.group()
+    else:
+        number_string = ''
 
-    #rexp = r'(?:[+-]?((?:(?:\d+)(?:\.\d*)?)|Infinity|(?:\.[0-9]+))(?:[eE][\+\-]?[0-9]*)?)'
-    #match_data = re.match(rexp, str_trimmed_string)
-    #if match_data is not None:
-        #number_string = match_data.group()
-    #else:
-        #number_string = ''
+    if number_string == 'Infinity' or number_string == '+Infinity':
+        return INFINITY
+    elif number_string == '-Infinity':
+        return -INFINITY
 
     try:
         number = float(number_string)
@@ -294,7 +298,7 @@ def unescape(this, args):
 @w_return
 def pypy_repr(this, args):
     o = args[0]
-    return unicode(o)
+    return str(o)
 
 @w_return
 def inspect(this, args):

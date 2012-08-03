@@ -8,13 +8,15 @@ from js.jsobj import W_Root, W_String, _w, w_Null, w_Undefined
 
 from pypy.rlib import jit, debug
 
-def get_printable_location(pc, jsfunction):
-    try:
-        return str(jsfunction.opcodes[pc])
-    except IndexError:
-        return "???"
+def get_printable_location(pc, debug, jscode):
+    if pc < jscode._opcode_count():
+        opcode = jscode._get_opcode(pc)
+        return '%d: %s' % (pc, str(opcode))
+    else:
+        return '%d: %s' % (pc, 'end of opcodes')
 
 #jitdriver = JitDriver(greens=['pc', 'self'], reds=['ctx'], get_printable_location = get_printable_location, virtualizables=['ctx'])
+jitdriver = JitDriver(greens=['pc', 'debug', 'self'], reds=['result', 'ctx'], get_printable_location = get_printable_location)
 
 def ast_to_bytecode(ast, symbol_map):
     bytecode = JsCode(symbol_map)
@@ -58,7 +60,6 @@ class JsCode(object):
     def params(self):
         return self._symbols.parameters
 
-    @jit.elidable
     def estimated_stack_size(self):
         # TODO: compute only once
         if self._estimated_stack_size == -1:
@@ -214,7 +215,7 @@ class JsCode(object):
 
         self.unlabel()
 
-        if len(self.opcodes) == 0:
+        if self._opcode_count() == 0:
             return NormalCompletion()
 
         if debug:
@@ -223,7 +224,8 @@ class JsCode(object):
         pc = 0
         result = None
         while True:
-            if pc >= len(self.opcodes):
+            jitdriver.jit_merge_point(pc = pc, debug = debug, self = self, ctx = ctx, result = result)
+            if pc >= self._opcode_count():
                 break
             opcode = self._get_opcode(pc)
             result = opcode.eval(ctx)
@@ -241,6 +243,8 @@ class JsCode(object):
 
             if isinstance(opcode, BaseJump):
                 new_pc = opcode.do_jump(ctx, pc)
+                if new_pc < pc:
+                    jitdriver.can_enter_jit(pc = pc, debug = debug, self = self, ctx = ctx, result = result)
                 pc = new_pc
                 continue
             else:
