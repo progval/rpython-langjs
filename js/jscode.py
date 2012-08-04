@@ -208,7 +208,7 @@ class JsCode(object):
 
     def run(self, ctx):
         from js.object_space import object_space
-        debug = object_space.DEBUG
+        debug = object_space.interpreter.config.debug
         from js.completion import NormalCompletion, is_completion, is_return_completion, is_empty_completion
         from js.opcodes import RETURN, BaseJump
         from js.jsobj import w_Undefined

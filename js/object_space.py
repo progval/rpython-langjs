@@ -12,7 +12,6 @@ class ObjectSpace(object):
         self.proto_date = w_Null
         self.proto_object = w_Null
         self.interpreter = None
-        self.DEBUG = False
 
     def get_global_environment(self):
         return self.global_context.variable_environment()

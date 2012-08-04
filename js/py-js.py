@@ -8,24 +8,21 @@ from pypy.rlib.parsing.parsing import ParseError
 def main(argv):
     opts, files = parse_args(argv)
 
-    debug = opts.get('debug', False)
-    inspect = opts.get('inspect', False)
-
     try:
-        run(files, debug, inspect)
+        run(files, opts)
     except SystemExit:
         printmessage(u"\n")
 
     return 0
 
-def run(files, debug, inspect):
+def run(files, opts):
     from js.object_space import object_space
     from js.interpreter import Interpreter
 
     interactive = len(files) == 0
+    inspect = opts.get('inspect', False)
 
-    object_space.DEBUG = debug
-    interp = Interpreter()
+    interp = Interpreter(opts)
 
     for f in files:
         try:
@@ -90,20 +87,19 @@ def readline():
             raise SystemExit
     return "".join(result)
 
+def _parse_bool_arg(arg_name, argv):
+    for i in xrange(len(argv)):
+        if argv[i] == arg_name:
+            del(argv[i])
+            return True
+    return False
+
 def parse_args(argv):
-    opts = {'inspect': False, 'debug': False}
+    opts = {}
 
-    for i in xrange(len(argv)):
-        if argv[i] == '-d':
-            opts['debug'] = True
-            del(argv[i])
-            break
-
-    for i in xrange(len(argv)):
-        if argv[i] == '-i':
-            opts['inspect'] = True
-            del(argv[i])
-            break
+    opts['debug'] = _parse_bool_arg('-d', argv) or _parse_bool_arg('--debug', argv)
+    opts['inspect'] = _parse_bool_arg('-i', argv) or _parse_bool_arg('--inspect', argv)
+    opts['no-exception-jseval'] = _parse_bool_arg('--no-exception-jseval', argv)
 
     del(argv[0])
 

@@ -7,6 +7,7 @@ def setup_builtins(global_object, overwrite_eval = False):
     put_native_function(global_object, u'load', js_load)
     put_native_function(global_object, u'debug', js_debug)
 
+    ## the tests expect eval to return "error" on an exception
     if overwrite_eval is True:
         from js.builtins import put_intimate_function
         del(global_object._properties_[u'eval'])
@@ -25,8 +26,9 @@ def js_trace(this, args):
 @w_return
 def js_debug(this, args):
     from js.object_space import object_space
-    object_space.DEBUG = not object_space.DEBUG
-    return object_space.DEBUG
+    config = object_space.interpreter.config
+    config.debug = not config.debug
+    return config.debug
 
 def overriden_eval(ctx):
     from js.builtins_global import js_eval

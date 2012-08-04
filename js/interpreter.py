@@ -1,4 +1,3 @@
-from pypy.rlib.objectmodel import we_are_translated
 from pypy.rlib.streamio import open_file_as_stream
 
 def load_file(filename):
@@ -13,20 +12,26 @@ def load_file(filename):
     f.close()
     return ast
 
+class InterpreterConfig(object):
+    def __init__(self, config = {}):
+        self.debug = config.get('debug', False)
+        self.no_exception_jseval = config.get('no-exception-jseval', False)
+
 class Interpreter(object):
     """Creates a js interpreter"""
-    def __init__(self):
+    def __init__(self, config = {}):
         from js.jsobj import W_GlobalObject
         from js.object_space import object_space
         import js.builtins
         import js.builtins_interpreter
 
+        self.config = InterpreterConfig(config)
         self.global_object = W_GlobalObject()
         object_space.global_object = self.global_object
         object_space.interpreter = self
 
         js.builtins.setup_builtins(self.global_object)
-        js.builtins_interpreter.setup_builtins(self.global_object, overwrite_eval = True)
+        js.builtins_interpreter.setup_builtins(self.global_object, self.config.no_exception_jseval)
 
         object_space.assign_proto(self.global_object)
 
@@ -44,7 +49,8 @@ class Interpreter(object):
 
     def run_src(self, src):
         from js.astbuilder import parse_to_ast
-        ast = parse_to_ast(unicode(src))
+        from runistr import decode_str_utf8
+        ast = parse_to_ast(decode_str_utf8(src))
         return self.run_ast(ast)
 
     def run(self, code, interactive=False):
