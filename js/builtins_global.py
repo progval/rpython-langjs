@@ -139,15 +139,23 @@ def parse_int(this, args):
 
     numerals = NUMERALS[:r]
 
-    z = s
-    if not _string_match_chars(s, numerals):
-        z = u''
+    z = []
+    for char in s:
+        uni_ord = unicodedb.tolower(ord(char))
+        if uni_ord > 128:
+            break
+        c = chr(uni_ord)
+        if c not in numerals:
+            break
+        z.append(c)
 
-    if z == u'':
+    if not z:
         return NAN
 
+    num_str = ''.join(z)
+
     try:
-        number = int(str(z), r)
+        number = int(num_str, r)
         try:
             from pypy.rlib.rarithmetic import ovfcheck_float_to_int
             ovfcheck_float_to_int(number)
