@@ -202,9 +202,14 @@ class JsCode(object):
                 op.where = labels[op.where]
         self.has_labels = False
 
+    @jit.elidable
     def _get_opcode(self, pc):
         assert pc >= 0
         return self.opcodes[pc]
+
+    @jit.elidable
+    def _opcode_count(self):
+        return len(self.opcodes)
 
     def run(self, ctx):
         from js.object_space import object_space
