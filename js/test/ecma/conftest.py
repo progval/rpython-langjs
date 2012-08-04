@@ -1,13 +1,11 @@
 import pytest
 import py
 
+from js.interpreter import Interpreter
 from _pytest.runner import Failed
-from js.interpreter import Interpreter, load_file
 from js.jsobj import _w
-from js import interpreter
 from js.execution import JsException
 from pypy.rlib.parsing.parsing import ParseError
-
 
 EXCLUSIONLIST = ['shell.js', 'browser.js']
 SKIP = [\
@@ -151,8 +149,57 @@ def pytest_addoption(parser):
            action="store_true", dest="ecma", default=False,
            help="run js interpreter ecma tests"
     )
+    parser.addoption('--ecma-compile',
+           action="store_true", dest="ecma-compile", default=False,
+           help="run js interpreter ecma tests"
+    )
 
 rootdir = py.path.local(__file__).dirpath()
+shellpath = rootdir/'shell.js'
+_compiled_f = None
+
+class InterpreterResults(object):
+    compiled_interpreter = None
+
+    def __init__(self, do_compile):
+        self.do_compile = do_compile
+
+    def get_interp(self):
+        def f(testfile):
+            interp = Interpreter({'no-exception-jseval':True})
+
+            interp.run_file(str(shellpath))
+            interp.run_file(testfile)
+
+            global_object = interp.global_object
+            testcases = global_object.get(u'testcases')
+
+            testcount = testcases.get(u'length').ToInt32()
+
+            run_test_func = global_object.get(u'run_test')
+
+            test_results = []
+
+            for number in xrange(testcount):
+                w_test_number = _w(number)
+                result_obj = run_test_func.Call(args = [w_test_number])
+                result_passed = result_obj.get(u'passed').to_boolean()
+                result_reason = str(result_obj.get(u'reason').to_string())
+                test_results.append({'number': number, 'passed':result_passed, 'reason':result_reason})
+
+            return test_results
+
+        if self.do_compile:
+            if self.compiled_interpreter is None:
+                from pypy.translator.c.test.test_genc import compile
+                self.compiled_interpreter = compile(f, [str])
+            return self.compiled_interpreter
+        else:
+            return f
+
+    def get_results(self, test_file):
+        interp = self.get_interp()
+        return interp(test_file)
 
 class JSTestFile(pytest.File):
     def __init__(self, fspath, parent=None, config=None, session=None):
@@ -166,53 +213,21 @@ class JSTestFile(pytest.File):
         if self.name in SKIP:
             pytest.skip()
 
-        interp = Interpreter()
+        do_compile = self.session.config.getvalue("ecma-compile")
+        interp = InterpreterResults(do_compile)
 
-        # the tests expect eval to return "error" on an exception
-        from js.builtins import put_intimate_function
-        def overriden_eval(ctx):
-            from js.builtins_global import js_eval
-            from js.execution import JsException
-            from js.completion import NormalCompletion
-            try:
-                return js_eval(ctx)
-            except JsException:
-                return NormalCompletion(value = _w("error"))
-
-        global_object = interp.global_object
-        del(global_object._properties_[u'eval'])
-        put_intimate_function(global_object, u'eval', overriden_eval, configurable = False, params = [u'x'])
-
-        shellpath = rootdir/'shell.js'
-        shellfile = load_file(str(shellpath))
-        interp.run_ast(shellfile)
-
-        #actually run the file :)
-        t = load_file(str(self.fspath))
         try:
-            interp.run_ast(t)
+            results = interp.get_results(str(self.fspath))
         except ParseError, e:
             raise Failed(msg=e.nice_error_message(filename=str(self.fspath))) #, excinfo=None)
-        #except JsException, e:
-            #import pdb; pdb.set_trace()
-            #raise Failed(msg="Javascript Error: "+str(e)) #, excinfo=py.code.ExceptionInfo())
+        except JsException, e:
+            import pdb; pdb.set_trace()
+            raise Failed(msg="Javascript Error: "+str(e)) #, excinfo=py.code.ExceptionInfo())
 
-        testcases = global_object.get(u'testcases')
-        #tc = global_object.get('tc')
-        #self.tc = tc
-        testcount = testcases.get(u'length').ToInt32()
-        self.testcases = testcases
-
-        run_test_func = global_object.get(u'run_test')
-        def get_result(test_num):
-            w_test_number = _w(test_num)
-            result_obj = run_test_func.Call(args = [w_test_number])
-            result_passed = result_obj.get(u'passed').to_boolean()
-            result_reason = result_obj.get(u'reason').to_string();
-            return (result_passed, result_reason) # result.to_string()
-
-        for number in xrange(testcount):
-            passed, reason = get_result(number)
+        for test_result in results:
+            number = test_result.get('number')
+            passed = test_result.get('passed')
+            reason = test_result.get('reason')
             yield JSTestItem(str(number), passed, reason, parent=self)
 
 class JSTestItem(pytest.Item):
