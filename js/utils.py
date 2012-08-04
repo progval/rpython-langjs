@@ -5,41 +5,40 @@ from pypy.rlib import jit, debug
 class StackMixin(object):
     _mixin_ = True
     def __init__(self):
-        self._init_stack()
+        self._init_stack_()
 
-    def _init_stack(self, size = 1):
-        self.stack = [None] * size
-        self.stack_pointer = 0
+    def _init_stack_(self, size = 1, resize = True):
+        self._stack_ = [None] * size
+        self._stack_pointer_ = 0
+        self._stack_resize_ = resize
 
-    def pop(self):
-        e = self.top()
-        i = self.stack_pointer - 1
+    def _stack_pop(self):
+        e = self._stack_top()
+        i = self._stack_pointer_ - 1
         assert i >= 0
-        self.stack[i] = None
-        self.stack_pointer = i
+        self._stack_[i] = None
+        self._stack_pointer_ = i
         return e
 
-    def top(self):
-        i = self.stack_pointer - 1
+    def _stack_top(self):
+        i = self._stack_pointer_ - 1
         if i < 0:
             raise IndexError
-        return self.stack[i]
+        return self._stack_[i]
 
-    def append(self, element):
-        from js.jsobj import W_Root
-        assert isinstance(element, W_Root)
-        i = self.stack_pointer
+    def _stack_append(self, element):
+        i = self._stack_pointer_
         assert i >= 0
-        self.stack[i] = element
-        self.stack_pointer = i + 1
+        if len(self._stack_) <= i and self._stack_resize_:
+            self._stack_ += [None]
 
-    @jit.unroll_safe
-    def pop_n(self, n):
+        self._stack_[i] = element
+        self._stack_pointer_ = i + 1
+
+    #@jit.unroll_safe
+    def _stack_pop_n(self, n):
         l = [None] * n
         for i in range(n-1, -1, -1):
-            l[i] = self.pop()
-        debug.make_sure_not_resized(l)
+            l[i] = self._stack_pop()
+        #debug.make_sure_not_resized(l)
         return l
-
-    def check_stack(self):
-        assert self.stack_pointer == 1

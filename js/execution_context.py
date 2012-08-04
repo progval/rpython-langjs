@@ -1,20 +1,21 @@
 from js.jsobj import w_Undefined
+from js.utils import StackMixin
 
-class ExecutionContext(object):
+class ExecutionContext(StackMixin):
     def __init__(self):
-        self._stack_ = []
         self._lexical_environment_ = None
         self._variable_environment_ = None
         self._this_binding_ = None
+        self._init_stack_()
 
     def stack_append(self, value):
-        self._stack_.append(value)
+        self._stack_append(value)
 
     def stack_pop(self):
-        return self._stack_.pop()
+        return self._stack_pop()
 
     def stack_top(self):
-        return self._stack_[-1]
+        return self._stack_top()
 
     def stack_pop_n(self, n):
         if n < 1:
@@ -24,7 +25,7 @@ class ExecutionContext(object):
         i = n
         while i > 0:
             i -= 1
-            e = self.stack_pop()
+            e = self._stack_pop()
             r = [e] + r
 
         return r
