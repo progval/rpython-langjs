@@ -114,6 +114,7 @@ class LOAD_NULL(Opcode):
     def eval(self, ctx):
         ctx.stack_append(w_Null)
 
+
 class LOAD_VARIABLE(Opcode):
     #_immutable_fields_ = ['identifier']
     def __init__(self, index, identifier):
@@ -129,7 +130,8 @@ class LOAD_VARIABLE(Opcode):
         ctx.stack_append(value)
 
     def __str__(self):
-        return 'LOAD_VARIABLE "%s"' %(self.identifier)
+        return 'LOAD_VARIABLE "%s"' % (self.identifier)
+
 
 class LOAD_THIS(Opcode):
     # 11.1.1
@@ -407,16 +409,20 @@ class NE(BaseBinaryComparison):
     def decision(self, ctx, op1, op2):
         return newbool(not AbstractEC(ctx, op1, op2))
 
+
 class IS(BaseBinaryComparison):
     def decision(self, ctx, op1, op2):
         return newbool(StrictEC(op1, op2))
+
 
 class ISNOT(BaseBinaryComparison):
     def decision(self, ctx, op1, op2):
         return newbool(not StrictEC(op1, op2))
 
+
 class STORE_MEMBER(Opcode):
     _stack_change = 0
+
     def eval(self, ctx):
         left = ctx.stack_pop()
         member = ctx.stack_pop()
@@ -430,9 +436,11 @@ class STORE_MEMBER(Opcode):
 
         ctx.stack_append(value)
 
+
 class STORE(Opcode):
     #_immutable_fields_ = ['name']
     _stack_change = 0
+
     def __init__(self, index, identifier):
         assert index is not None
         self.index = index
@@ -444,22 +452,26 @@ class STORE(Opcode):
         ref.put_value(value)
 
     def __str__(self):
-        return 'STORE "%s"' %(self.identifier)
+        return 'STORE "%s"' % (self.identifier)
 
 
 class LABEL(Opcode):
     _stack_change = 0
+
     def __init__(self, num):
         self.num = num
 
     def __str__(self):
-        return 'LABEL %d' %( self.num)
+        return 'LABEL %d' % (self.num)
+
     #def __repr__(self):
         #return 'LABEL %d' % (self.num,)
+
 
 class BaseJump(Opcode):
     _immutable_fields_ = ['where']
     _stack_change = 0
+
     def __init__(self, where):
         self.where = where
         self.decision = False

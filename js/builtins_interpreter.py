@@ -19,9 +19,11 @@ def js_load(this, args):
     filename = args[0].to_string()
     object_space.interpreter.run_file(str(filename))
 
+
 @w_return
 def js_trace(this, args):
     import pdb; pdb.set_trace()
+
 
 @w_return
 def js_debug(this, args):
@@ -29,6 +31,7 @@ def js_debug(this, args):
     config = object_space.interpreter.config
     config.debug = not config.debug
     return config.debug
+
 
 def overriden_eval(ctx):
     from js.builtins_global import js_eval

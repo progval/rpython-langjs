@@ -2,7 +2,8 @@
 from pypy.rpython.lltypesystem import rffi
 from pypy.rlib.rarithmetic import intmask, ovfcheck_float_to_int
 from pypy.rlib.rfloat import isnan, isinf, NAN, formatd, INFINITY
-from js.execution import JsTypeError, JsRangeError, ReturnException
+from js.execution import JsTypeError, JsRangeError
+
 from pypy.rlib.objectmodel import enforceargs
 
 from js.property_descriptor import PropertyDescriptor, DataPropertyDescriptor, AccessorPropertyDescriptor, is_data_descriptor, is_generic_descriptor, is_accessor_descriptor
@@ -36,7 +37,7 @@ class W_Root(object):
     def to_boolean(self):
         return False
 
-    def ToPrimitive(self, hint = None):
+    def ToPrimitive(self, hint=None):
         return self
 
     def ToObject(self):
@@ -81,11 +82,14 @@ class W_Root(object):
     def check_object_coercible(self):
         pass
 
+
 class W_Primitive(W_Root):
     pass
 
+
 class W_Undefined(W_Primitive):
     _type_ = 'undefined'
+
     def ToInteger(self):
         return 0
 
@@ -100,6 +104,7 @@ class W_Undefined(W_Primitive):
 
     def ToObject(self):
         raise JsTypeError(u'W_Undefined.ToObject')
+
 
 class W_Null(W_Primitive):
     _type_ = 'null'
@@ -125,21 +130,23 @@ class PropertyIdenfidier(object):
         self.name = name
         self.descriptor = descriptor
 
+
 class W_ProtoGetter(W_Root):
     def is_callable(self):
         return True
 
-    def Call(self, args = [], this = None, calling_context = None):
+    def Call(self, args=[], this=None, calling_context=None):
         if not isinstance(this, W_BasicObject):
             raise JsTypeError(u'')
 
         return this._prototype_
 
+
 class W_ProtoSetter(W_Root):
     def is_callable(self):
         return True
 
-    def Call(self, args = [], this = None, calling_context = None):
+    def Call(self, args=[], this=None, calling_context=None):
         if not isinstance(this, W_BasicObject):
             raise JsTypeError(u'')
 
@@ -155,6 +162,7 @@ def reject(throw, msg=u''):
         raise JsTypeError(msg)
     return False
 
+
 class W_BasicObject(W_Root):
     _type_ = 'object'
     _class_ = 'Object'
@@ -167,7 +175,6 @@ class W_BasicObject(W_Root):
 
     def __str__(self):
         return "%s: %s" % (object.__repr__(self), self.klass())
-
 
     ##########
     # 8.6.2 Object Internal Properties and Methods
@@ -182,7 +189,6 @@ class W_BasicObject(W_Root):
 
     # 8.12.3
     def get(self, p):
-        #assert isinstance(p, unicode)
         assert p is not None and isinstance(p, unicode)
         desc = self.get_property(p)
 
@@ -196,12 +202,11 @@ class W_BasicObject(W_Root):
         if getter is None:
             return w_Undefined
 
-        res = getter.Call(this = self)
+        res = getter.Call(this=self)
         return res
 
     # 8.12.1
     def get_own_property(self, p):
-        #assert isinstance(p, unicode)
         assert p is not None and isinstance(p, unicode)
 
         prop = self._properties_.get(p, None)
@@ -212,7 +217,6 @@ class W_BasicObject(W_Root):
 
     # 8.12.2
     def get_property(self, p):
-        #assert isinstance(p, unicode)
         assert p is not None and isinstance(p, unicode)
 
         prop = self.get_own_property(p)
@@ -226,7 +230,7 @@ class W_BasicObject(W_Root):
         return proto.get_property(p)
 
     # 8.12.5
-    def put(self, p, v, throw = False):
+    def put(self, p, v, throw=False):
         #assert isinstance(p, unicode)
         assert p is not None and isinstance(p, unicode)
 
@@ -238,7 +242,7 @@ class W_BasicObject(W_Root):
 
         own_desc = self.get_own_property(p)
         if is_data_descriptor(own_desc) is True:
-            value_desc = PropertyDescriptor(value = v)
+            value_desc = PropertyDescriptor(value=v)
             self.define_own_property(p, value_desc, throw)
             return
 
@@ -246,7 +250,7 @@ class W_BasicObject(W_Root):
         if is_accessor_descriptor(desc) is True:
             setter = desc.setter
             assert setter is not None
-            setter.Call(this = self, args = [v])
+            setter.Call(this=self, args=[v])
         else:
             new_desc = DataPropertyDescriptor(v, True, True, True)
             self.define_own_property(p, new_desc, throw)
@@ -337,9 +341,10 @@ class W_BasicObject(W_Root):
                 return val
 
     # 8.12.9
-    def define_own_property(self, p, desc, throw = False):
+    def define_own_property(self, p, desc, throw=False):
         current = self.get_own_property(p)
         extensible = self.extensible()
+
         # 3.
         if current is None and extensible is False:
             return reject(throw, p)
@@ -438,7 +443,7 @@ class W_BasicObject(W_Root):
     def to_string(self):
         return self.ToPrimitive('String').to_string()
 
-    def ToPrimitive(self, hint = None):
+    def ToPrimitive(self, hint=None):
         return self.default_value(hint)
 
     def ToObject(self):
@@ -700,8 +705,8 @@ class W_BooleanConstructor(W_BasicFunction):
 # 15.9.2
 class W_DateConstructor(W_BasicFunction):
     def Call(self, args = [], this = None, calling_context = None):
-        from js.builtins import get_arg
         import time
+        #from js.builtins import get_arg
         # TODO
         #import datetime
 
@@ -1151,18 +1156,20 @@ class W_Iterator(W_Root):
         return u'<Iterator>'
 
 w_0 = W_IntNumber(0)
+
+
 class W__Array(W_BasicObject):
     _class_ = 'Array'
 
-    def __init__(self, length = w_0):
+    def __init__(self, length=w_0):
         W_BasicObject.__init__(self)
         assert isinstance(length, W_Root)
 
-        desc = PropertyDescriptor(value = length, writable = True, enumerable = False, configurable = False)
+        desc = PropertyDescriptor(value=length, writable=True, enumerable=False, configurable=False)
         W_BasicObject.define_own_property(self, u'length', desc)
 
     # 15.4.5.1
-    def define_own_property(self, p, desc, throw = False):
+    def define_own_property(self, p, desc, throw=False):
         old_len_desc = self.get_own_property(u'length')
         assert old_len_desc is not None
         old_len = old_len_desc.value.ToUInt32()
