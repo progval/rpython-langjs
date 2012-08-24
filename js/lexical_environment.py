@@ -37,6 +37,8 @@ class ObjectEnvironment(LexicalEnvironment):
 
 
 class Reference(object):
+    _immutable_fields_ = ['base_env', 'base_value', 'referenced', 'strict']
+
     def __init__(self, base_value=None, base_env=None, referenced=None, strict=False):
         self.base_env = base_env
         self.base_value = base_value
