@@ -33,6 +33,9 @@ class ExecutionContext(StackMixin):
     def this_binding(self):
         return self._this_binding_
 
+    def implicit_this_binding(self):
+        return self.lexical_environment().environment_record.implicit_this_value()
+
     def variable_environment(self):
         return self._variable_environment_
 
@@ -199,6 +202,9 @@ class SubExecutionContext(ExecutionContext):
     def stack_pop_n(self, n):
         return self._parent_context_.stack_pop_n(n)
 
+    def this_binding(self):
+        return self._parent_context_.this_binding()
+
 class WithExecutionContext(SubExecutionContext):
     def __init__(self, code, expr_obj, parent_context):
         SubExecutionContext.__init__(self, parent_context)
@@ -213,7 +219,6 @@ class WithExecutionContext(SubExecutionContext):
 
         self._lexical_environment_ = local_env
         self._variable_environment_ = local_env
-        self._this_binding_ = local_env.environment_record.implicit_this_value()
 
         self.declaration_binding_initialization()
 
@@ -233,6 +238,5 @@ class CatchExecutionContext(SubExecutionContext):
 
         self._lexical_environment_ = local_env
         self._variable_environment_ = local_env
-        self._this_binding_ = parent_context.this_binding()
 
         self.declaration_binding_initialization()

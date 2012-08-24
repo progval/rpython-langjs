@@ -611,7 +611,7 @@ class CALL(Opcode):
     def eval(self, ctx):
         r1 = ctx.stack_pop()
         args = ctx.stack_pop()
-        this = ctx.this_binding()
+        this = ctx.implicit_this_binding()
         res = common_call(ctx, r1, args, this, r1)
         ctx.stack_append(res)
 
