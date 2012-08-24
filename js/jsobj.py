@@ -5,16 +5,21 @@ from pypy.rlib.rfloat import isnan, isinf, NAN, formatd, INFINITY
 from js.execution import JsTypeError, JsRangeError
 
 from pypy.rlib.objectmodel import enforceargs
+from pypy.rlib import jit
 
 from js.property_descriptor import PropertyDescriptor, DataPropertyDescriptor, AccessorPropertyDescriptor, is_data_descriptor, is_generic_descriptor, is_accessor_descriptor
 from js.property import DataProperty, AccessorProperty
 
+
+@jit.elidable
 def is_array_index(p):
     try:
-        return unicode(str(uint32(abs(int(p))))) == p
+        return unicode(str(uint32(abs(int(str(p)))))) == p
     except ValueError:
         return False
 
+
+@jit.elidable
 def sign(i):
     if i > 0:
         return 1
@@ -22,7 +27,9 @@ def sign(i):
         return -1
     return 0
 
+
 class W_Root(object):
+    _immutable_fields_ = ['_type_']
     _type_ = ''
 
     def __str__(self):
@@ -156,7 +163,10 @@ class W_ProtoSetter(W_Root):
 w_proto_getter = W_ProtoGetter()
 w_proto_setter = W_ProtoSetter()
 proto_desc = AccessorPropertyDescriptor(w_proto_getter, w_proto_setter, False, False)
+jit.promote(proto_desc)
 
+
+@jit.elidable
 def reject(throw, msg=u''):
     if throw:
         raise JsTypeError(msg)
@@ -167,6 +177,7 @@ class W_BasicObject(W_Root):
     _type_ = 'object'
     _class_ = 'Object'
     _extensible_ = True
+    _immutable_fields_ = ['_type_', '_class_', '_extensible_']
 
     def __init__(self):
         self._properties_ = {}
@@ -858,12 +869,15 @@ class W_Arguments(W__Object):
             # 10.6 14 thrower
             pass
 
-def make_arg_getter(name, env):
-    code = u'return %s;' % (name)
 
-def make_arg_setter(name, env):
-    param = u'%s_arg' % (name)
-    code = u'%s = %s;' % (name, param)
+def make_arg_getter(name, env): pass
+    #code = u'return %s;' % (name)
+
+
+def make_arg_setter(name, env): pass
+    #param = u'%s_arg' % (name)
+    #code = u'%s = %s;' % (name, param)
+
 
 # 15.4.2
 class W_ArrayConstructor(W_BasicFunction):
@@ -906,6 +920,7 @@ class W_Math(W__Object):
 
 class W_Boolean(W_Primitive):
     _type_ = 'boolean'
+    _immutable_fields_ = ['_boolval_']
 
     def __init__(self, boolval):
         self._boolval_ = bool(boolval)
@@ -940,6 +955,7 @@ def _isspace(s):
 
 class W_String(W_Primitive):
     _type_ = 'string'
+    _immutable_fields_ = ['_strval_']
 
     def __init__(self, strval):
         assert strval is not None and isinstance(strval, unicode)
@@ -1031,7 +1047,10 @@ class W_Number(W_Primitive):
         else:
             return False
 
+
 class W_IntNumber(W_Number):
+    _immutable_fields_ = ['_intval_']
+
     """ Number known to be an integer
     """
     def __init__(self, intval):
@@ -1055,6 +1074,7 @@ MASK_32 = (2 ** 32) - 1
 MASK_16 = (2 ** 16) - 1
 
 @enforceargs(int)
+@jit.elidable
 def int32(n):
     if n & (1 << (32 - 1)):
       res = n | ~MASK_32
@@ -1064,10 +1084,12 @@ def int32(n):
     return res
 
 @enforceargs(int)
+@jit.elidable
 def uint32(n):
     return n & MASK_32
 
 @enforceargs(int)
+@jit.elidable
 def uint16(n):
     return n & MASK_16
 

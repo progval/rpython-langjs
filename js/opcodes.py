@@ -116,7 +116,8 @@ class LOAD_NULL(Opcode):
 
 
 class LOAD_VARIABLE(Opcode):
-    #_immutable_fields_ = ['identifier']
+    _immutable_fields_ = ['identifier', 'index']
+
     def __init__(self, index, identifier):
         assert index is not None
         self.index = index
@@ -438,7 +439,7 @@ class STORE_MEMBER(Opcode):
 
 
 class STORE(Opcode):
-    #_immutable_fields_ = ['name']
+    _immutable_fields_ = ['name']
     _stack_change = 0
 
     def __init__(self, index, identifier):
