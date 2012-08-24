@@ -5,6 +5,9 @@ from pypy.rlib.rfloat import isnan, isinf, NAN, formatd, INFINITY
 from js.execution import JsTypeError, JsRangeError, ReturnException
 from pypy.rlib.objectmodel import enforceargs
 
+from js.property_descriptor import PropertyDescriptor, DataPropertyDescriptor, AccessorPropertyDescriptor, is_data_descriptor, is_generic_descriptor, is_accessor_descriptor
+from js.property import DataProperty, AccessorProperty
+
 def is_array_index(p):
     try:
         return unicode(str(uint32(abs(int(p))))) == p
@@ -116,136 +119,6 @@ class W_Null(W_Primitive):
 w_Undefined = W_Undefined()
 w_Null = W_Null()
 
-NOT_SET = -1
-
-# 8.6.1
-class Property(object):
-    def __init__(self, value = None, writable = NOT_SET, getter = None, setter = None, enumerable = NOT_SET, configurable = NOT_SET):
-        self.value = value
-        self.writable = writable
-        self.getter = getter
-        self.setter = setter
-        self.enumerable = enumerable
-        self.configurable = configurable
-
-    def is_data_property(self):
-        return False
-
-    def is_accessor_property(self):
-        return False
-
-    def update_with(self, other):
-        if other.value is not None:
-            self.value = other.value
-        if other.writable is not NOT_SET:
-            self.writable = other.writable
-        if other.getter is not None:
-            self.getter = other.getter
-        if other.setter is not None:
-            self.setter = other.setter
-        if other.writable is not NOT_SET:
-            self.writable = other.writable
-        if other.configurable is not NOT_SET:
-            self.configurable = other.configurable
-
-class DataProperty(Property):
-    def __init__(self, value = None, writable = NOT_SET, enumerable = NOT_SET, configurable = NOT_SET):
-        Property.__init__(self, value = value, writable = writable, enumerable = enumerable, configurable = configurable)
-
-    def is_data_property(self):
-        return True
-
-class AccessorProperty(Property):
-    def __init__(self, getter = None, setter = None, enumerable = NOT_SET, configurable = NOT_SET):
-        Property.__init__(self, getter = getter, setter = setter, enumerable = enumerable, configurable = configurable)
-
-    def is_accessor_property(self):
-        return True
-
-def is_data_descriptor(desc):
-    if desc is None:
-        return False
-    return desc.is_data_descriptor()
-
-def is_accessor_descriptor(desc):
-    if desc is None:
-        return False
-    return desc.is_accessor_descriptor()
-
-def is_generic_descriptor(desc):
-    if desc is None:
-        return False
-    return desc.is_generic_descriptor()
-
-# 8.10
-class PropertyDescriptor(object):
-
-    def __init__(self, value = None, writable = NOT_SET, getter = None, setter = None, configurable = NOT_SET, enumerable = NOT_SET):
-        self.value = value
-        self.writable = writable
-        self.getter = getter
-        self.setter = setter
-        self.configurable = configurable
-        self.enumerable = enumerable
-
-    def is_accessor_descriptor(self):
-        return self.getter is not None and self.setter is not None
-
-    def is_data_descriptor(self):
-        return self.value is not None and self.writable is not NOT_SET
-
-    def is_generic_descriptor(self):
-        return self.is_accessor_descriptor() is False and self.is_data_descriptor() is False
-
-    def is_empty(self):
-        return self.getter is None\
-            and self.setter is None\
-            and self.value is None\
-            and self.writable is NOT_SET\
-            and self.enumerable is NOT_SET\
-            and self.configurable is NOT_SET
-
-    def __eq__(self, other):
-        assert isinstance(other, PropertyDescriptor)
-
-        if self.setter is not None and self.setter != other.setter:
-            return False
-
-        if self.getter is not None and self.getter != other.getter:
-            return False
-
-        if self.writable is not NOT_SET and self.writable != other.writable:
-            return False
-
-        if self.value is not None and self.value != other.value:
-            return False
-
-        if self.configurable is not NOT_SET and self.configurable != other.configurable:
-            return False
-
-        if self.enumerable is not NOT_SET and self.enumerable != other.enumerable:
-            return False
-
-    def update_with(self, other):
-        assert isinstance(other, PropertyDescriptor)
-
-        if other.enumerable is not NOT_SET:
-            self.enumerable = other.enumerable
-
-        if other.configurable is not NOT_SET:
-            self.configurable = other.configurable
-
-        if other.value is not None:
-            self.value = other.value
-
-        if other.writable is not NOT_SET:
-            self.writable = other.writable
-
-        if other.getter is not None:
-            self.getter = other.getter
-
-        if other.setter is not None:
-            self.setter = other.setter
 
 class PropertyIdenfidier(object):
     def __init__(self, name, descriptor):
@@ -275,7 +148,7 @@ class W_ProtoSetter(W_Root):
 
 w_proto_getter = W_ProtoGetter()
 w_proto_setter = W_ProtoSetter()
-proto_desc = PropertyDescriptor(getter = w_proto_getter, setter = w_proto_setter, enumerable = False, configurable = False)
+proto_desc = AccessorPropertyDescriptor(w_proto_getter, w_proto_setter, False, False)
 
 def reject(throw):
     if throw:
@@ -290,8 +163,7 @@ class W_BasicObject(W_Root):
     def __init__(self):
         self._properties_ = {}
         self._prototype_ = w_Null
-        desc = proto_desc
-        W_BasicObject.define_own_property(self, u'__proto__', desc)
+        W_BasicObject.define_own_property(self, u'__proto__', proto_desc)
 
     def __str__(self):
         return "%s: %s" % (object.__repr__(self), self.klass())
@@ -331,22 +203,12 @@ class W_BasicObject(W_Root):
     def get_own_property(self, p):
         #assert isinstance(p, unicode)
         assert p is not None and isinstance(p, unicode)
-        if p not in self._properties_:
-            return None
 
-        d = PropertyDescriptor()
-        x = self._properties_[p]
+        prop = self._properties_.get(p, None)
+        if prop is None:
+            return
 
-        if x.is_data_property():
-            d.value = x.value
-            d.writable = x.writable
-        elif x.is_accessor_property:
-            d.setter = x.setter
-            d.getter = x.getter
-
-        d.enumerable = x.enumerable
-        d.configurable = x.configurable
-        return d
+        return prop.to_property_descriptor()
 
     # 8.12.2
     def get_property(self, p):
@@ -386,7 +248,7 @@ class W_BasicObject(W_Root):
             assert setter is not None
             setter.Call(this = self, args = [v])
         else:
-            new_desc = PropertyDescriptor(value = v, writable = True, configurable = True, enumerable = True)
+            new_desc = DataPropertyDescriptor(v, True, True, True)
             self.define_own_property(p, new_desc, throw)
 
     # 8.12.4
@@ -485,21 +347,21 @@ class W_BasicObject(W_Root):
         if current is None and extensible is True:
             # 4.a
             if is_generic_descriptor(desc) or is_data_descriptor(desc):
-                new_prop = DataProperty(\
-                    value = desc.value,\
-                    writable = desc.writable,\
-                    enumerable = desc.enumerable,\
-                    configurable = desc.configurable\
+                new_prop = DataProperty(
+                    desc.value,
+                    desc.writable,
+                    desc.enumerable,
+                    desc.configurable
                 )
                 self._properties_[p] = new_prop
             # 4.b
             else:
                 assert is_accessor_descriptor(desc) is True
-                new_prop = AccessorProperty(\
-                    getter = desc.getter,\
-                    setter = desc.setter,\
-                    enumerable = desc.enumerable,
-                    configurable = desc.configurable\
+                new_prop = AccessorProperty(
+                    desc.getter,
+                    desc.setter,
+                    desc.enumerable,
+                    desc.configurable
                 )
                 self._properties_[p] = new_prop
             # 4.c
@@ -517,8 +379,8 @@ class W_BasicObject(W_Root):
         if current.configurable is False:
             if desc.configurable is True:
                 return reject(throw)
-            if desc.enumerable is not NOT_SET and current.enumerable != desc.enumerable:
                 return reject(throw)
+            if desc.has_set_enumerable() and (not(current.enumerable) == desc.enumerable):
 
         # 8.
         if is_generic_descriptor(desc):
@@ -543,8 +405,8 @@ class W_BasicObject(W_Root):
                     return reject(throw)
                 # 10.a.ii
                 if current.writable is False:
-                    if desc.value is not None and desc.value != current.value:
                         return reject(throw)
+                    if desc.has_set_value() and desc.value != current.value:
             # 10.b
             else:
                 pass
@@ -553,14 +415,14 @@ class W_BasicObject(W_Root):
             # 11.a
             if current.configurable is False:
                 # 11.a.i
-                if desc.setter is not None and desc.setter != current.setter:
                     return reject(throw)
+                if desc.has_set_setter() and desc.setter != current.setter:
                 # 11.a.ii
-                if desc.getter is not None and desc.getter != current.getter:
                     return reject(throw)
+                if desc.has_set_getter() and desc.getter != current.getter:
         # 12
         prop = self._properties_[p]
-        prop.update_with(desc)
+        self._properties_[p] = prop.update_with_descriptor(desc)
 
         # 13
         return True
@@ -1308,13 +1170,7 @@ class W__Array(W_BasicObject):
         if p == u'length':
             if desc.value is None:
                 return W_BasicObject.define_own_property(self, u'length', desc, throw)
-            new_len_desc = PropertyDescriptor()
-            new_len_desc.value = desc.value
-            new_len_desc.writable = desc.writable
-            new_len_desc.getter = desc.getter
-            new_len_desc.setter = desc.setter
-            new_len_desc.configurable = desc.configurable
-            new_len_desc.enumerable = desc.enumerable
+            new_len_desc = desc.copy()
             new_len = desc.value.ToUInt32()
 
             if new_len != desc.value.ToNumber():
