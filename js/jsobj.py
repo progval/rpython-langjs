@@ -150,9 +150,9 @@ w_proto_getter = W_ProtoGetter()
 w_proto_setter = W_ProtoSetter()
 proto_desc = AccessorPropertyDescriptor(w_proto_getter, w_proto_setter, False, False)
 
-def reject(throw):
+def reject(throw, msg=u''):
     if throw:
-        raise JsTypeError(u'')
+        raise JsTypeError(msg)
     return False
 
 class W_BasicObject(W_Root):
@@ -232,7 +232,7 @@ class W_BasicObject(W_Root):
 
         if self.can_put(p) is False:
             if throw is True:
-                raise JsTypeError(u'')
+                raise JsTypeError(u"can't put %s" % (p, ))
             else:
                 return
 
@@ -342,7 +342,8 @@ class W_BasicObject(W_Root):
         extensible = self.extensible()
         # 3.
         if current is None and extensible is False:
-            return reject(throw)
+            return reject(throw, p)
+
         # 4.
         if current is None and extensible is True:
             # 4.a
@@ -378,9 +379,9 @@ class W_BasicObject(W_Root):
         # 7.
         if current.configurable is False:
             if desc.configurable is True:
-                return reject(throw)
-                return reject(throw)
+                return reject(throw, p)
             if desc.has_set_enumerable() and (not(current.enumerable) == desc.enumerable):
+                return reject(throw, p)
 
         # 8.
         if is_generic_descriptor(desc):
@@ -389,7 +390,7 @@ class W_BasicObject(W_Root):
         elif is_data_descriptor(current) != is_data_descriptor(desc):
             # 9.a
             if current.configurable is False:
-                return reject(throw)
+                return reject(throw, p)
             # 9.b
             if is_data_descriptor(current):
                 raise NotImplementedError(self.__class__)
@@ -402,11 +403,11 @@ class W_BasicObject(W_Root):
             if current.configurable is False:
                 # 10.a.i
                 if current.writable is False and desc.writable is True:
-                    return reject(throw)
+                    return reject(throw, p)
                 # 10.a.ii
                 if current.writable is False:
-                        return reject(throw)
                     if desc.has_set_value() and desc.value != current.value:
+                        return reject(throw, p)
             # 10.b
             else:
                 pass
@@ -415,11 +416,11 @@ class W_BasicObject(W_Root):
             # 11.a
             if current.configurable is False:
                 # 11.a.i
-                    return reject(throw)
                 if desc.has_set_setter() and desc.setter != current.setter:
+                    return reject(throw, p)
                 # 11.a.ii
-                    return reject(throw)
                 if desc.has_set_getter() and desc.getter != current.getter:
+                    return reject(throw, p)
         # 12
         prop = self._properties_[p]
         self._properties_[p] = prop.update_with_descriptor(desc)
@@ -1183,7 +1184,7 @@ class W__Array(W_BasicObject):
                 return W_BasicObject.define_own_property(self, u'length', new_len_desc, throw)
             # g
             if old_len_desc.writable is False:
-                return reject(throw)
+                return reject(throw, p)
 
             # h
             if new_len_desc.writable is None or new_len_desc.writable is True:
@@ -1208,7 +1209,7 @@ class W__Array(W_BasicObject):
                     if new_writable is False:
                         new_len_desc.writable = False
                     W_BasicObject.define_own_property(self, u'length', new_len_desc, False)
-                    return reject(throw)
+                    return reject(throw, p)
 
             # m
             if new_writable is False:
@@ -1227,13 +1228,13 @@ class W__Array(W_BasicObject):
             index = uint32(int(p))
             # b
             if index >= old_len and old_len_desc.writable is False:
-                return reject(throw)
+                return reject(throw, p)
 
             # c
             succeeded = W_BasicObject.define_own_property(self, p, desc, False)
             # d
             if succeeded is False:
-                return reject(throw)
+                return reject(throw, p)
 
             # e
             if index >= old_len:
