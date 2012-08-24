@@ -1,9 +1,10 @@
 from js.object_space import w_return
+from pypy.rlib.objectmodel import we_are_translated
 
-def setup_builtins(global_object, overwrite_eval = False):
+
+def setup_builtins(global_object, overwrite_eval=False):
     from js.builtins import put_native_function
 
-    #put_native_function(global_object, u'trace', js_trace)
     put_native_function(global_object, u'load', js_load)
     put_native_function(global_object, u'debug', js_debug)
 
@@ -11,7 +12,9 @@ def setup_builtins(global_object, overwrite_eval = False):
     if overwrite_eval is True:
         from js.builtins import put_intimate_function
         del(global_object._properties_[u'eval'])
-        put_intimate_function(global_object, u'eval', overriden_eval, configurable = False, params = [u'x'])
+        put_intimate_function(global_object, u'eval', overriden_eval, configurable=False, params=[u'x'])
+        put_native_function(global_object, u'trace', js_trace)
+
 
 @w_return
 def js_load(this, args):
@@ -22,7 +25,9 @@ def js_load(this, args):
 
 @w_return
 def js_trace(this, args):
-    import pdb; pdb.set_trace()
+    if not we_are_translated():
+        import pdb
+        pdb.set_trace()
 
 
 @w_return
@@ -41,4 +46,4 @@ def overriden_eval(ctx):
     try:
         return js_eval(ctx)
     except JsException:
-        return NormalCompletion(value = _w("error"))
+        return NormalCompletion(value=_w("error"))
