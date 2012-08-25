@@ -11,7 +11,7 @@ def setup_builtins(global_object, overwrite_eval=False):
     ## the tests expect eval to return "error" on an exception
     if overwrite_eval is True:
         from js.builtins import put_intimate_function
-        del(global_object._properties_[u'eval'])
+        global_object._del_prop(u'eval')
         put_intimate_function(global_object, u'eval', overriden_eval, configurable=False, params=[u'x'])
 
     put_native_function(global_object, u'trace', js_trace)

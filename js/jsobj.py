@@ -9,6 +9,11 @@ from pypy.rlib import jit
 
 from js.property_descriptor import PropertyDescriptor, DataPropertyDescriptor, AccessorPropertyDescriptor, is_data_descriptor, is_generic_descriptor, is_accessor_descriptor
 from js.property import DataProperty, AccessorProperty
+from js.object_map import ROOT_MAP
+
+
+def _new_map():
+    return ROOT_MAP
 
 
 @jit.elidable
@@ -180,7 +185,9 @@ class W_BasicObject(W_Root):
     _immutable_fields_ = ['_type_', '_class_', '_extensible_']
 
     def __init__(self):
-        self._properties_ = {}
+        self._property_map_ = _new_map()
+        self._property_slots_ = []
+
         self._prototype_ = w_Null
         W_BasicObject.define_own_property(self, u'__proto__', proto_desc)
 
@@ -220,11 +227,43 @@ class W_BasicObject(W_Root):
     def get_own_property(self, p):
         assert p is not None and isinstance(p, unicode)
 
-        prop = self._properties_.get(p, None)
+        prop = self._get_prop(p)
         if prop is None:
             return
 
         return prop.to_property_descriptor()
+
+    def _get_prop(self, name):
+        idx = self._property_map_.lookup(name)
+
+        if self._property_map_.not_found(idx):
+            return
+        elif idx >= len(self._property_slots_):
+                return
+
+        prop = self._property_slots_[idx]
+        return prop
+
+    def _del_prop(self, name):
+        idx = self._property_map_.lookup(name)
+
+        if self._property_map_.not_found(idx):
+            return
+
+        del(self._property_slots_[idx])
+        self._property_map_ = self._property_map_.delete(name)
+
+    def _set_prop(self, name, value):
+        idx = self._property_map_.lookup(name)
+
+        if self._property_map_.not_found(idx):
+            self._property_map_ = self._property_map_.add(name)
+            idx = self._property_map_.index
+
+        if idx >= len(self._property_slots_):
+            self._property_slots_ += ([None] * (1 + idx - len(self._property_slots_)))
+
+        self._property_slots_[idx] = value
 
     # 8.12.2
     def get_property(self, p):
@@ -313,7 +352,7 @@ class W_BasicObject(W_Root):
         if desc is None:
             return True
         if desc.configurable:
-            del self._properties_[p]
+            self._del_prop(p)
             return True
 
         if throw is True:
@@ -370,7 +409,7 @@ class W_BasicObject(W_Root):
                     desc.enumerable,
                     desc.configurable
                 )
-                self._properties_[p] = new_prop
+                self._set_prop(p, new_prop)
             # 4.b
             else:
                 assert is_accessor_descriptor(desc) is True
@@ -380,7 +419,7 @@ class W_BasicObject(W_Root):
                     desc.enumerable,
                     desc.configurable
                 )
-                self._properties_[p] = new_prop
+                self._set_prop(p, new_prop)
             # 4.c
             return True
 
@@ -438,8 +477,8 @@ class W_BasicObject(W_Root):
                 if desc.has_set_getter() and desc.getter != current.getter:
                     return reject(throw, p)
         # 12
-        prop = self._properties_[p]
-        self._properties_[p] = prop.update_with_descriptor(desc)
+        prop = self._get_prop(p)
+        self._set_prop(p, prop.update_with_descriptor(desc))
 
         # 13
         return True
@@ -466,7 +505,7 @@ class W_BasicObject(W_Root):
 
     def _named_properties_dict(self):
         my_d = {}
-        for i in self._properties_.keys():
+        for i in self._property_map_.keys():
             my_d[i] = None
 
         proto = self.prototype()
