@@ -128,7 +128,7 @@ def reverse(this, args):
     length = o.get(u'length').ToUInt32()
 
     import math
-    middle = math.floor(length/2)
+    middle = int(math.floor(length / 2))
 
     lower = 0
     while lower != middle:
