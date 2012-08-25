@@ -1,31 +1,35 @@
 from pypy.rlib import jit
 
+
 class Map(object):
     NOT_FOUND = -1
-    _immutable_fields_ = ['index', 'back', 'name', 'flags']
+    _immutable_fields_ = ['index', 'back', 'name', 'forward_pointers']
+
     def __init__(self):
         self.index = self.NOT_FOUND
         self.forward_pointers = {}
         self.back = None
         self.name = None
-        self.flags = 0
 
     def __repr__(self):
-        return "%(back)s, [%(index)d]:%(name)s(%(flags)d)" % \
-            {'back': repr(self.back), 'index': self.index, 'name': self.name, 'flags': self.flags}
+        return "%(back)s, [%(index)d]:%(name)s" % \
+            {'back': repr(self.back), 'index': self.index, 'name': self.name}
 
+    @jit.elidable
+    def contains(self, name):
+        idx = self.lookup(name)
+        return self.not_found(idx)
+
+    @jit.elidable
+    def not_found(self, idx):
+        return idx == self.NOT_FOUND
+
+    @jit.elidable
     def lookup(self, name):
         jit.promote(self)
         node = self._find_node_with_name(name)
         if node is not None:
             return node.index
-        return self.NOT_FOUND
-
-    def lookup_flag(self, name):
-        jit.promote(self)
-        node = self._find_node_with_name(name)
-        if node is not None:
-            return node.flags
         return self.NOT_FOUND
 
     def _find_node_with_name(self, name):
@@ -34,27 +38,19 @@ class Map(object):
         if self.back is not None:
             return self.back._find_node_with_name(name)
 
-    def _find_node_with_name_and_flags(self, name, flags):
-        if self.name == name and self.flags == flags:
-            return self
-        node = None
-        if self.back is not None:
-            node = self.back._find_node_with_name_and_flags(name, flags)
-        if node is None:
-            return self.forward_pointers.get((name, flags), None)
-
     def _key(self):
-        return (self.name, self.flags)
+        return (self.name)
 
     @jit.elidable
-    def add(self, name, flags=0):
+    def add(self, name):
         assert self.lookup(name) == self.NOT_FOUND
-        node = self.forward_pointers.get((name, flags), None)
+        node = self.forward_pointers.get((name), None)
         if node is None:
-            node = MapNode(self, name, flags)
+            node = MapNode(self, name)
             self.forward_pointers[node._key()] = node
         return node
 
+    @jit.elidable
     def keys(self):
         if self.name is None:
             return []
@@ -65,42 +61,33 @@ class Map(object):
 
         return k
 
-    def set_flags(self, name, flags):
-        return self
-
     def delete(self, key):
         return self
 
+
 class MapRoot(Map):
     def __repr__(self):
-        return "[%(index)d]:%(name)s(%(flags)d)" % {'index': self.index, 'name': self.name, 'flags': self.flags}
+        return "[%(index)d]:%(name)s" % {'index': self.index, 'name': self.name}
+
 
 class MapNode(Map):
-    def __init__(self, back, name, flags = 0):
+    def __init__(self, back, name):
         Map.__init__(self)
         self.back = back
         self.name = name
         self.index = back.index + 1
-        self.flags = flags
 
+    @jit.elidable
     def delete(self, name):
         if self.name == name:
             return self.back
         else:
             n = self.back.delete(name)
-            return n.add(self.name, self.flags)
+            return n.add(self.name)
 
-    def set_flags(self, name, flags):
-        if self.name == name:
-            if self.flags == flags:
-                return self
-            else:
-                return self.back.add(name, flags)
-        else:
-            n = self.back.set_flags(name, flags)
-            return n.add(self.name, self.flags)
 
 ROOT_MAP = MapRoot()
+
 
 def root_map():
     return ROOT_MAP

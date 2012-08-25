@@ -1,4 +1,10 @@
 from js.jsobj import w_Undefined
+from js.object_map import ROOT_MAP
+
+
+def _new_map():
+    return ROOT_MAP
+
 
 class EnvironmentRecord(object):
     def __init__(self):
@@ -25,30 +31,63 @@ class EnvironmentRecord(object):
 class DeclarativeEnvironmentRecord(EnvironmentRecord):
     def __init__(self):
         EnvironmentRecord.__init__(self)
-        self.bindings = {}
-        self.mutable_bindings = {}
-        self.deletable_bindings = {}
+        self._binding_map_ = _new_map()
+        self._binding_slots_ = []
+        self._mutable_bindings_map_ = _new_map()
+        self._deletable_bindings_map_ = _new_map()
 
     def _is_mutable_binding(self, identifier):
-        return self.mutable_bindings.get(identifier, False) == True
+        return self._mutable_bindings_map_.contains(identifier)
 
     def _set_mutable_binding(self, identifier):
-        self.mutable_bindings[identifier] = True
+        self._mutable_bindings_map_ = self._mutable_bindings_map_.add(identifier)
 
     def _is_deletable_binding(self, identifier):
-        return self.deletable_bindings.get(identifier, False) == True
+        return self._deletable_bindings_map_.contains(identifier)
 
     def _set_deletable_binding(self, identifier):
-        self.deletable_bindings[identifier] = True
+        self._deletable_bindings_ = self._deletable_bindings_map_.add(identifier)
 
     # 10.2.1.1.1
     def has_binding(self, identifier):
-        return identifier in self.bindings
+        return self._binding_map_.contains(identifier)
+
+    def _get_binding(self, name):
+        idx = self._binding_map_.lookup(name)
+
+        if self._binding_map_.not_found(idx):
+            return
+        if idx >= len(self._binding_slots_):
+            return
+
+        binding = self._binding_slots_[idx]
+        return binding
+
+    def _set_binding(self, name, value):
+        idx = self._binding_map_.lookup(name)
+
+        if self._binding_map_.not_found(idx):
+            self._binding_map_ = self._binding_map_.add(name)
+            idx = self._binding_map_.index
+
+        if idx >= len(self._binding_slots_):
+            self._binding_slots_ += ([None] * (1 + idx - len(self._binding_slots_)))
+
+        self._binding_slots_[idx] = value
+
+    def _del_binding(self, name):
+        idx = self._binding_map_.lookup(name)
+
+        if self._binding_map_.not_found(idx):
+            return
+
+        del(self._binding_slots_[idx])
+        self._binding_map_ = self._binding_map_.delete(name)
 
     # 10.2.1.1.2
     def create_mutuable_binding(self, identifier, deletable):
         assert not self.has_binding(identifier)
-        self.bindings[identifier] = w_Undefined
+        self._set_binding(identifier, w_Undefined)
         self._set_mutable_binding(identifier)
         if deletable:
             self._set_deletable_binding(identifier)
@@ -60,18 +99,12 @@ class DeclarativeEnvironmentRecord(EnvironmentRecord):
         if not self._is_mutable_binding(identifier):
             from js.execution import JsTypeError
             raise JsTypeError(u'immutable binding')
-        self.bindings[identifier] = value
+        self._set_binding(identifier, value)
 
     # 10.2.1.1.4
     def get_binding_value(self, identifier, strict=False):
         assert self.has_binding(identifier)
-        if not identifier in self.bindings:
-            if strict:
-                from js.execution import JsReferenceError
-                raise JsReferenceError(identifier)
-            else:
-                return w_Undefined
-        return self.bindings[identifier]
+        return self._get_binding(identifier)
 
     # 10.2.1.1.5
     def delete_binding(self, identifier):
@@ -81,9 +114,9 @@ class DeclarativeEnvironmentRecord(EnvironmentRecord):
             return False
         if self._is_deletable_binding(identifier) is False:
             return False
-        del(self.deletable_bindings[identifier])
-        del(self.mutable_bindings[identifier])
-        del(self.bindings[identifier])
+        self._deletable_bindings_map__ = self._deletable_bindings_map_.delete(identifier)
+        self._mutable_bindings_map_ = self._mutable_bindings_map_.delete(identifier)
+        self._del_binding(identifier)
         return False
 
     # 10.2.1.1.6
