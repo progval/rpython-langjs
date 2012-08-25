@@ -81,3 +81,22 @@ def w_return(fn):
         from js.jsobj import _w
         return _w(fn(*args))
     return f
+
+
+def hide_on_translate(*args):
+    default = None
+
+    def _wrap(f):
+        def _wrapped_f(*args):
+            from pypy.rlib.objectmodel import we_are_translated
+            if not we_are_translated():
+                return f(*args)
+
+            return default
+        return _wrapped_f
+
+    if len(args) == 1 and callable(args[0]):
+        return _wrap(args[0])
+    else:
+        default = args[0]
+        return _wrap
