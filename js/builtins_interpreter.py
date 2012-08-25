@@ -13,7 +13,8 @@ def setup_builtins(global_object, overwrite_eval=False):
         from js.builtins import put_intimate_function
         del(global_object._properties_[u'eval'])
         put_intimate_function(global_object, u'eval', overriden_eval, configurable=False, params=[u'x'])
-        put_native_function(global_object, u'trace', js_trace)
+
+    put_native_function(global_object, u'trace', js_trace)
 
 
 @w_return
