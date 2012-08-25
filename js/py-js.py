@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
-import os, sys
+import os
 from js.execution import JsException
 from pypy.rlib.objectmodel import enforceargs
 from pypy.rlib.parsing.parsing import ParseError
+
 
 def main(argv):
     opts, files = parse_args(argv)
@@ -15,8 +16,8 @@ def main(argv):
 
     return 0
 
+
 def run(files, opts):
-    from js.object_space import object_space
     from js.interpreter import Interpreter
 
     interactive = len(files) == 0
@@ -34,6 +35,7 @@ def run(files, opts):
     if inspect or interactive:
         repl(interp)
 
+
 @enforceargs(unicode, unicode)
 def printerrormessage(filename, message):
     printmessage(u"ERROR in %s: %s\n" % (filename, message))
@@ -48,7 +50,7 @@ def repl(interpreter):
         try:
             result = interpreter.run_src(line)
             result_string = result.to_string()
-            printmessage(u"%s\n"% (result_string))
+            printmessage(u"%s\n" % (result_string))
         except ParseError as exc:
             printsyntaxerror(filename, exc, line)
             continue
@@ -56,11 +58,13 @@ def repl(interpreter):
             printerrormessage(filename, e._msg())
             continue
 
+
 # https://bitbucket.org/cfbolz/pyrolog/src/f18f2ccc23a4/prolog/interpreter/translatedmain.py
 @enforceargs(unicode)
 def printmessage(msg):
     from js.runistr import encode_unicode_utf8
     os.write(1, encode_unicode_utf8(msg))
+
 
 def printsyntaxerror(filename, exc, source):
     # XXX format syntax errors nicier
@@ -70,8 +74,9 @@ def printsyntaxerror(filename, exc, source):
     error_line = (source.splitlines())[error_lineno]
     printmessage(u'Syntax Error in: %s:%d\n' % (unicode(filename), error_lineno))
     printmessage(u'%s\n' % (unicode(error_line)))
-    printmessage(u'%s^\n' %(marker_indent))
-    printmessage(u'Error: %s\n' %(unicode(str(error))))
+    printmessage(u'%s^\n' % (marker_indent))
+    printmessage(u'Error: %s\n' % (unicode(str(error))))
+
 
 # https://bitbucket.org/cfbolz/pyrolog/src/f18f2ccc23a4/prolog/interpreter/translatedmain.py
 def readline():
@@ -87,12 +92,14 @@ def readline():
             raise SystemExit
     return "".join(result)
 
+
 def _parse_bool_arg(arg_name, argv):
     for i in xrange(len(argv)):
         if argv[i] == arg_name:
             del(argv[i])
             return True
     return False
+
 
 def parse_args(argv):
     opts = {}
@@ -105,19 +112,22 @@ def parse_args(argv):
 
     return opts, argv
 
+
 if __name__ == '__main__':
     import sys
     main(sys.argv)
 
-# _____ Define and setup target ___
 
+# _____ Define and setup target ___
 def target(driver, args):
     driver.exe_name = 'py-js'
     return entry_point, None
 
+
 def jitpolicy(driver):
     from pypy.jit.codewriter.policy import JitPolicy
     return JitPolicy()
+
 
 def entry_point(argv):
     return main(argv)

@@ -1,15 +1,16 @@
-from js.jsobj import W_IntNumber, W_FloatNumber, W_String,\
-     w_Undefined, newbool, W__Object, \
-     w_True, w_False, w_Null, W_Root, W__Function, _w
-from js.execution import JsTypeError, ReturnException, ThrowException
+from js.jsobj import W_IntNumber, W_FloatNumber, W_String, \
+    w_Undefined, newbool, w_Null, _w
+from js.execution import JsTypeError
 from js.baseop import plus, sub, compare, AbstractEC, StrictEC,\
-     compare_e, increment, decrement, mult, division, uminus, mod
+    compare_e, increment, decrement, mult, division, uminus, mod
 from pypy.rlib.rarithmetic import intmask
 
 from js.jsobj import put_property
 
+
 class Opcode(object):
     _stack_change = 1
+
     def __init__(self):
         pass
 
@@ -24,8 +25,10 @@ class Opcode(object):
     def __str__(self):
         return self.__class__.__name__
 
+
 class BaseBinaryComparison(Opcode):
     _stack_change = 0
+
     def eval(self, ctx):
         s4 = ctx.stack_pop()
         s2 = ctx.stack_pop()
@@ -34,8 +37,10 @@ class BaseBinaryComparison(Opcode):
     def decision(self, ctx, op1, op2):
         raise NotImplementedError
 
+
 class BaseBinaryBitwiseOp(Opcode):
     _stack_change = 0
+
     def eval(self, ctx):
         s5 = ctx.stack_pop().ToInt32()
         s6 = ctx.stack_pop().ToInt32()
@@ -44,22 +49,28 @@ class BaseBinaryBitwiseOp(Opcode):
     def operation(self, ctx, op1, op2):
         raise NotImplementedError
 
+
 class BaseBinaryOperation(Opcode):
     _stack_change = 0
+
     def eval(self, ctx):
         right = ctx.stack_pop()
         left = ctx.stack_pop()
         ctx.stack_append(self.operation(ctx, left, right))
 
+
 class BaseUnaryOperation(Opcode):
     _stack_change = 0
+
 
 class Undefined(Opcode):
     def eval(self, ctx):
         ctx.stack_append(w_Undefined)
 
+
 class LOAD_INTCONSTANT(Opcode):
     _immutable_fields_ = ['w_intvalue']
+
     def __init__(self, value):
         self.w_intvalue = W_IntNumber(int(value))
 
@@ -68,6 +79,7 @@ class LOAD_INTCONSTANT(Opcode):
 
     def __str__(self):
         return 'LOAD_INTCONSTANT %s' % (self.w_intvalue.ToInteger(),)
+
 
 class LOAD_BOOLCONSTANT(Opcode):
     def __init__(self, value):
@@ -81,6 +93,7 @@ class LOAD_BOOLCONSTANT(Opcode):
             return 'LOAD_BOOLCONSTANT true'
         return 'LOAD_BOOLCONSTANT false'
 
+
 class LOAD_FLOATCONSTANT(Opcode):
     def __init__(self, value):
         self.w_floatvalue = W_FloatNumber(float(value))
@@ -91,8 +104,10 @@ class LOAD_FLOATCONSTANT(Opcode):
     def __str__(self):
         return 'LOAD_FLOATCONSTANT %s' % (self.w_floatvalue.ToNumber(),)
 
+
 class LOAD_STRINGCONSTANT(Opcode):
     _immutable_fields_ = ['w_stringvalue']
+
     def __init__(self, value):
         #assert isinstance(value, unicode)
         self.strval = value
@@ -106,9 +121,11 @@ class LOAD_STRINGCONSTANT(Opcode):
     def __str__(self):
         return u'LOAD_STRINGCONSTANT "%s"' % (self.strval)
 
+
 class LOAD_UNDEFINED(Opcode):
     def eval(self, ctx):
         ctx.stack_append(w_Undefined)
+
 
 class LOAD_NULL(Opcode):
     def eval(self, ctx):
@@ -140,6 +157,7 @@ class LOAD_THIS(Opcode):
         this = ctx.this_binding()
         ctx.stack_append(this)
 
+
 class LOAD_ARRAY(Opcode):
     def __init__(self, counter):
         self.counter = counter
@@ -148,7 +166,7 @@ class LOAD_ARRAY(Opcode):
         from js.object_space import object_space
         array = object_space.new_array()
 
-        list_w = ctx.stack_pop_n(self.counter) # [:] # pop_n returns a non-resizable list
+        list_w = ctx.stack_pop_n(self.counter)  # [:] # pop_n returns a non-resizable list
         for index, el in enumerate(list_w):
             array.put(unicode(str(index)), el)
         ctx.stack_append(array)
@@ -159,6 +177,7 @@ class LOAD_ARRAY(Opcode):
     def __str__(self):
         return 'LOAD_ARRAY %d' % (self.counter,)
 
+
 class LOAD_LIST(Opcode):
     #_immutable_fields_ = ['counter']
     def __init__(self, counter):
@@ -166,7 +185,7 @@ class LOAD_LIST(Opcode):
 
     def eval(self, ctx):
         from js.jsobj import W_List
-        list_w = ctx.stack_pop_n(self.counter) # [:] # pop_n returns a non-resizable list
+        list_w = ctx.stack_pop_n(self.counter)  # [:] # pop_n returns a non-resizable list
         ctx.stack_append(W_List(list_w))
 
     def stack_change(self):
@@ -174,6 +193,7 @@ class LOAD_LIST(Opcode):
 
     def __str__(self):
         return u'LOAD_LIST %d' % (self.counter,)
+
 
 class LOAD_FUNCTION(Opcode):
     def __init__(self, funcobj):
@@ -187,15 +207,17 @@ class LOAD_FUNCTION(Opcode):
         scope = ctx.lexical_environment()
         params = func.params()
         strict = func.strict
-        w_func = object_space.new_func(func, formal_parameter_list = params, scope = scope, strict = strict)
+        w_func = object_space.new_func(func, formal_parameter_list=params, scope=scope, strict=strict)
 
         ctx.stack_append(w_func)
 
     #def __repr__(self):
         #return 'LOAD_FUNCTION' # XXX
 
+
 class LOAD_OBJECT(Opcode):
     _immutable_fields_ = ["counter"]
+
     def __init__(self, counter):
         self.counter = counter
 
@@ -205,14 +227,16 @@ class LOAD_OBJECT(Opcode):
         for _ in range(self.counter):
             name = ctx.stack_pop().to_string()
             w_elem = ctx.stack_pop()
-            put_property(w_obj, name, w_elem, writable = True, configurable = True, enumerable = True)
+            put_property(w_obj, name, w_elem, writable=True, configurable=True, enumerable=True)
         ctx.stack_append(w_obj)
 
     #def __repr__(self):
         #return 'LOAD_OBJECT %d' % (self.counter,)
 
+
 class LOAD_MEMBER(Opcode):
     _stack_change = -1
+
     def eval(self, ctx):
         w_obj = ctx.stack_pop().ToObject()
         name = ctx.stack_pop().to_string()
@@ -222,6 +246,7 @@ class LOAD_MEMBER(Opcode):
     def __str__(self):
         return 'LOAD_MEMBER'
 
+
 class COMMA(BaseUnaryOperation):
     def eval(self, ctx):
         one = ctx.stack_pop()
@@ -229,18 +254,21 @@ class COMMA(BaseUnaryOperation):
         ctx.stack_append(one)
         # XXX
 
+
 class SUB(BaseBinaryOperation):
     def operation(self, ctx, left, right):
         return sub(ctx, left, right)
+
 
 class IN(BaseBinaryOperation):
     def operation(self, ctx, left, right):
         from js.jsobj import W_BasicObject
         if not isinstance(right, W_BasicObject):
-            raise JsTypeError(u"TypeError: fffuuu!") #+ repr(right)
+            raise JsTypeError(u"TypeError: fffuuu!")  # + repr(right)
         name = left.to_string()
         has_name = right.has_property(name)
         return newbool(has_name)
+
 
 # 11.4.3
 def type_of(var):
@@ -249,11 +277,13 @@ def type_of(var):
         return u'object'
     return unicode(var_type)
 
+
 class TYPEOF(BaseUnaryOperation):
     def eval(self, ctx):
         var = ctx.stack_pop()
         var_type = type_of(var)
         ctx.stack_append(_w(var_type))
+
 
 class TYPEOF_VARIABLE(Opcode):
     def __init__(self, index, name):
@@ -274,26 +304,32 @@ class TYPEOF_VARIABLE(Opcode):
     def __str__(self):
         return 'TYPEOF_VARIABLE %s' % (self.name)
 
+
 class ADD(BaseBinaryOperation):
     def operation(self, ctx, left, right):
         return plus(ctx, left, right)
 
+
 class BITAND(BaseBinaryBitwiseOp):
     def operation(self, ctx, op1, op2):
-        return W_IntNumber(op1&op2)
+        return W_IntNumber(op1 & op2)
+
 
 class BITXOR(BaseBinaryBitwiseOp):
     def operation(self, ctx, op1, op2):
-        return W_IntNumber(op1^op2)
+        return W_IntNumber(op1 ^ op2)
+
 
 class BITOR(BaseBinaryBitwiseOp):
     def operation(self, ctx, op1, op2):
-        return W_IntNumber(op1|op2)
+        return W_IntNumber(op1 | op2)
+
 
 class BITNOT(BaseUnaryOperation):
     def eval(self, ctx):
         op = ctx.stack_pop().ToInt32()
         ctx.stack_append(W_IntNumber(~op))
+
 
 class URSH(BaseBinaryBitwiseOp):
     def eval(self, ctx):
@@ -316,6 +352,7 @@ class URSH(BaseBinaryBitwiseOp):
 
         ctx.stack_append(w_res)
 
+
 class RSH(BaseBinaryBitwiseOp):
     def eval(self, ctx):
         rval = ctx.stack_pop()
@@ -327,6 +364,7 @@ class RSH(BaseBinaryBitwiseOp):
         res = lnum >> shift_count
 
         ctx.stack_append(_w(res))
+
 
 class LSH(BaseBinaryBitwiseOp):
     def eval(self, ctx):
@@ -342,17 +380,21 @@ class LSH(BaseBinaryBitwiseOp):
 
         ctx.stack_append(_w(res))
 
+
 class MUL(BaseBinaryOperation):
     def operation(self, ctx, op1, op2):
         return mult(ctx, op1, op2)
+
 
 class DIV(BaseBinaryOperation):
     def operation(self, ctx, op1, op2):
         return division(ctx, op1, op2)
 
+
 class MOD(BaseBinaryOperation):
     def operation(self, ctx, op1, op2):
         return mod(ctx, op1, op2)
+
 
 class UPLUS(BaseUnaryOperation):
     def eval(self, ctx):
@@ -361,9 +403,11 @@ class UPLUS(BaseUnaryOperation):
         res = _w(num)
         ctx.stack_append(res)
 
+
 class UMINUS(BaseUnaryOperation):
     def eval(self, ctx):
         ctx.stack_append(uminus(ctx.stack_pop(), ctx))
+
 
 class NOT(BaseUnaryOperation):
     def eval(self, ctx):
@@ -372,12 +416,14 @@ class NOT(BaseUnaryOperation):
         inv_boolval = not boolval
         ctx.stack_append(_w(inv_boolval))
 
+
 class INCR(BaseUnaryOperation):
     def eval(self, ctx):
         value = ctx.stack_pop()
         num = _w(value.ToNumber())
         newvalue = increment(ctx, num)
         ctx.stack_append(newvalue)
+
 
 class DECR(BaseUnaryOperation):
     def eval(self, ctx):
@@ -386,25 +432,31 @@ class DECR(BaseUnaryOperation):
         newvalue = decrement(ctx, num)
         ctx.stack_append(newvalue)
 
+
 class GT(BaseBinaryComparison):
     def decision(self, ctx, op1, op2):
         return newbool(compare(ctx, op1, op2))
+
 
 class GE(BaseBinaryComparison):
     def decision(self, ctx, op1, op2):
         return newbool(compare_e(ctx, op1, op2))
 
+
 class LT(BaseBinaryComparison):
     def decision(self, ctx, op1, op2):
         return newbool(compare(ctx, op2, op1))
+
 
 class LE(BaseBinaryComparison):
     def decision(self, ctx, op1, op2):
         return newbool(compare_e(ctx, op2, op1))
 
+
 class EQ(BaseBinaryComparison):
     def decision(self, ctx, op1, op2):
         return newbool(AbstractEC(ctx, op1, op2))
+
 
 class NE(BaseBinaryComparison):
     def decision(self, ctx, op1, op2):
@@ -483,6 +535,7 @@ class BaseJump(Opcode):
     #def __repr__(self):
         #return '%s %d' % (self.__class__.__name__, self.where)
 
+
 class JUMP(BaseJump):
     def eval(self, ctx):
         pass
@@ -493,15 +546,18 @@ class JUMP(BaseJump):
     def __str__(self):
         return 'JUMP %d' % (self.where)
 
+
 class BaseIfJump(BaseJump):
     def eval(self, ctx):
         value = ctx.stack_pop()
         self.decision = value.to_boolean()
 
+
 class BaseIfNopopJump(BaseJump):
     def eval(self, ctx):
         value = ctx.stack_top()
         self.decision = value.to_boolean()
+
 
 class JUMP_IF_FALSE(BaseIfJump):
     def do_jump(self, ctx, pos):
@@ -511,6 +567,7 @@ class JUMP_IF_FALSE(BaseIfJump):
 
     def __str__(self):
         return 'JUMP_IF_FALSE %d' % (self.where)
+
 
 class JUMP_IF_FALSE_NOPOP(BaseIfNopopJump):
     def do_jump(self, ctx, pos):
@@ -522,6 +579,7 @@ class JUMP_IF_FALSE_NOPOP(BaseIfNopopJump):
     def __str__(self):
         return 'JUMP_IF_FALSE_NOPOP %d' % (self.where)
 
+
 class JUMP_IF_TRUE(BaseIfJump):
     def do_jump(self, ctx, pos):
         if self.decision:
@@ -530,6 +588,7 @@ class JUMP_IF_TRUE(BaseIfJump):
 
     def __str__(self):
         return 'JUMP_IF_TRUE %d' % (self.where)
+
 
 class JUMP_IF_TRUE_NOPOP(BaseIfNopopJump):
     def do_jump(self, ctx, pos):
@@ -541,8 +600,10 @@ class JUMP_IF_TRUE_NOPOP(BaseIfNopopJump):
     def __str__(self):
         return 'JUMP_IF_TRUE_NOPOP %d' % (self.where)
 
+
 class DECLARE_FUNCTION(Opcode):
     _stack_change = 0
+
     def __init__(self, funcobj):
         self.funcobj = funcobj
 
@@ -584,8 +645,10 @@ class DECLARE_FUNCTION(Opcode):
     ##    ##return 'DECLARE_FUNCTION %s%r [\n%s\n]' % (name, funcobj.params, codestr)
     ##    return 'DECLARE_FUNCTION %s%r' % (name, funcobj.params)
 
+
 class DECLARE_VAR(Opcode):
     _stack_change = 0
+
     def __init__(self, name):
         self.name = name
 
@@ -596,17 +659,22 @@ class DECLARE_VAR(Opcode):
     #def __repr__(self):
         #return 'DECLARE_VAR "%s"' % (self.name,)
 
+
 class RETURN(Opcode):
     _stack_change = 0
+
     def eval(self, ctx):
         from js.completion import ReturnCompletion
         value = ctx.stack_top()
         return ReturnCompletion(value)
 
+
 class POP(Opcode):
     _stack_change = -1
+
     def eval(self, ctx):
         ctx.stack_pop()
+
 
 def common_call(ctx, r1, args, this, name):
     # TODO
@@ -616,11 +684,13 @@ def common_call(ctx, r1, args, this, name):
         err = u"is not a callable (%s)"
         raise JsTypeError(err)
     argv = args.to_list()
-    res = r1.Call(args = argv, this = this, calling_context = ctx)
+    res = r1.Call(args=argv, this=this, calling_context=ctx)
     return res
+
 
 class CALL(Opcode):
     _stack_change = 0
+
     def eval(self, ctx):
         r1 = ctx.stack_pop()
         args = ctx.stack_pop()
@@ -628,8 +698,10 @@ class CALL(Opcode):
         res = common_call(ctx, r1, args, this, r1)
         ctx.stack_append(res)
 
+
 class CALL_METHOD(Opcode):
     _stack_change = -2
+
     def eval(self, ctx):
         method = ctx.stack_pop()
         what = ctx.stack_pop().ToObject()
@@ -639,23 +711,28 @@ class CALL_METHOD(Opcode):
         res = common_call(ctx, r1, args, what, method)
         ctx.stack_append(res)
 
+
 class DUP(Opcode):
     def eval(self, ctx):
         ctx.stack_append(ctx.stack_top())
 
+
 class THROW(Opcode):
     _stack_change = 0
+
     def eval(self, ctx):
         val = ctx.stack_pop()
         from js.execution import JsThrowException
         raise JsThrowException(val)
 
+
 class TRYCATCHBLOCK(Opcode):
     _stack_change = 0
+
     def __init__(self, tryfunc, catchparam, catchfunc, finallyfunc):
-        self.tryexec     = tryfunc
-        self.catchexec   = catchfunc
-        self.catchparam  = catchparam
+        self.tryexec = tryfunc
+        self.catchexec = catchfunc
+        self.catchparam = catchparam
         self.finallyexec = finallyfunc
 
     def eval(self, ctx):
@@ -698,6 +775,7 @@ class TRYCATCHBLOCK(Opcode):
         else:
             ctx.stack_append(f.value)
 
+
 def commonnew(ctx, obj, args):
     from js.jsobj import W_BasicFunction
 
@@ -706,8 +784,10 @@ def commonnew(ctx, obj, args):
     res = obj.Construct(args=args)
     return res
 
+
 class NEW(Opcode):
     _stack_change = 0
+
     def eval(self, ctx):
         from js.jsobj import W_List
 
@@ -718,8 +798,10 @@ class NEW(Opcode):
         res = commonnew(ctx, x, args)
         ctx.stack_append(res)
 
+
 class NEW_NO_ARGS(Opcode):
     _stack_change = 0
+
     def eval(self, ctx):
         x = ctx.stack_pop()
         res = commonnew(ctx, x, [])
@@ -730,8 +812,10 @@ class NEW_NO_ARGS(Opcode):
 from pypy.rlib.listsort import make_timsort_class
 TimSort = make_timsort_class()
 
+
 class LOAD_ITERATOR(Opcode):
     _stack_change = 0
+
     def eval(self, ctx):
         exper_value = ctx.stack_pop()
         obj = exper_value.ToObject()
@@ -754,6 +838,7 @@ class LOAD_ITERATOR(Opcode):
 
         ctx.stack_append(iterator)
 
+
 class JUMP_IF_ITERATOR_EMPTY(BaseJump):
     def eval(self, ctx):
         pass
@@ -772,7 +857,8 @@ class JUMP_IF_ITERATOR_EMPTY(BaseJump):
         return pos + 1
 
     def __str__(self):
-        return 'JUMP_IF_ITERATOR_EMPTY %d' %(self.where)
+        return 'JUMP_IF_ITERATOR_EMPTY %d' % (self.where)
+
 
 class NEXT_ITERATOR(Opcode):
     _stack_change = 0
@@ -789,6 +875,7 @@ class NEXT_ITERATOR(Opcode):
         #ref.put_value(next_el)
 
 # ---------------- with support ---------------------
+
 
 class WITH(Opcode):
     def __init__(self, body):
@@ -810,6 +897,7 @@ class WITH(Opcode):
             ctx.stack_append(c.value)
 
 # ------------------ delete -------------------------
+
 
 class DELETE(Opcode):
     def __init__(self, name):
@@ -837,16 +925,20 @@ class DELETE(Opcode):
             res = bindings.delete_binding(ref.get_referenced_name())
         ctx.stack_append(_w(res))
 
+
 class DELETE_MEMBER(Opcode):
     _stack_change = 0
+
     def eval(self, ctx):
         what = ctx.stack_pop().to_string()
         obj = ctx.stack_pop().ToObject()
         res = obj.delete(what, False)
         ctx.stack_append(_w(res))
 
+
 class LOAD_LOCAL(Opcode):
     _immutable_fields_ = ['local']
+
     def __init__(self, local):
         self.local = local
 
@@ -856,9 +948,11 @@ class LOAD_LOCAL(Opcode):
     #def __repr__(self):
         #return 'LOAD_LOCAL %d' % (self.local,)
 
+
 class STORE_LOCAL(Opcode):
     _stack_change = 0
     _immutable_fields_ = ['local']
+
     def __init__(self, local):
         self.local = local
 
@@ -868,6 +962,7 @@ class STORE_LOCAL(Opcode):
 
     #def __repr__(self):
         #return 'STORE_LOCAL %d' % (self.local,)
+
 
 class INSTANCEOF(Opcode):
     def eval(self, ctx):
@@ -886,6 +981,7 @@ OpcodeMap = {}
 for name, value in locals().items():
     if name.upper() == name and type(value) == type(Opcode) and issubclass(value, Opcode):
         OpcodeMap[name] = value
+
 
 class Opcodes:
     pass

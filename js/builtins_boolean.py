@@ -3,6 +3,7 @@ from js.execution import JsTypeError
 from js.jsobj import _w
 from js.object_space import w_return
 
+
 def setup(global_object):
     from js.builtins import put_property, put_native_function
     from js.object_space import object_space
@@ -14,7 +15,7 @@ def setup(global_object):
     put_property(global_object, u'Boolean', w_Boolean)
 
     # 15.6.3
-    put_property(w_Boolean, u'length', _w(1), writable = False, enumerable = False, configurable = False)
+    put_property(w_Boolean, u'length', _w(1), writable=False, enumerable=False, configurable=False)
 
     # 15.6.4
     w_BooleanPrototype = W_BooleanObject(_w(False))
@@ -24,7 +25,7 @@ def setup(global_object):
     object_space.proto_boolean = w_BooleanPrototype
 
     # 15.6.3.1
-    put_property(w_Boolean, u'prototype', w_BooleanPrototype, writable = False, enumerable = False, configurable = False)
+    put_property(w_Boolean, u'prototype', w_BooleanPrototype, writable=False, enumerable=False, configurable=False)
 
     # 15.6.4.1
     put_property(w_BooleanPrototype, u'constructor', w_Boolean)
@@ -34,6 +35,7 @@ def setup(global_object):
 
     # 15.6.4.3
     put_native_function(w_BooleanPrototype, u'valueOf', value_of)
+
 
 # 15.6.4.2
 @w_return
@@ -45,10 +47,11 @@ def to_string(this, args):
     else:
         raise JsTypeError(u'')
 
-    if b.to_boolean() == True:
+    if b.to_boolean() is True:
         return u'true'
     else:
         return u'false'
+
 
 # 15.6.4.3
 @w_return

@@ -1,6 +1,5 @@
 # encoding: utf-8
-from pypy.rpython.lltypesystem import rffi
-from pypy.rlib.rarithmetic import intmask, ovfcheck_float_to_int
+from pypy.rlib.rarithmetic import intmask
 from pypy.rlib.rfloat import isnan, isinf, NAN, formatd, INFINITY
 from js.execution import JsTypeError, JsRangeError
 
@@ -134,6 +133,7 @@ class W_Null(W_Primitive):
         raise JsTypeError(u'W_Null.ToObject')
 
 w_Undefined = W_Undefined()
+
 w_Null = W_Null()
 
 
@@ -347,7 +347,7 @@ class W_BasicObject(W_Root):
         return True
 
     # 8.12.7
-    def delete(self, p, throw = False):
+    def delete(self, p, throw=False):
         desc = self.get_own_property(p)
         if desc is None:
             return True
@@ -361,7 +361,7 @@ class W_BasicObject(W_Root):
         return False
 
     # 8.12.8
-    def default_value(self, hint = 'Number'):
+    def default_value(self, hint='Number'):
         if hint == 'String':
             res = self._default_value_string_()
             if res is None:
@@ -379,14 +379,14 @@ class W_BasicObject(W_Root):
     def _default_value_string_(self):
         to_string = self.get(u'toString')
         if to_string.is_callable():
-            _str = to_string.Call(this = self)
+            _str = to_string.Call(this=self)
             if isinstance(_str, W_Primitive):
                 return _str
 
     def _default_value_number_(self):
         value_of = self.get(u'valueOf')
         if value_of.is_callable():
-            val = value_of.Call(this = self)
+            val = value_of.Call(this=self)
             if isinstance(val, W_Primitive):
                 return val
 
@@ -522,6 +522,7 @@ class W_BasicObject(W_Root):
         prop_dict = self._named_properties_dict()
         return prop_dict.keys()
 
+
 class W__PrimitiveObject(W_BasicObject):
     def __init__(self, primitive_value):
         W_BasicObject.__init__(self)
@@ -534,21 +535,25 @@ class W__PrimitiveObject(W_BasicObject):
         assert isinstance(value, W_Root)
         self._primitive_value_ = value
 
+
 class W_BooleanObject(W__PrimitiveObject):
     _class_ = 'Boolean'
 
     def __str__(self):
         return u'W_BooleanObject(%s)' % (str(self._primitive_value_))
 
+
 class W_NumericObject(W__PrimitiveObject):
     _class_ = 'Number'
 
+
 class W_StringObject(W__PrimitiveObject):
     _class_ = 'String'
+
     def __init__(self, primitive_value):
         W__PrimitiveObject.__init__(self, primitive_value)
         length = len(self._primitive_value_.to_string())
-        descr = PropertyDescriptor(value = _w(length), enumerable = False, configurable = False, writable = False)
+        descr = PropertyDescriptor(value=_w(length), enumerable=False, configurable=False, writable=False)
         self.define_own_property(u'length', descr)
 
     def get_own_property(self, p):
@@ -567,28 +572,32 @@ class W_StringObject(W__PrimitiveObject):
             return None
 
         result_string = string[index]
-        d = PropertyDescriptor(value = _w(result_string), enumerable = True, writable = False, configurable = False)
+        d = PropertyDescriptor(value=_w(result_string), enumerable=True, writable=False, configurable=False)
         return d
+
 
 class W__Object(W_BasicObject):
     pass
 
+
 class W_GlobalObject(W__Object):
     _class_ = 'global'
+
 
 class W_DateObject(W__PrimitiveObject):
     _class_ = 'Date'
 
-    def default_value(self, hint = 'String'):
+    def default_value(self, hint='String'):
         if hint is None:
             hint = 'String'
         return W_BasicObject.default_value(self, hint)
+
 
 class W_BasicFunction(W_BasicObject):
     _class_ = 'Function'
     _type_ = 'function'
 
-    def Call(self, args = [], this = None, calling_context = None):
+    def Call(self, args=[], this=None, calling_context=None):
         raise NotImplementedError("abstract")
 
     # 13.2.2
@@ -633,8 +642,9 @@ class W_BasicFunction(W_BasicObject):
             if v == o:
                 return True
 
+
 class W_ObjectConstructor(W_BasicFunction):
-    def Call(self, args = [], this = None, calling_context = None):
+    def Call(self, args=[], this=None, calling_context=None):
         from js.builtins import get_arg
         value = get_arg(args, 0)
 
@@ -660,12 +670,13 @@ class W_ObjectConstructor(W_BasicFunction):
     def Construct(self, args=[]):
         return self.Call(args, this=None)
 
+
 class W_FunctionConstructor(W_BasicFunction):
     def _to_string_(self):
         return u'function Function() { [native code] }'
 
     # 15.3.2.1
-    def Call(self, args = [], this = None, calling_context = None):
+    def Call(self, args=[], this=None, calling_context=None):
         arg_count = len(args)
         _args = u''
         body = u''
@@ -678,10 +689,10 @@ class W_FunctionConstructor(W_BasicFunction):
             _args = first_arg
             k = 2
             while k < arg_count:
-                next_arg = args[k-1].to_string()
+                next_arg = args[k - 1].to_string()
                 _args = _args + u',' + next_arg
                 k = k + 1
-            body = args[k-1].to_string()
+            body = args[k - 1].to_string()
 
         src = u'function (' + _args + u') { ' + body + u' };'
 
@@ -698,17 +709,18 @@ class W_FunctionConstructor(W_BasicFunction):
         scope = object_space.get_global_environment()
         strict = func.strict
         params = func.params()
-        w_func = object_space.new_func(func, formal_parameter_list = params, scope = scope, strict = strict)
+        w_func = object_space.new_func(func, formal_parameter_list=params, scope=scope, strict=strict)
         return w_func
 
     # TODO
     def Construct(self, args=[]):
         return self.Call(args, this=None)
 
+
 # 15.7.2
 class W_NumberConstructor(W_BasicFunction):
     # 15.7.1.1
-    def Call(self, args = [], this = None, calling_context = None):
+    def Call(self, args=[], this=None, calling_context=None):
         if len(args) >= 1 and not isnull_or_undefined(args[0]):
             return _w(args[0].ToNumber())
         elif len(args) >= 1 and args[0] is w_Undefined:
@@ -723,9 +735,10 @@ class W_NumberConstructor(W_BasicFunction):
     def _to_string_(self):
         return u'function Number() { [native code] }'
 
+
 # 15.5.2
 class W_StringConstructor(W_BasicFunction):
-    def Call(self, args = [], this = None, calling_context = None):
+    def Call(self, args=[], this=None, calling_context=None):
         from js.builtins import get_arg
         arg0 = get_arg(args, 0, _w(u""))
         strval = arg0.to_string()
@@ -737,9 +750,10 @@ class W_StringConstructor(W_BasicFunction):
     def _to_string_(self):
         return u'function String() { [native code] }'
 
+
 # 15.6.2
 class W_BooleanConstructor(W_BasicFunction):
-    def Call(self, args = [], this = None, calling_context = None):
+    def Call(self, args=[], this=None, calling_context=None):
         if len(args) >= 1 and not isnull_or_undefined(args[0]):
             boolval = args[0].to_boolean()
             return _w(boolval)
@@ -752,9 +766,10 @@ class W_BooleanConstructor(W_BasicFunction):
     def _to_string_(self):
         return u'function Boolean() { [native code] }'
 
+
 # 15.9.2
 class W_DateConstructor(W_BasicFunction):
-    def Call(self, args = [], this = None, calling_context = None):
+    def Call(self, args=[], this=None, calling_context=None):
         import time
         #from js.builtins import get_arg
         # TODO
@@ -812,20 +827,19 @@ class W__Function(W_BasicFunction):
         # 14.
         _len = len(formal_parameter_list)
         # 15.
-        put_property(self, u'length', _w(_len), writable = False, enumerable = False, configurable = False)
+        put_property(self, u'length', _w(_len), writable=False, enumerable=False, configurable=False)
         # 16.
         proto_obj = object_space.new_obj()
         # 17.
-        put_property(proto_obj, u'constructor', self, writable = True, enumerable = False, configurable = True)
+        put_property(proto_obj, u'constructor', self, writable=True, enumerable=False, configurable=True)
         # 18.
-        put_property(self, u'prototype', proto_obj, writable = True, enumerable = False, configurable = False)
+        put_property(self, u'prototype', proto_obj, writable=True, enumerable=False, configurable=False)
 
         if strict is True:
             raise NotImplementedError()
         else:
-            put_property(self, u'caller', w_Null, writable = True, enumerable = False, configurable = False)
-            put_property(self, u'arguments', w_Null, writable = True, enumerable = False, configurable = False)
-
+            put_property(self, u'caller', w_Null, writable=True, enumerable=False, configurable=False)
+            put_property(self, u'arguments', w_Null, writable=True, enumerable=False, configurable=False)
 
     def _to_string(self):
         return self._function_.to_string()
@@ -836,7 +850,7 @@ class W__Function(W_BasicFunction):
     def formal_parameters(self):
         return self._params_
 
-    def Call(self, args = [], this = None, calling_context = None):
+    def Call(self, args=[], this=None, calling_context=None):
         from js.execution_context import FunctionExecutionContext
         from js.completion import Completion
 
@@ -845,13 +859,13 @@ class W__Function(W_BasicFunction):
         strict = self._strict_
         scope = self.scope()
 
-        ctx = FunctionExecutionContext(code,\
-            formal_parameters = argn,\
-            argv = args,\
-            this = this,\
-            strict = strict,\
-            scope = scope,\
-            w_func = self)
+        ctx = FunctionExecutionContext(code,
+                                       formal_parameters=argn,
+                                       argv=args,
+                                       this=this,
+                                       strict=strict,
+                                       scope=scope,
+                                       w_func=self)
         ctx._calling_context_ = calling_context
 
         res = code.run(ctx)
@@ -872,15 +886,16 @@ class W__Function(W_BasicFunction):
     def is_strict(self):
         return self._strict_
 
+
 # 10.6
 class W_Arguments(W__Object):
     _class_ = 'Arguments'
 
-    def __init__(self, func, names, args, env, strict = False):
+    def __init__(self, func, names, args, env, strict=False):
         W__Object.__init__(self)
         self.strict = strict
         _len = len(args)
-        put_property(self, u'length', _w(_len), writable = True, enumerable = False, configurable = True)
+        put_property(self, u'length', _w(_len), writable=True, enumerable=False, configurable=True)
 
         from js.object_space import object_space
         _map = object_space.new_obj()
@@ -888,14 +903,14 @@ class W_Arguments(W__Object):
         indx = _len - 1
         while indx >= 0:
             val = args[indx]
-            put_property(self, unicode(str(indx)), val, writable = True, enumerable = True, configurable = True)
+            put_property(self, unicode(str(indx)), val, writable=True, enumerable=True, configurable=True)
             if indx < len(names):
                 name = names[indx]
                 if strict is False and name not in mapped_names:
                     mapped_names.append(name)
                     g = make_arg_getter(name, env)
                     p = make_arg_setter(name, env)
-                    desc = PropertyDescriptor(setter = p, getter = g, configurable = True)
+                    desc = PropertyDescriptor(setter=p, getter=g, configurable=True)
                     _map.define_own_property(unicode(str(indx)), desc, False)
             indx = indx - 1
 
@@ -903,17 +918,19 @@ class W_Arguments(W__Object):
             self._paramenter_map_ = _map
 
         if strict is False:
-            put_property(self, u'callee', _w(func), writable = True, enumerable = False, configurable = True)
+            put_property(self, u'callee', _w(func), writable=True, enumerable=False, configurable=True)
         else:
             # 10.6 14 thrower
             pass
 
 
-def make_arg_getter(name, env): pass
+def make_arg_getter(name, env):
+    pass
     #code = u'return %s;' % (name)
 
 
-def make_arg_setter(name, env): pass
+def make_arg_setter(name, env):
+    pass
     #param = u'%s_arg' % (name)
     #code = u'%s = %s;' % (name, param)
 
@@ -922,12 +939,12 @@ def make_arg_setter(name, env): pass
 class W_ArrayConstructor(W_BasicFunction):
     def __init__(self):
         W_BasicFunction.__init__(self)
-        put_property(self, u'length', _w(1), writable = False, enumerable = False, configurable = False)
+        put_property(self, u'length', _w(1), writable=False, enumerable=False, configurable=False)
 
     def is_callable(self):
         return True
 
-    def Call(self, args = [], this = None, calling_context = None):
+    def Call(self, args=[], this=None, calling_context=None):
         from js.object_space import object_space
 
         if len(args) == 1:
@@ -957,6 +974,7 @@ class W_ArrayConstructor(W_BasicFunction):
 class W_Math(W__Object):
     _class_ = 'Math'
 
+
 class W_Boolean(W_Primitive):
     _type_ = 'boolean'
     _immutable_fields_ = ['_boolval_']
@@ -972,24 +990,17 @@ class W_Boolean(W_Primitive):
         return object_space.new_bool(self)
 
     def to_string(self):
-        if self._boolval_ == True:
+        if self._boolval_ is True:
             return u'true'
         return u'false'
 
     def ToNumber(self):
-        if self._boolval_ == True:
+        if self._boolval_ is True:
             return 1.0
         return 0.0
 
     def to_boolean(self):
         return self._boolval_
-
-def _isspace(s):
-    whitespace = {u' ':None, u'\n':None, u'\t':None, u'\r':None}
-    for i in xrange(len(s)):
-        if s[i] not in whitespace:
-            return False
-    return True
 
 
 class W_String(W_Primitive):
@@ -1062,6 +1073,7 @@ class W_String(W_Primitive):
 
         return NAN
 
+
 class W_Number(W_Primitive):
     """ Base class for numbers, both known to be floats
     and those known to be integers
@@ -1112,25 +1124,29 @@ class W_IntNumber(W_Number):
 MASK_32 = (2 ** 32) - 1
 MASK_16 = (2 ** 16) - 1
 
+
 @enforceargs(int)
 @jit.elidable
 def int32(n):
     if n & (1 << (32 - 1)):
-      res = n | ~MASK_32
+        res = n | ~MASK_32
     else:
-      res = n & MASK_32
+        res = n & MASK_32
 
     return res
+
 
 @enforceargs(int)
 @jit.elidable
 def uint32(n):
     return n & MASK_32
 
+
 @enforceargs(int)
 @jit.elidable
 def uint16(n):
     return n & MASK_16
+
 
 class W_FloatNumber(W_Number):
     """ Number known to be a float
@@ -1179,18 +1195,22 @@ class W_FloatNumber(W_Number):
 
         return intmask(int(self._floatval_))
 
+
 def isnull_or_undefined(obj):
     if obj is w_Null or obj is w_Undefined:
         return True
     return False
 
 w_True = W_Boolean(True)
+
 w_False = W_Boolean(False)
+
 
 def newbool(val):
     if val:
         return w_True
     return w_False
+
 
 class W_List(W_Root):
     def __init__(self, values):
@@ -1200,7 +1220,8 @@ class W_List(W_Root):
         return self.values
 
     def __str__(self):
-        return 'W_List(%s)' % ( unicode([unicode(v) for v in self.values]) )
+        return 'W_List(%s)' % (unicode([unicode(v) for v in self.values]))
+
 
 class W_Iterator(W_Root):
     def __init__(self, elements_w):
@@ -1281,7 +1302,7 @@ class W__Array(W_BasicObject):
 
             # m
             if new_writable is False:
-                desc = PropertyDescriptor(writable = False)
+                desc = PropertyDescriptor(writable=False)
                 res = W_BasicObject.define_own_property(self, u'length', desc, False)
                 assert res is True
 
@@ -1314,7 +1335,10 @@ class W__Array(W_BasicObject):
         # 5
         return W_BasicObject.define_own_property(self, p, desc, throw)
 
+
 from pypy.rlib.objectmodel import specialize
+
+
 @specialize.argtype(0)
 def _w(value):
     if value is None:
@@ -1336,11 +1360,12 @@ def _w(value):
         from js.object_space import object_space
         a = object_space.new_array()
         for index, item in enumerate(value):
-            put_property(a, unicode(str(index)), _w(item), writable = True, enumerable = True, configurable = True)
+            put_property(a, unicode(str(index)), _w(item), writable=True, enumerable=True, configurable=True)
         return a
 
-    raise TypeError, ("ffffuuu %s" % (value,))
+    raise TypeError("ffffuuu %s" % (value,))
 
-def put_property(obj, name, value, writable = False, configurable = False, enumerable = False, throw = False):
-    descriptor = PropertyDescriptor(value = value, writable = writable, configurable = configurable, enumerable = enumerable)
+
+def put_property(obj, name, value, writable=False, configurable=False, enumerable=False, throw=False):
+    descriptor = PropertyDescriptor(value=value, writable=writable, configurable=configurable, enumerable=enumerable)
     obj.define_own_property(name, descriptor, throw)

@@ -3,13 +3,13 @@
 """
 
 from js.jsobj import W_String, W_IntNumber, W_FloatNumber, _w
-from js.execution import ThrowException, JsTypeError
 
-from pypy.rlib.rarithmetic import r_uint, intmask, ovfcheck
-from pypy.rlib.rfloat import  INFINITY, NAN, isnan, isinf
+from pypy.rlib.rarithmetic import ovfcheck
+from pypy.rlib.rfloat import isnan, isinf
 from js.builtins_number import w_NAN, w_POSITIVE_INFINITY, w_NEGATIVE_INFINITY
 
 import math
+
 
 # 11.6.1, 11.6.3
 def plus(ctx, lval, rval):
@@ -33,17 +33,20 @@ def plus(ctx, lval, rval):
         fright = rprim.ToNumber()
         return W_FloatNumber(fleft + fright)
 
+
 def increment(ctx, nleft, constval=1):
     if isinstance(nleft, W_IntNumber):
         return W_IntNumber(nleft.ToInteger() + constval)
     else:
         return plus(ctx, nleft, W_IntNumber(constval))
 
+
 def decrement(ctx, nleft, constval=1):
     if isinstance(nleft, W_IntNumber):
         return W_IntNumber(nleft.ToInteger() - constval)
     else:
         return sub(ctx, nleft, W_IntNumber(constval))
+
 
 def sub(ctx, nleft, nright):
     if isinstance(nleft, W_IntNumber) and isinstance(nright, W_IntNumber):
@@ -58,6 +61,7 @@ def sub(ctx, nleft, nright):
     fright = nright.ToNumber()
     return W_FloatNumber(fleft - fright)
 
+
 def mult(ctx, nleft, nright):
     if isinstance(nleft, W_IntNumber) and isinstance(nright, W_IntNumber):
         # XXXX test & stuff
@@ -70,6 +74,7 @@ def mult(ctx, nleft, nright):
     fleft = nleft.ToNumber()
     fright = nright.ToNumber()
     return W_FloatNumber(fleft * fright)
+
 
 def mod(ctx, w_left, w_right):
     left = w_left.ToNumber()
@@ -89,19 +94,23 @@ def mod(ctx, w_left, w_right):
 
     return W_FloatNumber(math.fmod(left, right))
 
+
 def sign(x):
     from math import copysign
     return copysign(1.0, x)
+
 
 def sign_of(a, b):
     sign_a = sign(a)
     sign_b = sign(b)
     return sign_a * sign_b
 
+
 def w_signed_inf(sign):
     if sign < 0.0:
         return w_NEGATIVE_INFINITY
     return w_POSITIVE_INFINITY
+
 
 # 11.5.2
 def division(ctx, nleft, nright):
@@ -131,6 +140,7 @@ def division(ctx, nleft, nright):
     val = fleft / fright
     return W_FloatNumber(val)
 
+
 def compare(ctx, x, y):
     if isinstance(x, W_IntNumber) and isinstance(y, W_IntNumber):
         return x.ToInteger() > y.ToInteger()
@@ -151,6 +161,7 @@ def compare(ctx, x, y):
         s5 = s2.to_string()
         return s4 > s5
 
+
 def compare_e(ctx, x, y):
     if isinstance(x, W_IntNumber) and isinstance(y, W_IntNumber):
         return x.ToInteger() >= y.ToInteger()
@@ -170,6 +181,7 @@ def compare_e(ctx, x, y):
         s4 = s1.to_string()
         s5 = s2.to_string()
         return s4 >= s5
+
 
 # 11.9.3
 def AbstractEC(ctx, x, y):
@@ -205,7 +217,7 @@ def AbstractEC(ctx, x, y):
     else:
         #step 14
         if (type1 == "undefined" and type2 == "null") or \
-           (type1 == "null" and type2 == "undefined"):
+                (type1 == "null" and type2 == "undefined"):
             return True
         if type1 == "number" and type2 == "string":
             return AbstractEC(ctx, x, W_FloatNumber(y.ToNumber()))
@@ -216,13 +228,12 @@ def AbstractEC(ctx, x, y):
         if type2 == "boolean":
             return AbstractEC(ctx, x, W_FloatNumber(y.ToNumber()))
         if (type1 == "string" or type1 == "number") and \
-            type2 == "object":
+                type2 == "object":
             return AbstractEC(ctx, x, y.ToPrimitive())
         if (type2 == "string" or type2 == "number") and \
-            type1 == "object":
+                type1 == "object":
             return AbstractEC(ctx, x.ToPrimitive(), y)
         return False
-
 
     objtype = x.GetValue().type()
     if objtype == y.GetValue().type():
@@ -234,6 +245,7 @@ def AbstractEC(ctx, x, y):
     else:
         r = x.ToNumber() == y.ToNumber()
     return r
+
 
 def StrictEC(x, y):
     """

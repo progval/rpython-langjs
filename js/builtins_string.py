@@ -1,9 +1,10 @@
 from js.jsobj import _w, w_Undefined, W_String, W_StringObject
-from pypy.rlib.rfloat import NAN, INFINITY, isnan
-from js.execution import ThrowException, JsTypeError
+from pypy.rlib.rfloat import NAN
+from js.execution import JsTypeError
 from js.builtins import get_arg
 from js.object_space import w_return
 from pypy.rlib.rstring import UnicodeBuilder
+
 
 def setup(global_object):
     from js.builtins import put_native_function, put_property
@@ -14,22 +15,20 @@ def setup(global_object):
     from js.jsobj import W_StringConstructor
     w_String = W_StringConstructor()
     object_space.assign_proto(w_String, object_space.proto_function)
-    put_property(w_String, u'length', _w(1), writable = False, enumerable = False, configurable = False)
+    put_property(w_String, u'length', _w(1), writable=False, enumerable=False, configurable=False)
     put_property(global_object, u'String', w_String)
 
-
     # 15.5.4
-    from js.jsobj import W_StringObject
     w_StringPrototype = W_StringObject(_w(u''))
     object_space.assign_proto(w_StringPrototype, object_space.proto_object)
 
     # 15.5.3.1
     object_space.proto_string = w_StringPrototype
 
-    put_property(w_String, u'prototype', w_StringPrototype, writable = False, enumerable = False, configurable = False)
+    put_property(w_String, u'prototype', w_StringPrototype, writable=False, enumerable=False, configurable=False)
 
     # 15.5.3.2
-    put_native_function(w_String, u'fromCharCode', from_char_code, params = [u'char1'])
+    put_native_function(w_String, u'fromCharCode', from_char_code, params=[u'char1'])
 
     # 15.5.4.1
     put_property(w_StringPrototype, u'constructor', w_String)
@@ -41,31 +40,32 @@ def setup(global_object):
     put_native_function(w_StringPrototype, u'valueOf', value_of)
 
     # 15.5.4.4
-    put_native_function(w_StringPrototype, u'charAt', char_at, params = [u'pos'])
+    put_native_function(w_StringPrototype, u'charAt', char_at, params=[u'pos'])
 
     # 15.5.4.5
-    put_native_function(w_StringPrototype, u'charCodeAt', char_code_at, params = [u'pos'])
+    put_native_function(w_StringPrototype, u'charCodeAt', char_code_at, params=[u'pos'])
 
     # 15.5.4.6
-    put_native_function(w_StringPrototype, u'concat', concat, params = [u'string1'])
+    put_native_function(w_StringPrototype, u'concat', concat, params=[u'string1'])
 
     # 15.5.4.7
-    put_native_function(w_StringPrototype, u'indexOf', index_of, params = [u'searchstring'])
+    put_native_function(w_StringPrototype, u'indexOf', index_of, params=[u'searchstring'])
 
     # 15.5.4.8
-    put_native_function(w_StringPrototype, u'lastIndexOf', last_index_of, params = [u'searchstring'])
+    put_native_function(w_StringPrototype, u'lastIndexOf', last_index_of, params=[u'searchstring'])
 
     # 15.5.4.14
-    put_native_function(w_StringPrototype, u'split', split, params = [u'separator', u'limit'])
+    put_native_function(w_StringPrototype, u'split', split, params=[u'separator', u'limit'])
 
     # 15.5.4.15
-    put_native_function(w_StringPrototype, u'substring', substring, params = [u'start', u'end'])
+    put_native_function(w_StringPrototype, u'substring', substring, params=[u'start', u'end'])
 
     # 15.5.4.16
     put_native_function(w_StringPrototype, u'toLowerCase', to_lower_case)
 
     # 15.5.4.18
     put_native_function(w_StringPrototype, u'toUpperCase', to_upper_case)
+
 
 # 15.5.3.2
 @w_return
@@ -80,6 +80,7 @@ def from_char_code(this, args):
     s = builder.build()
     return s
 
+
 # 15.5.4.2
 @w_return
 def to_string(this, args):
@@ -91,6 +92,7 @@ def to_string(this, args):
         raise JsTypeError(u'')
 
     return s.to_string()
+
 
 # 15.5.4.3
 @w_return
@@ -104,6 +106,7 @@ def value_of(this, args):
 
     assert isinstance(s, W_String)
     return s
+
 
 # 15.5.4.4
 @w_return
@@ -124,6 +127,7 @@ def char_at(this, args):
 
     return string[position]
 
+
 #15.5.4.5
 @w_return
 def char_code_at(this, args):
@@ -140,6 +144,7 @@ def char_code_at(this, args):
     char = string[position]
     return ord(char)
 
+
 #15.5.4.6
 @w_return
 def concat(this, args):
@@ -147,6 +152,7 @@ def concat(this, args):
     others = [obj.to_string() for obj in args]
     string += u''.join(others)
     return string
+
 
 # 15.5.4.7
 @w_return
@@ -157,7 +163,6 @@ def index_of(this, args):
 
     substr = args[0].to_string()
     size = len(string)
-    subsize = len(substr)
     if len(args) < 2:
         pos = 0
     else:
@@ -168,17 +173,18 @@ def index_of(this, args):
     assert pos >= 0
     return string.find(substr, pos)
 
+
 # 15.5.4.8
 @w_return
 def last_index_of(this, args):
-    search_string = get_arg(args,0)
+    search_string = get_arg(args, 0)
     position = get_arg(args, 1)
 
     s = this.to_string()
     search_str = search_string.to_string()
     num_pos = position.ToNumber()
 
-    from pypy.rlib.rfloat import NAN, INFINITY, isnan, isinf
+    from pypy.rlib.rfloat import INFINITY, isnan, isinf
 
     if isnan(num_pos):
         pos = INFINITY
@@ -200,6 +206,7 @@ def last_index_of(this, args):
     idx = s.rfind(search_str, 0, end)
     return idx
 
+
 # pypy/rlib/rstring
 def _rsplit(value, by, maxsplit=-1):
     bylen = len(by)
@@ -219,6 +226,7 @@ def _rsplit(value, by, maxsplit=-1):
     res.append(value[start:len(value)])
     return res
 
+
 # 15.5.4.14
 @w_return
 def split(this, args):
@@ -231,13 +239,12 @@ def split(this, args):
 
     if limit is w_Undefined:
         import math
-        lim = int(math.pow(2,32) - 1)
+        lim = int(math.pow(2, 32) - 1)
     else:
         lim = limit.ToUInt32()
 
     if lim == 0 or separator is None:
         return [string]
-
 
     r = separator.to_string()
 
@@ -251,6 +258,7 @@ def split(this, args):
     else:
         splitted = _rsplit(string, r, lim)
         return splitted
+
 
 # 15.5.4.15
 @w_return
@@ -279,6 +287,7 @@ def substring(this, args):
     assert end >= 0
     return string[start:end]
 
+
 # 15.5.4.16
 @w_return
 def to_lower_case(this, args):
@@ -291,6 +300,7 @@ def to_lower_case(this, args):
         builder.append(unichr(unicodedb.tolower(ord(char))))
 
     return builder.build()
+
 
 # 15.5.4.18
 @w_return

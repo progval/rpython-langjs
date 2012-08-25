@@ -1,5 +1,6 @@
 from pypy.rlib.streamio import open_file_as_stream
 
+
 def load_file(filename):
     from js.astbuilder import parse_to_ast
     from runistr import decode_str_utf8
@@ -12,14 +13,16 @@ def load_file(filename):
     f.close()
     return ast
 
+
 class InterpreterConfig(object):
-    def __init__(self, config = {}):
+    def __init__(self, config={}):
         self.debug = config.get('debug', False)
         self.no_exception_jseval = config.get('no-exception-jseval', False)
 
+
 class Interpreter(object):
     """Creates a js interpreter"""
-    def __init__(self, config = {}):
+    def __init__(self, config={}):
         from js.jsobj import W_GlobalObject
         from js.object_space import object_space
         import js.builtins

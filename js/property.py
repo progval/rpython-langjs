@@ -1,6 +1,6 @@
 from pypy.rlib import jit
 from js.property_descriptor import PropertyDescriptor, DataPropertyDescriptor, AccessorPropertyDescriptor
-from pypy.rlib.objectmodel import enforceargs
+#from pypy.rlib.objectmodel import enforceargs
 
 NOT_SET = -1
 
@@ -29,6 +29,7 @@ class Property(object):
     @jit.elidable
     def to_property_descriptor(self):
         return PropertyDescriptor(enumerable=self.enumerable, configurable=self.configurable)
+
 
 class DataProperty(Property):
     def __init__(self, value=None, writable=NOT_SET, enumerable=NOT_SET, configurable=NOT_SET):
@@ -65,6 +66,7 @@ class DataProperty(Property):
     @jit.elidable
     def to_property_descriptor(self):
         return DataPropertyDescriptor(self.value, self.writable, self.enumerable, self.configurable)
+
 
 class AccessorProperty(Property):
     def __init__(self, getter=None, setter=None, enumerable=NOT_SET, configurable=NOT_SET):

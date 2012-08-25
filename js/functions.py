@@ -1,5 +1,6 @@
 from js.jsobj import _w
 
+
 class JsBaseFunction(object):
     eval_code = False
     function_code = False
@@ -42,8 +43,9 @@ class JsBaseFunction(object):
     def is_function_code(self):
         return False
 
+
 class JsNativeFunction(JsBaseFunction):
-    def __init__(self, function, name = u''):
+    def __init__(self, function, name=u''):
         self._name_ = name
         self._function_ = function
 
@@ -57,7 +59,7 @@ class JsNativeFunction(JsBaseFunction):
         this = ctx.this_binding()
         res = self._function_(this, args)
         w_res = _w(res)
-        compl = ReturnCompletion(value = w_res)
+        compl = ReturnCompletion(value=w_res)
         return compl
 
     def to_string(self):
@@ -67,8 +69,9 @@ class JsNativeFunction(JsBaseFunction):
         else:
             return u'function () { [native code] }'
 
+
 class JsIntimateFunction(JsNativeFunction):
-    def __init__(self, function, name = u''):
+    def __init__(self, function, name=u''):
         self._name_ = name
         self._intimate_function_ = function
 
@@ -77,6 +80,7 @@ class JsIntimateFunction(JsNativeFunction):
         compl = self._intimate_function_(ctx)
         assert isinstance(compl, Completion)
         return compl
+
 
 class JsExecutableCode(JsBaseFunction):
     def __init__(self, js_code):
@@ -120,12 +124,15 @@ class JsExecutableCode(JsBaseFunction):
         else:
             return u'function () { }'
 
+
 class JsGlobalCode(JsExecutableCode):
     pass
+
 
 class JsEvalCode(JsExecutableCode):
     def is_eval_code(self):
         return True
+
 
 class JsFunction(JsExecutableCode):
     def __init__(self, name, js_code):

@@ -1,13 +1,9 @@
-from pypy.rlib.rarithmetic import intmask, ovfcheck, ovfcheck_float_to_int
-from pypy.rlib.parsing.tree import RPythonVisitor, Symbol, Nonterminal
-from pypy.rlib.parsing.parsing import ParseError
+from pypy.rlib.rarithmetic import ovfcheck_float_to_int
+from pypy.rlib.parsing.tree import RPythonVisitor, Symbol
 from pypy.rlib.objectmodel import enforceargs
 
 from js import operations
-from js.object_map import ROOT_MAP
 
-def _get_root_map():
-    return ROOT_MAP
 
 class SymbolMap(object):
     def __init__(self):
@@ -58,6 +54,7 @@ class SymbolMap(object):
                 return symbol
 
 empty_symbols = SymbolMap()
+
 
 class FakeParseError(Exception):
     def __init__(self, pos, msg):
@@ -166,7 +163,7 @@ class ASTBuilder(RPythonVisitor):
             return None
 
     def set_sourcename(self, sourcename):
-        self.stsourcename = sourcename #XXX I should call this
+        self.stsourcename = sourcename  # XXX I should call this
 
     def get_pos(self, node):
         value = ''
@@ -189,9 +186,9 @@ class ASTBuilder(RPythonVisitor):
         if source_pos is None:
             return operations.Position()
         return operations.Position(
-                   source_pos.lineno,
-                   source_pos.columnno,
-                   source_pos.columnno + len(value))
+            source_pos.lineno,
+            source_pos.columnno,
+            source_pos.columnno + len(value))
 
     def visit_DECIMALLITERAL(self, node):
         pos = self.get_pos(node)
@@ -217,7 +214,7 @@ class ASTBuilder(RPythonVisitor):
         pos = self.get_pos(node)
         return operations.IntNumber(pos, int(node.additional_info, 8))
 
-    def string(self,node):
+    def string(self, node):
         from operations import string_unquote
         from runistr import unicode_unescape, decode_str_utf8
 
@@ -256,7 +253,7 @@ class ASTBuilder(RPythonVisitor):
 
     def visit_memberexpression(self, node):
         if isinstance(node.children[0], Symbol) and \
-           node.children[0].additional_info == 'new': # XXX could be a identifier?
+                node.children[0].additional_info == 'new':  # XXX could be a identifier?
             pos = self.get_pos(node)
             left = self.dispatch(node.children[1])
             right = self.dispatch(node.children[2])
@@ -265,7 +262,7 @@ class ASTBuilder(RPythonVisitor):
             return self.binaryop(node)
 
     def literalop(self, node):
-        pos = self.get_pos(node);
+        pos = self.get_pos(node)
         value = node.children[0].additional_info
         if value == "true":
             return operations.Boolean(pos, True)
@@ -308,7 +305,7 @@ class ASTBuilder(RPythonVisitor):
         pos = self.get_pos(op)
         l = [self.dispatch(child) for child in node.children[1:]]
         return self.LISTOP_TO_CLS[op.additional_info](pos, l)
-    visit_arrayliteral = listop # elision
+    visit_arrayliteral = listop  # elision
     visit_objectliteral = listop
 
     def visit_block(self, node):
@@ -354,7 +351,7 @@ class ASTBuilder(RPythonVisitor):
         else:
             left = self.dispatch(l)
         right = self.dispatch(node.children[1])
-        return operations.PropertyInit(pos,left,right)
+        return operations.PropertyInit(pos, left, right)
 
     def visit_IDENTIFIERNAME(self, node):
         pos = self.get_pos(node)
@@ -387,7 +384,7 @@ class ASTBuilder(RPythonVisitor):
     def visit_sourceelements(self, node):
         pos = self.get_pos(node)
         self.funclists.append({})
-        nodes=[]
+        nodes = []
 
         for child in node.children:
             n = self.dispatch(child)
@@ -403,7 +400,7 @@ class ASTBuilder(RPythonVisitor):
         self.enter_scope()
 
         pos = self.get_pos(node)
-        i=0
+        i = 0
         identifier, i = self.get_next_expr(node, i)
         parameters, i = self.get_next_expr(node, i)
         functionbody, i = self.get_next_expr(node, i)
@@ -412,7 +409,7 @@ class ASTBuilder(RPythonVisitor):
         #if parameters is not None:
         #    params = [pident.get_literal() for pident in parameters.nodes]
 
-        params = self.current_scope_parameters()
+        #params = self.current_scope_parameters()
 
         if identifier is not None:
             funcname = identifier.get_literal()
@@ -485,7 +482,7 @@ class ASTBuilder(RPythonVisitor):
         return isinstance(obj, Identifier)
 
     def is_member(self, obj):
-        from js.operations import  Member, MemberDot
+        from js.operations import Member, MemberDot
         return isinstance(obj, Member) or isinstance(obj, MemberDot)
 
     def is_local_identifier(self, obj):
@@ -529,9 +526,9 @@ class ASTBuilder(RPythonVisitor):
     def visit_ifstatement(self, node):
         pos = self.get_pos(node)
         condition = self.dispatch(node.children[0])
-        ifblock =  self.dispatch(node.children[1])
+        ifblock = self.dispatch(node.children[1])
         if len(node.children) > 2:
-            elseblock =  self.dispatch(node.children[2])
+            elseblock = self.dispatch(node.children[2])
         else:
             elseblock = None
         return operations.If(pos, condition, ifblock, elseblock)
@@ -614,26 +611,24 @@ class ASTBuilder(RPythonVisitor):
     visit_regularvarfor = visit_regularfor
 
     def visit_infor(self, node):
-        from js.operations import Identifier
         pos = self.get_pos(node)
         left = self.dispatch(node.children[1])
         right = self.dispatch(node.children[2])
-        body= self.dispatch(node.children[3])
+        body = self.dispatch(node.children[3])
         return operations.ForIn(pos, left, right, body)
 
     def visit_invarfor(self, node):
         pos = self.get_pos(node)
         left = self.dispatch(node.children[1])
         right = self.dispatch(node.children[2])
-        body= self.dispatch(node.children[3])
+        body = self.dispatch(node.children[3])
         return operations.ForIn(pos, left, right, body)
 
     def get_next_expr(self, node, i):
-        if isinstance(node.children[i], Symbol) and \
-           node.children[i].additional_info in [';', ')', '(', '}']:
-            return None, i+1
+        if isinstance(node.children[i], Symbol) and node.children[i].additional_info in [';', ')', '(', '}']:
+            return None, i + 1
         else:
-            return self.dispatch(node.children[i]), i+2
+            return self.dispatch(node.children[i]), i + 2
 
     def visit_breakstatement(self, node):
         pos = self.get_pos(node)
@@ -693,33 +688,32 @@ class ASTBuilder(RPythonVisitor):
 
 ASTBUILDER = ASTBuilder()
 
+
 # XXX this is somewhat hackish
 def new_ast_builder():
-    b = ASTBuilder() #ASTBUILDER
+    b = ASTBuilder()  # ASTBUILDER
     #b.funclists = []
     #b.scopes = Scopes()
     #b.sourcename = ""
     return b
 
-def make_ast_builder(sourcename = ''):
-    b = new_ast_builder() #ASTBuilder()
+
+def make_ast_builder(sourcename=''):
+    b = new_ast_builder()  # ASTBuilder()
     b.set_sourcename(sourcename)
     return b
 
-def make_eval_ast_builder(sourcename = ''):
-    b = make_ast_builder(sourcename)
-    b.scopes._scopes = [EvalScope()]
-    return b
 
 def parse_tree_to_ast(parse_tree):
     builder = make_ast_builder()
     tree = builder.dispatch(parse_tree)
     return tree
 
+
 @enforceargs(unicode)
 def parse_to_ast(code):
     #assert isinstance(code, unicode)
-    from js.jsparser import parse, ParseError
+    from js.jsparser import parse
     from runistr import encode_unicode_utf8
     src = encode_unicode_utf8(code)
     parse_tree = parse(src)

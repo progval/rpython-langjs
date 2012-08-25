@@ -1,12 +1,13 @@
-from pypy.rlib.jit import hint
-from pypy.rlib.objectmodel import we_are_translated
-from pypy.rlib.jit import JitDriver, purefunction
+#from pypy.rlib.jit import hint
+#from pypy.rlib.objectmodel import we_are_translated
+from pypy.rlib.jit import JitDriver
+from pypy.rlib import jit
 
-from js.execution import JsTypeError, ReturnException, JsThrowException, JsReferenceError
+from js.execution import JsThrowException
 from js.opcodes import opcodes, LABEL, BaseJump
-from js.jsobj import W_Root, W_String, _w, w_Null, w_Undefined
+from js.jsobj import W_String
+from js.astbuilder import empty_symbols
 
-from pypy.rlib import jit, debug
 
 def get_printable_location(pc, debug, jscode):
     if pc < jscode._opcode_count():
@@ -16,7 +17,8 @@ def get_printable_location(pc, debug, jscode):
         return '%d: %s' % (pc, 'end of opcodes')
 
 #jitdriver = JitDriver(greens=['pc', 'self'], reds=['ctx'], get_printable_location = get_printable_location, virtualizables=['ctx'])
-jitdriver = JitDriver(greens=['pc', 'debug', 'self'], reds=['result', 'ctx'], get_printable_location = get_printable_location)
+jitdriver = JitDriver(greens=['pc', 'debug', 'self'], reds=['result', 'ctx'], get_printable_location=get_printable_location)
+
 
 def ast_to_bytecode(ast, symbol_map):
     bytecode = JsCode(symbol_map)
@@ -24,15 +26,15 @@ def ast_to_bytecode(ast, symbol_map):
         ast.emit(bytecode)
     return bytecode
 
+
 class AlreadyRun(Exception):
     pass
 
-from js.astbuilder import empty_symbols
 
 class JsCode(object):
     """ That object stands for code of a single javascript function
     """
-    def __init__(self, symbol_map = empty_symbols):
+    def __init__(self, symbol_map=empty_symbols):
         self.opcodes = []
         self.label_count = 0
         self.has_labels = True
@@ -60,6 +62,7 @@ class JsCode(object):
     def params(self):
         return self._symbols.parameters
 
+    #@jit.elidable
     def estimated_stack_size(self):
         # TODO: compute only once
         if self._estimated_stack_size == -1:
@@ -73,7 +76,7 @@ class JsCode(object):
 
         return self._estimated_stack_size
 
-    def emit_label(self, num = -1):
+    def emit_label(self, num=-1):
         if num == -1:
             num = self.prealocate_label()
         self.emit('LABEL', num)
@@ -215,8 +218,7 @@ class JsCode(object):
         from js.object_space import object_space
         debug = object_space.interpreter.config.debug
         from js.completion import NormalCompletion, is_completion, is_return_completion, is_empty_completion
-        from js.opcodes import RETURN, BaseJump
-        from js.jsobj import w_Undefined
+        from js.opcodes import BaseJump
 
         self.unlabel()
 
@@ -229,7 +231,7 @@ class JsCode(object):
         pc = 0
         result = None
         while True:
-            jitdriver.jit_merge_point(pc = pc, debug = debug, self = self, ctx = ctx, result = result)
+            jitdriver.jit_merge_point(pc=pc, debug=debug, self=self, ctx=ctx, result=result)
             if pc >= self._opcode_count():
                 break
             opcode = self._get_opcode(pc)
@@ -242,14 +244,14 @@ class JsCode(object):
                 print(d)
 
             if is_return_completion(result):
-                break;
+                break
             elif not is_completion(result):
                 result = NormalCompletion()
 
             if isinstance(opcode, BaseJump):
                 new_pc = opcode.do_jump(ctx, pc)
                 if new_pc < pc:
-                    jitdriver.can_enter_jit(pc = pc, debug = debug, self = self, ctx = ctx, result = result)
+                    jitdriver.can_enter_jit(pc=pc, debug=debug, self=self, ctx=ctx, result=result)
                 pc = new_pc
                 continue
             else:
@@ -257,11 +259,10 @@ class JsCode(object):
 
         assert is_completion(result)
         if is_empty_completion(result):
-            result = NormalCompletion(value = ctx.stack_top())
+            result = NormalCompletion(value=ctx.stack_top())
 
         return result
 
 
     #def __repr__(self):
         #return "\n".join([repr(i) for i in self.opcodes])
-

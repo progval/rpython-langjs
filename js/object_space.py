@@ -1,4 +1,5 @@
-from js.jsobj import _w, W_BasicObject, W__Object, W_BasicFunction, W__Function, W_DateObject, W_BooleanObject, W_StringObject, W_NumericObject, W__Array, w_Null
+from js.jsobj import _w, W__Object, W_BasicFunction, W__Function, W_DateObject, W_BooleanObject, W_StringObject, W_NumericObject, W__Array, w_Null
+
 
 class ObjectSpace(object):
     def __init__(self):
@@ -16,7 +17,7 @@ class ObjectSpace(object):
     def get_global_environment(self):
         return self.global_context.variable_environment()
 
-    def assign_proto(self, obj, proto = None):
+    def assign_proto(self, obj, proto=None):
         if proto is not None:
             obj._prototype_ = proto
             return obj
@@ -52,7 +53,7 @@ class ObjectSpace(object):
         self.assign_proto(obj)
         return obj
 
-    def new_array(self, length = _w(0)):
+    def new_array(self, length=_w(0)):
         obj = W__Array(length)
         self.assign_proto(obj)
         return obj
@@ -73,6 +74,7 @@ class ObjectSpace(object):
         return obj
 
 object_space = ObjectSpace()
+
 
 def w_return(fn):
     def f(*args):

@@ -45,9 +45,6 @@ class PropertyDescriptor(object):
     def is_generic_descriptor(self):
         return self.is_accessor_descriptor() is False and self.is_data_descriptor() is False
 
-    def has_set_value(self):
-        return self.value is not NOT_SET
-
     def has_set_writable(self):
         return self.writable is not NOT_SET
 
@@ -91,7 +88,7 @@ class PropertyDescriptor(object):
         if not isinstance(other, PropertyDescriptor):
             return False
 
-        if self.has_set_setter()  and self.setter != other.setter:
+        if self.has_set_setter() and self.setter != other.setter:
             return False
 
         if self.has_set_getter() and self.getter != other.getter:
@@ -112,12 +109,13 @@ class PropertyDescriptor(object):
         return True
 
     def copy(self):
-        return PropertyDescriptor(value = self.value,
-            writable = self.writable,
-            getter = self.getter,
-            setter = self.setter,
-            configurable = self.configurable,
-            enumerable = self.enumerable)
+        return PropertyDescriptor(value=self.value,
+                                  writable=self.writable,
+                                  getter=self.getter,
+                                  setter=self.setter,
+                                  configurable=self.configurable,
+                                  enumerable=self.enumerable)
+
 
 class DataPropertyDescriptor(PropertyDescriptor):
     def __init__(self, value, writable, enumerable, configurable):
@@ -125,6 +123,7 @@ class DataPropertyDescriptor(PropertyDescriptor):
 
     def copy(self):
         return DataPropertyDescriptor(self.value, self.writable, self.enumerable, self.configurable)
+
 
 class AccessorPropertyDescriptor(PropertyDescriptor):
     def __init__(self, getter, setter, enumerable, configurable):

@@ -28,6 +28,7 @@ class EnvironmentRecord(object):
     def implicit_this_value(self):
         raise NotImplementedError
 
+
 class DeclarativeEnvironmentRecord(EnvironmentRecord):
     def __init__(self):
         EnvironmentRecord.__init__(self)
@@ -130,10 +131,11 @@ class DeclarativeEnvironmentRecord(EnvironmentRecord):
     def initialize_immutable_binding(self, identifier, value):
         raise NotImplementedError(self.__class__)
 
+
 class ObjectEnvironmentRecord(EnvironmentRecord):
     provide_this = False
 
-    def __init__(self, obj, provide_this = False):
+    def __init__(self, obj, provide_this=False):
         self.binding_object = obj
         if provide_this is True:
             self.provide_this = True
@@ -153,7 +155,7 @@ class ObjectEnvironmentRecord(EnvironmentRecord):
             config_value = True
 
         from js.jsobj import PropertyDescriptor
-        desc = PropertyDescriptor(value = w_Undefined, writable = True, enumerable = True, configurable = config_value)
+        desc = PropertyDescriptor(value=w_Undefined, writable=True, enumerable=True, configurable=config_value)
         bindings.define_own_property(n, desc, True)
 
     # 10.2.1.2.3
@@ -163,7 +165,7 @@ class ObjectEnvironmentRecord(EnvironmentRecord):
         bindings.put(n, v, s)
 
     # 10.2.1.2.4
-    def get_binding_value(self, n, s = False):
+    def get_binding_value(self, n, s=False):
         bindings = self.binding_object
         value = bindings.has_property(n)
         if value is False:
@@ -185,6 +187,7 @@ class ObjectEnvironmentRecord(EnvironmentRecord):
         if self.provide_this is True:
             return self.binding_object
         return w_Undefined
+
 
 class GlobalEnvironmentRecord(ObjectEnvironmentRecord):
     pass

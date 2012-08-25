@@ -1,5 +1,6 @@
 from js.execution import JsReferenceError
 
+
 def get_identifier_reference(lex, identifier, strict=False):
     if lex is None:
         return Reference(referenced=identifier, strict=strict)
@@ -14,6 +15,7 @@ def get_identifier_reference(lex, identifier, strict=False):
 
 
 class LexicalEnvironment(object):
+
     def __init__(self, outer_environment=None):
         assert isinstance(outer_environment, LexicalEnvironment) or outer_environment is None
         self.outer_environment = outer_environment
@@ -22,15 +24,16 @@ class LexicalEnvironment(object):
     def get_identifier_reference(self, identifier, strict=False):
         return get_identifier_reference(self, identifier, strict)
 
+
 class DeclarativeEnvironment(LexicalEnvironment):
-    def __init__(self, outer_environment = None):
+    def __init__(self, outer_environment=None):
         LexicalEnvironment.__init__(self, outer_environment)
         from js.environment_record import DeclarativeEnvironmentRecord
         self.environment_record = DeclarativeEnvironmentRecord()
 
 
 class ObjectEnvironment(LexicalEnvironment):
-    def __init__(self, obj, outer_environment = None):
+    def __init__(self, obj, outer_environment=None):
         LexicalEnvironment.__init__(self, outer_environment)
         from js.environment_record import ObjectEnvironmentRecord
         self.environment_record = ObjectEnvironmentRecord(obj)

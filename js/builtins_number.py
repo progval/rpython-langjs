@@ -3,6 +3,7 @@ from js.execution import JsRangeError, JsTypeError
 from js.jsobj import W_Number, W_NumericObject, _w
 from js.object_space import w_return
 
+
 def setup(global_object):
     from js.builtins import put_property, put_native_function
     from js.object_space import object_space
@@ -14,8 +15,7 @@ def setup(global_object):
     put_property(global_object, u'Number', w_Number)
 
     # 15.7.3
-    put_property(w_Number, u'length', _w(1), writable = False, enumerable = False, configurable = False)
-
+    put_property(w_Number, u'length', _w(1), writable=False, enumerable=False, configurable=False)
 
     # 15.7.4
     w_NumberPrototype = W_NumericObject(_w(0))
@@ -32,22 +32,22 @@ def setup(global_object):
     put_native_function(w_NumberPrototype, u'valueOf', value_of)
 
     # 15.7.3.1
-    put_property(w_Number, u'prototype', w_NumberPrototype, writable = False, enumerable = False, configurable = False)
+    put_property(w_Number, u'prototype', w_NumberPrototype, writable=False, enumerable=False, configurable=False)
 
     # 15.7.3.2
-    put_property(w_Number, u'MAX_VALUE', w_MAX_VALUE, writable = False, configurable = False, enumerable = False)
+    put_property(w_Number, u'MAX_VALUE', w_MAX_VALUE, writable=False, configurable=False, enumerable=False)
 
     # 15.7.3.3
-    put_property(w_Number, u'MIN_VALUE', w_MIN_VALUE, writable = False, configurable = False, enumerable = False)
+    put_property(w_Number, u'MIN_VALUE', w_MIN_VALUE, writable=False, configurable=False, enumerable=False)
 
     # 15.7.3.4
-    put_property(w_Number, u'NaN', w_NAN, writable = False, configurable = False, enumerable = False)
+    put_property(w_Number, u'NaN', w_NAN, writable=False, configurable=False, enumerable=False)
 
     # 15.7.3.5
-    put_property(w_Number, u'POSITIVE_INFINITY', w_POSITIVE_INFINITY, writable = False, configurable = False, enumerable = False)
+    put_property(w_Number, u'POSITIVE_INFINITY', w_POSITIVE_INFINITY, writable=False, configurable=False, enumerable=False)
 
     # 15.7.3.6
-    put_property(w_Number, u'NEGATIVE_INFINITY', w_NEGATIVE_INFINITY, writable = False, configurable = False, enumerable = False)
+    put_property(w_Number, u'NEGATIVE_INFINITY', w_NEGATIVE_INFINITY, writable=False, configurable=False, enumerable=False)
 
 # 15.7.3.2
 w_MAX_VALUE = _w(1.7976931348623157e308)
@@ -63,6 +63,7 @@ w_POSITIVE_INFINITY = _w(INFINITY)
 
 # 15.7.3.6
 w_NEGATIVE_INFINITY = _w(-INFINITY)
+
 
 # 15.7.4.2
 @w_return
@@ -81,6 +82,7 @@ def to_string(this, args):
 
     # TODO radix, see 15.7.4.2
     return num.to_string()
+
 
 # 15.7.4.4
 @w_return

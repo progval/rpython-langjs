@@ -4,16 +4,10 @@ operations.py
 Implements the javascript operations nodes for the interpretation tree
 """
 
-from js.jsobj import W_IntNumber, W_FloatNumber, \
-     w_Undefined, W_String, W_Boolean,\
-     w_Null, isnull_or_undefined
-from pypy.rlib.parsing.ebnfparse import Symbol, Nonterminal
-from js.execution import JsTypeError, ThrowException
+from js.execution import JsTypeError
 from pypy.rlib.unroll import unrolling_iterable
 from pypy.rlib.objectmodel import enforceargs
 
-import sys
-import os
 
 class Position(object):
     def __init__(self, lineno=-1, start=-1, end=-1):
@@ -22,7 +16,8 @@ class Position(object):
         self.end = end
 
     def __repr__(self):
-        return "l:%d %d,%d" %(self.lineno, self.start, self.end)
+        return "l:%d %d,%d" % (self.lineno, self.start, self.end)
+
 
 class Node(object):
     """
@@ -46,11 +41,13 @@ class Node(object):
         raise NotImplementedError()
 
     def __str__(self):
-        return "%s()"%(self.__class__)
+        return "%s()" % (self.__class__)
+
 
 class Statement(Node):
     def __init__(self, pos):
         self.pos = pos
+
 
 class ExprStatement(Node):
     def __init__(self, pos, expr):
@@ -60,13 +57,16 @@ class ExprStatement(Node):
     def emit(self, bytecode):
         self.expr.emit(bytecode)
 
+
 class Expression(Statement):
     pass
+
 
 class ListOp(Expression):
     def __init__(self, pos, nodes):
         self.pos = pos
         self.nodes = nodes
+
 
 def create_unary_op(name):
     class UnaryOp(Expression):
@@ -80,6 +80,7 @@ def create_unary_op(name):
             bytecode.emit(name)
     UnaryOp.__name__ = name
     return UnaryOp
+
 
 def create_binary_op(name):
     class BinaryOp(Expression):
@@ -95,9 +96,11 @@ def create_binary_op(name):
     BinaryOp.__name__ = name
     return BinaryOp
 
+
 class Undefined(Statement):
     def emit(self, bytecode):
         bytecode.emit('LOAD_UNDEFINED')
+
 
 class PropertyInit(Expression):
     def __init__(self, pos, lefthand, expr):
@@ -112,6 +115,7 @@ class PropertyInit(Expression):
         else:
             self.lefthand.emit(bytecode)
 
+
 class Array(ListOp):
     def emit(self, bytecode):
         for element in self.nodes:
@@ -120,22 +124,23 @@ class Array(ListOp):
 
 
 OPERANDS = {
-    '+='   : 'ADD',
-    '-='   : 'SUB',
-    '*='   : 'MUL',
-    '/='   : 'DIV',
-    '++'   : 'INCR',
-    '--'   : 'DECR',
-    '%='   : 'MOD',
-    '&='   : 'BITAND',
-    '|='   : 'BITOR',
-    '^='   : 'BITXOR',
-    '>>='  : 'RSH',
-    '<<='  : 'LSH',
-    '>>>=' : 'URSH'
-    }
+    '+=': 'ADD',
+    '-=': 'SUB',
+    '*=': 'MUL',
+    '/=': 'DIV',
+    '++': 'INCR',
+    '--': 'DECR',
+    '%=': 'MOD',
+    '&=': 'BITAND',
+    '|=': 'BITOR',
+    '^=': 'BITXOR',
+    '>>=': 'RSH',
+    '<<=': 'LSH',
+    '>>>=': 'URSH'
+}
 
 OPERATIONS = unrolling_iterable(OPERANDS.items())
+
 
 class BaseAssignment(Expression):
     noops = ['=']
@@ -175,8 +180,9 @@ class BaseAssignment(Expression):
     def emit_store(self, bytecode):
         raise NotImplementedError
 
+
 class AssignmentOperation(BaseAssignment):
-    def __init__(self, pos, left, identifier, index, right, operand, post = False):
+    def __init__(self, pos, left, identifier, index, right, operand, post=False):
         self.left = left
         self.identifier = identifier
         self.index = index
@@ -190,8 +196,9 @@ class AssignmentOperation(BaseAssignment):
     def emit_store(self, bytecode):
         bytecode.emit('STORE', self.index, self.identifier)
 
+
 class LocalAssignmentOperation(AssignmentOperation):
-    def __init__(self, pos, left, right, operand, post = False):
+    def __init__(self, pos, left, right, operand, post=False):
         self.left = left
         self.local = left.get_local()
         self.identifier = left.get_literal()
@@ -205,8 +212,9 @@ class LocalAssignmentOperation(AssignmentOperation):
     def emit_store(self, bytecode):
         bytecode.emit('STORE_LOCAL', self.local)
 
+
 class MemberAssignmentOperation(BaseAssignment):
-    def __init__(self, pos, left, right, operand, post = False):
+    def __init__(self, pos, left, right, operand, post=False):
         self.pos = pos
         self.left = left
         self.right = right
@@ -223,6 +231,7 @@ class MemberAssignmentOperation(BaseAssignment):
         self.expr.emit(bytecode)
         self.w_object.emit(bytecode)
         bytecode.emit('STORE_MEMBER')
+
 
 class Block(Statement):
     def __init__(self, pos, nodes):
@@ -246,10 +255,12 @@ BitwiseOr = create_binary_op('BITOR')
 
 BitwiseNot = create_unary_op('BITNOT')
 
+
 class Unconditional(Statement):
     def __init__(self, pos, target):
         self.pos = pos
         self.target = target
+
 
 class Break(Unconditional):
     def emit(self, bytecode):
@@ -257,11 +268,13 @@ class Break(Unconditional):
         bytecode.emit('LOAD_UNDEFINED')
         bytecode.emit_break()
 
+
 class Continue(Unconditional):
     def emit(self, bytecode):
         assert self.target is None
         bytecode.emit('LOAD_UNDEFINED')
         bytecode.emit_continue()
+
 
 class Call(Expression):
     def __init__(self, pos, left, args):
@@ -285,12 +298,14 @@ class Call(Expression):
 
 Comma = create_binary_op('COMMA')
 
+
 class Conditional(Expression):
     def __init__(self, pos, condition, truepart, falsepart):
         self.pos = pos
         self.condition = condition
         self.truepart = truepart
         self.falsepart = falsepart
+
 
 class Member(Expression):
     "this is for object[name]"
@@ -307,6 +322,7 @@ class Member(Expression):
         self.left.emit(bytecode)
         bytecode.emit('LOAD_MEMBER')
 
+
 class MemberDot(Expression):
     "this is for object.name"
     def __init__(self, pos, left, name):
@@ -322,6 +338,7 @@ class MemberDot(Expression):
         bytecode.emit_str(self.name)
         self.left.emit(bytecode)
         bytecode.emit('LOAD_MEMBER')
+
 
 class FunctionStatement(Statement):
     def __init__(self, pos, name, index, body_ast, symbol_map):
@@ -347,6 +364,7 @@ class FunctionStatement(Statement):
         if index is not None:
             bytecode.emit('STORE', index, name)
 
+
 class Identifier(Expression):
     def __init__(self, pos, name, index):
         self.pos = pos
@@ -354,7 +372,7 @@ class Identifier(Expression):
         self.index = index
 
     def __repr__(self):
-        return "Identifier '%s'@%d" % (self.name, self.index )
+        return "Identifier '%s'@%d" % (self.name, self.index)
 
     def emit(self, bytecode):
         bytecode.emit('LOAD_VARIABLE', self.index, self.name)
@@ -362,12 +380,14 @@ class Identifier(Expression):
     def get_literal(self):
         return self.name
 
+
 class This(Identifier):
     def __init__(self, pos):
         self.pos = pos
 
     def emit(self, bytecode):
         bytecode.emit('LOAD_THIS')
+
 
 class If(Statement):
     def __init__(self, pos, condition, thenpart, elsepart=None):
@@ -391,6 +411,7 @@ class If(Statement):
             bytecode.emit('LOAD_UNDEFINED')
 
         bytecode.emit('LABEL', endif)
+
 
 class Switch(Statement):
     def __init__(self, pos, expression, clauses, default_clause):
@@ -419,22 +440,26 @@ class Switch(Statement):
         self.default_clause.emit(bytecode)
         bytecode.emit('LABEL', end_of_switch)
 
+
 class CaseBlock(Statement):
     def __init__(self, pos, clauses, default_clause):
         self.pos = pos
         self.clauses = clauses
         self.default_clause = default_clause
 
+
 class CaseClauses(Statement):
     def __init__(self, pos, clauses):
         self.pos = pos
         self.clauses = clauses
+
 
 class CaseClause(Statement):
     def __init__(self, pos, expressions, block):
         self.pos = pos
         self.expressions = expressions
         self.block = block
+
 
 class StatementList(Statement):
     def __init__(self, pos, block):
@@ -443,6 +468,7 @@ class StatementList(Statement):
 
     def emit(self, bytecode):
         self.block.emit(bytecode)
+
 
 class DefaultClause(Statement):
     def __init__(self, pos, block):
@@ -462,6 +488,7 @@ class DefaultClause(Statement):
 #
 ##############################################################################
 
+
 class And(Expression):
     def __init__(self, pos, left, right):
         self.pos = pos
@@ -474,6 +501,7 @@ class And(Expression):
         bytecode.emit('JUMP_IF_FALSE_NOPOP', one)
         self.right.emit(bytecode)
         bytecode.emit('LABEL', one)
+
 
 class Or(Expression):
     def __init__(self, pos, left, right):
@@ -525,6 +553,7 @@ StrictNe = create_binary_op('ISNOT')
 In = create_binary_op('IN')
 InstanceOf = create_binary_op('INSTANCEOF')
 
+
 class Typeof(Expression):
     def __init__(self, pos, left):
         self.pos = pos
@@ -537,6 +566,7 @@ class Typeof(Expression):
         else:
             self.left.emit(bytecode)
             bytecode.emit('TYPEOF')
+
 
 class Delete(Expression):
     def __init__(self, pos, what):
@@ -566,6 +596,7 @@ class Delete(Expression):
 #        name= self.right.eval(ctx).GetValue().to_string(ctx)
 #        return W_Reference(name, w_obj)
 
+
 class ArgumentList(ListOp):
     def emit(self, bytecode):
         for node in self.nodes:
@@ -584,6 +615,7 @@ Mod = create_binary_op('MOD')
 Division = create_binary_op('DIV')
 Sub = create_binary_op('SUB')
 
+
 class Null(Expression):
     def emit(self, bytecode):
         bytecode.emit('LOAD_NULL')
@@ -594,6 +626,7 @@ class Null(Expression):
 #
 ##############################################################################
 
+
 class New(Expression):
     def __init__(self, pos, left):
         self.pos = pos
@@ -602,6 +635,7 @@ class New(Expression):
     def emit(self, bytecode):
         self.left.emit(bytecode)
         bytecode.emit('NEW_NO_ARGS')
+
 
 class NewWithArgs(Expression):
     def __init__(self, pos, left, right):
@@ -614,8 +648,10 @@ class NewWithArgs(Expression):
         self.right.emit(bytecode)
         bytecode.emit('NEW')
 
+
 class BaseNumber(Expression):
     pass
+
 
 class IntNumber(BaseNumber):
     def __init__(self, pos, num):
@@ -628,6 +664,7 @@ class IntNumber(BaseNumber):
     def emit(self, bytecode):
         bytecode.emit('LOAD_INTCONSTANT', self.num)
 
+
 class FloatNumber(BaseNumber):
     def __init__(self, pos, num):
         self.pos = pos
@@ -635,6 +672,7 @@ class FloatNumber(BaseNumber):
 
     def emit(self, bytecode):
         bytecode.emit('LOAD_FLOATCONSTANT', self.num)
+
 
 @enforceargs(unicode)
 def string_unquote(string):
@@ -649,6 +687,7 @@ def string_unquote(string):
 
     return s
 
+
 class String(Expression):
     @enforceargs(None, None, unicode)
     def __init__(self, pos, strval):
@@ -662,17 +701,19 @@ class String(Expression):
         strval = self.strval
         bytecode.emit('LOAD_STRINGCONSTANT', strval)
 
+
 class ObjectInit(ListOp):
     def emit(self, bytecode):
         for prop in self.nodes:
             prop.emit(bytecode)
         bytecode.emit('LOAD_OBJECT', len(self.nodes))
 
+
 class SourceElements(Statement):
     """
     SourceElements nodes are found on each function declaration and in global code
     """
-    def __init__(self, pos, var_decl, func_decl, nodes, sourcename = ''):
+    def __init__(self, pos, var_decl, func_decl, nodes, sourcename=''):
         self.pos = pos
         self.var_decl = var_decl
         self.func_decl = func_decl
@@ -698,6 +739,7 @@ class SourceElements(Statement):
         else:
             bytecode.emit('LOAD_UNDEFINED')
 
+
 class Program(Statement):
     def __init__(self, pos, body, symbol_map):
         self.pos = pos
@@ -706,6 +748,7 @@ class Program(Statement):
 
     def emit(self, bytecode):
         self.body.emit(bytecode)
+
 
 class Return(Statement):
     def __init__(self, pos, expr):
@@ -719,6 +762,7 @@ class Return(Statement):
             self.expr.emit(bytecode)
         bytecode.emit('RETURN')
 
+
 class Throw(Statement):
     def __init__(self, pos, exp):
         self.pos = pos
@@ -727,6 +771,7 @@ class Throw(Statement):
     def emit(self, bytecode):
         self.exp.emit(bytecode)
         bytecode.emit('THROW')
+
 
 class Try(Statement):
     def __init__(self, pos, tryblock, catchparam, catchblock, finallyblock):
@@ -760,6 +805,7 @@ class Try(Statement):
         else:
             finallyexec = None
         bytecode.emit('TRYCATCHBLOCK', tryexec, catchparam, catchexec, finallyexec)
+
 
 class VariableDeclaration(Expression):
     def __init__(self, pos, identifier, index, expr=None):
@@ -811,6 +857,7 @@ class VariableDeclaration(Expression):
 #    def get_local(self):
 #        return self.local
 
+
 class VariableDeclList(Statement):
     def __init__(self, pos, nodes):
         self.pos = pos
@@ -829,6 +876,7 @@ class VariableDeclList(Statement):
         else:
             bytecode.emit('LOAD_UNDEFINED')
 
+
 class Variable(Statement):
     def __init__(self, pos, body):
         self.pos = pos
@@ -837,12 +885,14 @@ class Variable(Statement):
     def emit(self, bytecode):
         self.body.emit(bytecode)
 
+
 class Empty(Expression):
     def __init__(self, pos):
         self.pos = pos
 
     def emit(self, bytecode):
         pass
+
 
 class Void(Expression):
     def __init__(self, pos, expr):
@@ -854,10 +904,12 @@ class Void(Expression):
         bytecode.emit('POP')
         bytecode.emit('LOAD_UNDEFINED')
 
+
 class EmptyExpression(Expression):
     def emit(self, bytecode):
         #bytecode.unpop_or_undefined()
         bytecode.emit('LOAD_UNDEFINED')
+
 
 class With(Statement):
     def __init__(self, pos, expr, body):
@@ -877,11 +929,13 @@ class With(Statement):
 
         bytecode.emit('WITH', body_exec)
 
+
 class WhileBase(Statement):
     def __init__(self, pos, condition, body):
         self.pos = pos
         self.condition = condition
         self.body = body
+
 
 class Do(WhileBase):
     def emit(self, bytecode):
@@ -893,6 +947,7 @@ class Do(WhileBase):
         bytecode.emit('POP')
         bytecode.emit('JUMP', startlabel)
         bytecode.emit_endloop_label(end)
+
 
 class While(WhileBase):
     def emit(self, bytecode):
@@ -907,6 +962,7 @@ class While(WhileBase):
         bytecode.emit('JUMP', startlabel)
         bytecode.emit_endloop_label(endlabel)
         bytecode.done_continue()
+
 
 class ForIn(Statement):
     def __init__(self, pos, left_expr, lobject, body):
@@ -961,6 +1017,7 @@ class ForIn(Statement):
         bytecode.emit('JUMP', precond)
         bytecode.emit_endloop_label(finish)
 
+
 class For(Statement):
     def __init__(self, pos, setup, condition, update, body):
         self.pos = pos
@@ -986,6 +1043,7 @@ class For(Statement):
         bytecode.emit('POP')
         bytecode.emit('JUMP', precond)
         bytecode.emit_endloop_label(finish)
+
 
 class Boolean(Expression):
     def __init__(self, pos, boolval):

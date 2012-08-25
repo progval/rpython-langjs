@@ -1,4 +1,5 @@
 from js.object_space import w_return, hide_on_translate
+#from pypy.rlib import jit
 
 
 def setup_builtins(global_object, overwrite_eval=False):

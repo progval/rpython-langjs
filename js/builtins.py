@@ -1,44 +1,38 @@
-from js.jsobj import w_Undefined, W_IntNumber, w_Null, W_Boolean,\
-     W_FloatNumber, W_String, newbool, isnull_or_undefined, W_Number, _w
-from js.execution import ThrowException, JsTypeError
+from js.jsobj import w_Undefined, _w
 
-from js.jsparser import parse, ParseError
-from js.astbuilder import make_ast_builder, make_eval_ast_builder
-from js.jscode import JsCode
+#from pypy.rlib import jit
 
-from pypy.rlib.objectmodel import specialize
-from pypy.rlib.listsort import TimSort
-from pypy.rlib.rarithmetic import r_uint
 
-from pypy.rlib import jit
-
-def new_native_function(function, name = u'', params = []):
+def new_native_function(function, name=u'', params=[]):
     from js.functions import JsNativeFunction
     from js.object_space import object_space
 
     jsfunc = JsNativeFunction(function, name)
-    obj = object_space.new_func(jsfunc, formal_parameter_list = params)
+    obj = object_space.new_func(jsfunc, formal_parameter_list=params)
     return obj
 
-# 15
-def put_native_function(obj, name, func, writable = True, configurable = True, enumerable = False, params = []):
-    jsfunc = new_native_function(func, name, params)
-    put_property(obj, name, jsfunc, writable = writable, configurable = configurable, enumerable = enumerable)
 
 # 15
-def put_intimate_function(obj, name, func, writable = True, configurable = True, enumerable = False, params = []):
+def put_native_function(obj, name, func, writable=True, configurable=True, enumerable=False, params=[]):
+    jsfunc = new_native_function(func, name, params)
+    put_property(obj, name, jsfunc, writable=writable, configurable=configurable, enumerable=enumerable)
+
+
+# 15
+def put_intimate_function(obj, name, func, writable=True, configurable=True, enumerable=False, params=[]):
     from js.functions import JsIntimateFunction
-    from js.jsobj import W__Function
     from js.object_space import object_space
 
     jsfunc = JsIntimateFunction(func, name)
-    w_func = object_space.new_func(jsfunc, formal_parameter_list = params)
-    put_property(obj, name, w_func, writable = writable, configurable = configurable, enumerable = enumerable)
+    w_func = object_space.new_func(jsfunc, formal_parameter_list=params)
+    put_property(obj, name, w_func, writable=writable, configurable=configurable, enumerable=enumerable)
+
 
 # 15
-def put_property(obj, name, value, writable = True, configurable = True, enumerable = False):
+def put_property(obj, name, value, writable=True, configurable=True, enumerable=False):
     from js.jsobj import put_property as _put_property
     _put_property(obj, name, value, writable, configurable, enumerable)
+
 
 def setup_builtins(global_object):
     from js.object_space import object_space
@@ -55,7 +49,6 @@ def setup_builtins(global_object):
 
     # 15.3.4 Properties of the Function Prototype Object
     import js.builtins_function as function_builtins
-    from js.jsobj import W__Object, W__Function, W_BasicFunction
     from js.functions import JsNativeFunction
 
     empty_func = JsNativeFunction(function_builtins.empty, u'Empty')
@@ -65,7 +58,6 @@ def setup_builtins(global_object):
 
     # 15.3.3
     object_space.assign_proto(w_Function, object_space.proto_function)
-
 
     # 15.2 Object Objects
     # 15.2.3 Properties of the Object Constructor
@@ -78,7 +70,7 @@ def setup_builtins(global_object):
     put_property(global_object, u'Object', w_Object)
 
     # 15.2.3.1 Object.prototype
-    put_property(w_Object, u'prototype', w_ObjectPrototype, writable = False, configurable = False, enumerable = False)
+    put_property(w_Object, u'prototype', w_ObjectPrototype, writable=False, configurable=False, enumerable=False)
 
     # 14.2.4.1 Object.prototype.constructor
     put_property(w_ObjectPrototype, u'constructor', w_Object)
@@ -95,10 +87,10 @@ def setup_builtins(global_object):
     # 15.3.3 Properties of the Function Constructor
 
     # 15.3.3.1 Function.prototype
-    put_property(w_Function, u'prototype', w_FunctionPrototype, writable = False, configurable = False, enumerable = False)
+    put_property(w_Function, u'prototype', w_FunctionPrototype, writable=False, configurable=False, enumerable=False)
 
     # 15.3.3.2 Function.length
-    put_property(w_Function, u'length', _w(1), writable = False, configurable = False, enumerable = False)
+    put_property(w_Function, u'length', _w(1), writable=False, configurable=False, enumerable=False)
 
     # 14.3.4.1 Function.prototype.constructor
     put_property(w_FunctionPrototype, u'constructor', w_Function)
@@ -136,7 +128,8 @@ def setup_builtins(global_object):
     import js.builtins_global
     js.builtins_global.setup(global_object)
 
-def get_arg(args, index, default = w_Undefined):
+
+def get_arg(args, index, default=w_Undefined):
     if len(args) > index:
         return args[index]
     return default

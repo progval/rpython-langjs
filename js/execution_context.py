@@ -1,6 +1,7 @@
 from js.jsobj import w_Undefined
 from js.utils import StackMixin
 
+
 class ExecutionContext(StackMixin):
     def __init__(self):
         self._lexical_environment_ = None
@@ -68,7 +69,7 @@ class ExecutionContext(StackMixin):
                 if n > arg_count:
                     v = w_Undefined
                 else:
-                    v = args[n-1]
+                    v = args[n - 1]
                 arg_already_declared = env.has_binding(arg_name)
                 if arg_already_declared is False:
                     env.create_mutuable_binding(arg_name, configurable_bindings)
@@ -82,7 +83,7 @@ class ExecutionContext(StackMixin):
             if func_already_declared is False:
                 env.create_mutuable_binding(fn, configurable_bindings)
             else:
-                pass #see 10.5 5.e
+                pass  # see 10.5 5.e
             env.set_mutable_binding(fn, fo, False)
 
         arguments_already_declared = env.has_binding(u'arguments')
@@ -98,14 +99,14 @@ class ExecutionContext(StackMixin):
                 env.create_immutable_bining(u'arguments')
                 env.initialize_immutable_binding(u'arguments', args_obj)
             else:
-                env.create_mutuable_binding(u'arguments', False) # TODO not sure if mutable binding is deletable
+                env.create_mutuable_binding(u'arguments', False)  # TODO not sure if mutable binding is deletable
                 env.set_mutable_binding(u'arguments', args_obj, False)
 
         # 8.
         var_declarations = code.variables()
         for dn in var_declarations:
             var_already_declared = env.has_binding(dn)
-            if var_already_declared == False:
+            if var_already_declared is False:
                 env.create_mutuable_binding(dn, configurable_bindings)
                 env.set_mutable_binding(dn, w_Undefined, False)
 
@@ -116,8 +117,8 @@ class ExecutionContext(StackMixin):
         return ref
 
 class GlobalExecutionContext(ExecutionContext):
-    def __init__(self, code, global_object, strict = False):
         ExecutionContext.__init__(self)
+    def __init__(self, code, global_object, strict=False):
         self._code_ = code
         self._strict_ = strict
 
@@ -129,9 +130,10 @@ class GlobalExecutionContext(ExecutionContext):
 
         self.declaration_binding_initialization()
 
+
 class EvalExecutionContext(ExecutionContext):
-    def __init__(self, code, calling_context = None):
         ExecutionContext.__init__(self)
+    def __init__(self, code, calling_context=None):
         self._code_ = code
         self._strict_ = code.strict
 
@@ -147,13 +149,12 @@ class EvalExecutionContext(ExecutionContext):
             self._variable_environment_ = strict_var_env
             self._lexical_environment_ = strict_var_env
 
-
         self.declaration_binding_initialization()
 
-from js.jsobj import w_Undefined
+
 class FunctionExecutionContext(ExecutionContext):
-    def __init__(self, code, formal_parameters = [], argv = [], this = w_Undefined, strict = False, scope = None, w_func = None):
         ExecutionContext.__init__(self)
+    def __init__(self, code, formal_parameters=[], argv=[], this=w_Undefined, strict=False, scope=None, w_func=None):
         self._code_ = code
         self._formal_parameters_ = formal_parameters
         self._argument_values_ = argv
@@ -185,6 +186,7 @@ class FunctionExecutionContext(ExecutionContext):
     def argv(self):
         return self._argument_values_
 
+
 class SubExecutionContext(ExecutionContext):
     def __init__(self, parent):
         ExecutionContext.__init__(self)
@@ -205,6 +207,7 @@ class SubExecutionContext(ExecutionContext):
     def this_binding(self):
         return self._parent_context_.this_binding()
 
+
 class WithExecutionContext(SubExecutionContext):
     def __init__(self, code, expr_obj, parent_context):
         SubExecutionContext.__init__(self, parent_context)
@@ -214,13 +217,14 @@ class WithExecutionContext(SubExecutionContext):
 
         from js.lexical_environment import ObjectEnvironment
         parent_environment = parent_context.lexical_environment()
-        local_env = ObjectEnvironment(expr_obj, outer_environment = parent_environment)
+        local_env = ObjectEnvironment(expr_obj, outer_environment=parent_environment)
         local_env.environment_record.provide_this = True
 
         self._lexical_environment_ = local_env
         self._variable_environment_ = local_env
 
         self.declaration_binding_initialization()
+
 
 class CatchExecutionContext(SubExecutionContext):
     def __init__(self, code, catchparam, exception_value, parent_context):

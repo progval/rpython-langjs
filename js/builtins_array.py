@@ -2,9 +2,10 @@ from js.jsobj import isnull_or_undefined, _w, w_Undefined
 from js.builtins import get_arg
 from js.object_space import w_return
 
+
 def setup(global_object):
     from js.builtins import put_property, put_native_function
-    from js.jsobj import W_ArrayConstructor, W__Array, W__Object
+    from js.jsobj import W_ArrayConstructor, W__Array
     from js.object_space import object_space
 
     w_Array = W_ArrayConstructor()
@@ -17,7 +18,7 @@ def setup(global_object):
     object_space.proto_array = w_ArrayPrototype
 
     # 15.4.3.1
-    put_property(w_Array, u'prototype', w_ArrayPrototype, writable = False, enumerable = False, configurable = False)
+    put_property(w_Array, u'prototype', w_ArrayPrototype, writable=False, enumerable=False, configurable=False)
 
     # 15.4.4.1
     put_property(w_ArrayPrototype, u'constructor', w_Array)
@@ -26,7 +27,7 @@ def setup(global_object):
     put_native_function(w_ArrayPrototype, u'toString', to_string)
 
     # 15.4.4.5
-    put_native_function(w_ArrayPrototype, u'join', join, params = [u'separator'])
+    put_native_function(w_ArrayPrototype, u'join', join, params=[u'separator'])
 
     # 15.4.4.6
     put_native_function(w_ArrayPrototype, u'pop', pop)
@@ -39,6 +40,7 @@ def setup(global_object):
 
     # 15.4.4.11
     put_native_function(w_ArrayPrototype, u'sort', sort)
+
 
 # 15.4.4.7
 @w_return
@@ -56,15 +58,17 @@ def push(this, args):
 
     return n
 
+
 # 15.4.4.2
 @w_return
 def to_string(this, args):
     array = this.ToObject()
     func = array.get(u'join')
     if func.is_callable():
-        return func.Call(this = this).to_string()
+        return func.Call(this=this).to_string()
     else:
         return this.to_string()
+
 
 # 15.4.4.5
 @w_return
@@ -103,6 +107,7 @@ def join(this, args):
 
     return r
 
+
 # 15.4.4.6
 @w_return
 def pop(this, args):
@@ -120,6 +125,7 @@ def pop(this, args):
         o.delete(indxs, True)
         o.put(u'length', _w(indx))
         return element
+
 
 # 15.4.4.8
 @w_return
@@ -152,6 +158,7 @@ def reverse(this, args):
 
         lower = lower + 1
 
+
 # 15.4.4.11
 @w_return
 def sort(this, args):
@@ -169,7 +176,7 @@ def sort(this, args):
             x = unicode(str(i - 1))
             y = unicode(str(i))
             comp = sort_compare(obj, x, y, comparefn)
-            if  comp == 1:
+            if comp == 1:
                 tmp_x = obj.get(x)
                 tmp_y = obj.get(y)
                 obj.put(x, tmp_y)
@@ -180,7 +187,8 @@ def sort(this, args):
 
     return obj
 
-def sort_compare(obj, j, k, comparefn = w_Undefined):
+
+def sort_compare(obj, j, k, comparefn=w_Undefined):
     j_string = j
     k_string = k
     has_j = obj.has_property(j)
@@ -208,7 +216,7 @@ def sort_compare(obj, j, k, comparefn = w_Undefined):
             from js.execution import JsTypeError
             raise JsTypeError(u'')
 
-        res = comparefn.Call(args = [x, y], this = w_Undefined)
+        res = comparefn.Call(args=[x, y], this=w_Undefined)
         return res.ToInteger()
 
     x_string = x.to_string()
@@ -218,4 +226,3 @@ def sort_compare(obj, j, k, comparefn = w_Undefined):
     if x_string > y_string:
         return 1
     return 0
-

@@ -1,7 +1,6 @@
 from pypy.rlib.rfloat import NAN, isnan
 from js.jsobj import _w
 
-import time
 import datetime
 from js.builtins import get_arg
 from js.object_space import w_return, hide_on_translate
@@ -85,11 +84,12 @@ def setup(global_object):
     object_space.assign_proto(w_Date, object_space.proto_function)
     put_property(global_object, u'Date', w_Date)
 
-    put_property(w_Date, u'prototype', w_DatePrototype, writable = False, enumerable = False, configurable = False)
+    put_property(w_Date, u'prototype', w_DatePrototype, writable=False, enumerable=False, configurable=False)
 
     put_native_function(w_Date, u'parse', parse)
 
     put_native_function(w_Date, u'UTC', parse)
+
 
 @w_return
 def to_string(this, args):
@@ -102,15 +102,18 @@ def to_string(this, args):
 
     return this.PrimitiveValue().to_string()
 
+
 # 15.9.5.8
 @w_return
 def value_of(this, args):
     return get_time(this, args)
 
+
 # 15.9.5.9
 @w_return
 def get_time(this, args):
     return this.PrimitiveValue()
+
 
 # 15.9.5.10
 @w_return
@@ -263,6 +266,7 @@ def set_time(this, args):
     arg0 = get_arg(args, 0)
     this._primitive_value_ = arg0
     return arg0
+
 
 # 15.9.5.28
 @w_return
@@ -423,6 +427,7 @@ def to_gmt_string(this, args):
 def parse(this, args):
     raise NotImplementedError()
 
+
 # 15.9.4.3
 @w_return
 def utc(this, args):
@@ -430,17 +435,20 @@ def utc(this, args):
 
 ####### helper
 
+
 def to_timeargs(args, count):
     a = argv(args)
     rfilled = rfill_args(a, count)
     lfilled = lfill_args(rfilled, 7)
     return lfilled
 
+
 def to_dateargs(args, count):
     a = argv(args)
     rfilled = rfill_args(a, count)
     lfilled = lfill_args(rfilled, 3)
     return lfilled
+
 
 def set_datetime(this, args):
     d = w_date_to_datetime(this)
@@ -452,6 +460,7 @@ def set_datetime(this, args):
 
     return u
 
+
 def set_utc_datetime(this, args):
     d = w_date_to_datetime(this)
     new_d = change_datetime(d, *args)
@@ -461,14 +470,17 @@ def set_utc_datetime(this, args):
 
     return u
 
+
 def argv(args):
     return [arg.ToInteger() for arg in args]
+
 
 def lfill_args(args, count):
     if count > 0:
         missing = count - len(args)
         return ([None] * missing) + args
     return args
+
 
 def rfill_args(args, count):
     if count > 0:
@@ -477,7 +489,8 @@ def rfill_args(args, count):
 
     return args
 
-def change_datetime(d, year = None, month = None, day = None, hour = None, minute = None, second = None, ms = None ):
+
+def change_datetime(d, year=None, month=None, day=None, hour=None, minute=None, second=None, ms=None):
     args = {}
     if year is not None:
         args['year'] = year
@@ -496,9 +509,11 @@ def change_datetime(d, year = None, month = None, day = None, hour = None, minut
         args['microsecond'] = mu_sec
     return d.replace(**args)
 
+
 def w_date_to_datetime(w_date):
     msecs = w_date.PrimitiveValue().ToInteger()
     return msecs_to_datetime(msecs)
+
 
 def msecs_to_datetime(timestamp_msecs):
     from dateutil.tz import tzutc
@@ -507,9 +522,10 @@ def msecs_to_datetime(timestamp_msecs):
     msecs = timestamp_msecs - seconds_since_epoch * 1000
     timestamp = seconds_since_epoch + (msecs / 1000.0)
     utc = datetime.datetime.utcfromtimestamp(timestamp)
-    utc = utc.replace(tzinfo = tzutc())
+    utc = utc.replace(tzinfo=tzutc())
 
     return utc
+
 
 def datetime_to_msecs(d):
     from time import mktime
@@ -517,6 +533,7 @@ def datetime_to_msecs(d):
     msecs = timestamp * 1000
     msecs += (d.microsecond / 1000)
     return msecs
+
 
 def to_local(datetime):
     from dateutil.tz import tzlocal
