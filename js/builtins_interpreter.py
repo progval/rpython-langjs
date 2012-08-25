@@ -1,5 +1,4 @@
-from js.object_space import w_return
-from pypy.rlib.objectmodel import we_are_translated
+from js.object_space import w_return, hide_on_translate
 
 
 def setup_builtins(global_object, overwrite_eval=False):
@@ -25,10 +24,10 @@ def js_load(this, args):
 
 
 @w_return
+@hide_on_translate
 def js_trace(this, args):
-    if not we_are_translated():
-        import pdb
-        pdb.set_trace()
+    import pdb
+    pdb.set_trace()
 
 
 @w_return

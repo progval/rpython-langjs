@@ -4,7 +4,9 @@ from js.jsobj import _w
 import time
 import datetime
 from js.builtins import get_arg
-from js.object_space import w_return
+from js.object_space import w_return, hide_on_translate
+from pypy.rlib.objectmodel import we_are_translated
+
 
 def setup(global_object):
     from js.builtins import put_property, put_native_function
@@ -91,10 +93,13 @@ def setup(global_object):
 
 @w_return
 def to_string(this, args):
-    #d = w_date_to_datetime(this)
-    #local = to_local(d)
+    if not we_are_translated():
+        d = w_date_to_datetime(this)
+        local = to_local(d)
 
-    #s = local.strftime('%a %b %d %Y %H:%M:%S GMT%z (%Z)')
+        s = local.strftime('%a %b %d %Y %H:%M:%S GMT%z (%Z)')
+        return s
+
     return this.PrimitiveValue().to_string()
 
 # 15.9.5.8
@@ -109,114 +114,148 @@ def get_time(this, args):
 
 # 15.9.5.10
 @w_return
-def get_full_year(this, args): pass
-    #d = w_date_to_datetime(this)
-    #local = to_local(d)
-    #return local.year
+@hide_on_translate(0)
+def get_full_year(this, args):
+    d = w_date_to_datetime(this)
+    local = to_local(d)
+    return local.year
+
 
 # 15.9.5.11
 @w_return
-def get_utc_full_year(this, args): pass
-    #d = w_date_to_datetime(this)
-    #return d.year
+@hide_on_translate(0)
+def get_utc_full_year(this, args):
+    d = w_date_to_datetime(this)
+    return d.year
+
 
 # 15.9.5.12
 @w_return
-def get_month(this, args): pass
-    #d = w_date_to_datetime(this)
-    #local = to_local(d)
-    #return local.month
+@hide_on_translate(0)
+def get_month(this, args):
+    d = w_date_to_datetime(this)
+    local = to_local(d)
+    return local.month
+
 
 # 15.9.5.13
 @w_return
-def get_utc_month(this, args): pass
-    #d = w_date_to_datetime(this)
-    #return d.day
+@hide_on_translate(0)
+def get_utc_month(this, args):
+    d = w_date_to_datetime(this)
+    return d.day
+
 
 # 15.9.5.14
 @w_return
-def get_date(this, args): pass
-    #d = w_date_to_datetime(this)
-    #local = to_local(d)
-    #return local.day
+@hide_on_translate(0)
+def get_date(this, args):
+    d = w_date_to_datetime(this)
+    local = to_local(d)
+    return local.day
+
 
 # 15.9.5.15
 @w_return
-def get_utc_date(this, args): pass
-    #d = w_date_to_datetime(this)
-    #return d.day
+@hide_on_translate(0)
+def get_utc_date(this, args):
+    d = w_date_to_datetime(this)
+    return d.day
+
 
 # 15.9.5.16
 @w_return
-def get_day(this, args): pass
-    #d = w_date_to_datetime(this)
-    #local = to_local(d)
-    #return local.weekday()
+@hide_on_translate(0)
+def get_day(this, args):
+    d = w_date_to_datetime(this)
+    local = to_local(d)
+    return local.weekday()
+
 
 # 15.9.5.17
 @w_return
-def get_utc_day(this, args): pass
-    #d = w_date_to_datetime(this)
-    #return d.weekday()
+@hide_on_translate(0)
+def get_utc_day(this, args):
+    d = w_date_to_datetime(this)
+    return d.weekday()
+
 
 # 15.9.5.18
 @w_return
-def get_hours(this, args): pass
-    #d = w_date_to_datetime(this)
-    #local = to_local(d)
-    #return local.hour
+@hide_on_translate(0)
+def get_hours(this, args):
+    d = w_date_to_datetime(this)
+    local = to_local(d)
+    return local.hour
+
 
 # 15.9.5.19
 @w_return
-def get_utc_hours(this, args): pass
-    #d = w_date_to_datetime(this)
-    #return d.hour
+@hide_on_translate(0)
+def get_utc_hours(this, args):
+    d = w_date_to_datetime(this)
+    return d.hour
+
 
 # 15.9.5.20
 @w_return
-def get_minutes(this, args): pass
-    #d = w_date_to_datetime(this)
-    #local = to_local(d)
-    #return local.minute
+@hide_on_translate(0)
+def get_minutes(this, args):
+    d = w_date_to_datetime(this)
+    local = to_local(d)
+    return local.minute
+
 
 # 15.9.5.21
 @w_return
-def get_utc_minutes(this, args): pass
-    #d = w_date_to_datetime(this)
-    #return d.minute
+@hide_on_translate(0)
+def get_utc_minutes(this, args):
+    d = w_date_to_datetime(this)
+    return d.minute
+
 
 # 15.9.5.22
 @w_return
-def get_seconds(this, args): pass
-    #d = w_date_to_datetime(this)
-    #local = to_local(d)
-    #return local.second
+@hide_on_translate(0)
+def get_seconds(this, args):
+    d = w_date_to_datetime(this)
+    local = to_local(d)
+    return local.second
+
 
 # 15.9.5.23
 @w_return
-def get_utc_seconds(this, args): pass
-    #d = w_date_to_datetime(this)
-    #return d.second
+@hide_on_translate(0)
+def get_utc_seconds(this, args):
+    d = w_date_to_datetime(this)
+    return d.second
+
 
 # 15.9.5.24
 @w_return
-def get_milliseconds(this, args): pass
-    #d = w_date_to_datetime(this)
-    #local = to_local(d)
-    #return local.microsecond / 1000
+@hide_on_translate(0)
+def get_milliseconds(this, args):
+    d = w_date_to_datetime(this)
+    local = to_local(d)
+    return local.microsecond / 1000
+
 
 # 15.9.5.25
 @w_return
-def get_utc_milliseconds(this, args): pass
-    #d = w_date_to_datetime(this)
-    #return d.microsecond / 1000
+@hide_on_translate(0)
+def get_utc_milliseconds(this, args):
+    d = w_date_to_datetime(this)
+    return d.microsecond / 1000
+
 
 # 15.9.5.26
 @w_return
-def get_timezone_offset(this, args): pass
-    #d = w_date_to_datetime(this)
-    #offset = -1 * (d.utcoffset().total_seconds() / 60)
-    #return offset
+@hide_on_translate(0)
+def get_timezone_offset(this, args):
+    d = w_date_to_datetime(this)
+    offset = -1 * (d.utcoffset().total_seconds() / 60)
+    return offset
+
 
 # 15.9.5.27
 @w_return
@@ -227,121 +266,157 @@ def set_time(this, args):
 
 # 15.9.5.28
 @w_return
-def set_milliseconds(this, args): pass
-    #time_args = to_timeargs(args, 1)
-    #return set_datetime(this, time_args)
+@hide_on_translate(0)
+def set_milliseconds(this, args):
+    time_args = to_timeargs(args, 1)
+    return set_datetime(this, time_args)
+
 
 # 15.9.5.29
 @w_return
-def set_utc_milliseconds(this, args): pass
-    #time_args = to_timeargs(args, 1)
-    #return set_utc_datetime(this, time_args)
+@hide_on_translate(0)
+def set_utc_milliseconds(this, args):
+    time_args = to_timeargs(args, 1)
+    return set_utc_datetime(this, time_args)
+
 
 # 15.9.5.30
 @w_return
-def set_seconds(this, args): pass
-    #time_args = to_timeargs(args, 2)
-    #return set_datetime(this, time_args)
+@hide_on_translate(0)
+def set_seconds(this, args):
+    time_args = to_timeargs(args, 2)
+    return set_datetime(this, time_args)
+
 
 # 15.9.5.30
 @w_return
-def set_utc_seconds(this, args): pass
-    #time_args = to_timeargs(args, 2)
-    #return set_utc_datetime(this, time_args)
+@hide_on_translate(0)
+def set_utc_seconds(this, args):
+    time_args = to_timeargs(args, 2)
+    return set_utc_datetime(this, time_args)
+
 
 # 15.9.5.32
 @w_return
-def set_minutes(this, args): pass
-    #time_args = to_timeargs(args, 3)
-    #return set_datetime(this, time_args)
+@hide_on_translate(0)
+def set_minutes(this, args):
+    time_args = to_timeargs(args, 3)
+    return set_datetime(this, time_args)
+
 
 # 15.9.5.33
 @w_return
-def set_utc_minutes(this, args): pass
-    #time_args = to_timeargs(args, 3)
-    #return set_utc_datetime(this, time_args)
+@hide_on_translate(0)
+def set_utc_minutes(this, args):
+    time_args = to_timeargs(args, 3)
+    return set_utc_datetime(this, time_args)
+
 
 # 15.9.5.34
 @w_return
-def set_hours(this, args): pass
-    #time_args = to_timeargs(args, 4)
-    #return set_datetime(this, time_args)
+@hide_on_translate(0)
+def set_hours(this, args):
+    time_args = to_timeargs(args, 4)
+    return set_datetime(this, time_args)
+
 
 # 15.9.5.35
 @w_return
-def set_utc_hours(this, args): pass
-    #time_args = to_timeargs(args, 4)
-    #return set_utc_datetime(this, time_args)
+@hide_on_translate(0)
+def set_utc_hours(this, args):
+    time_args = to_timeargs(args, 4)
+    return set_utc_datetime(this, time_args)
+
 
 # 15.9.5.36
 @w_return
-def set_date(this, args): pass
-    #date_args = to_dateargs(args, 1)
-    #return set_datetime(this, date_args)
+@hide_on_translate(0)
+def set_date(this, args):
+    date_args = to_dateargs(args, 1)
+    return set_datetime(this, date_args)
+
 
 # 15.9.5.37
 @w_return
-def set_utc_date(this, args): pass
-    #date_args = to_dateargs(args, 1)
-    #return set_utc_datetime(this, date_args)
+@hide_on_translate(0)
+def set_utc_date(this, args):
+    date_args = to_dateargs(args, 1)
+    return set_utc_datetime(this, date_args)
+
 
 # 15.9.5.38
 @w_return
-def set_month(this, args): pass
-    #date_args = to_dateargs(args, 2)
-    #return set_datetime(this, date_args)
+@hide_on_translate(0)
+def set_month(this, args):
+    date_args = to_dateargs(args, 2)
+    return set_datetime(this, date_args)
+
 
 # 15.9.5.39
 @w_return
-def set_utc_month(this, args): pass
-    #date_args = to_dateargs(args, 2)
-    #return set_utc_datetime(this, date_args)
+@hide_on_translate(0)
+def set_utc_month(this, args):
+    date_args = to_dateargs(args, 2)
+    return set_utc_datetime(this, date_args)
+
 
 # 15.9.5.38
 @w_return
-def set_full_year(this, args): pass
-    #date_args = to_dateargs(args, 3)
-    #return set_datetime(this, date_args)
+@hide_on_translate(0)
+def set_full_year(this, args):
+    date_args = to_dateargs(args, 3)
+    return set_datetime(this, date_args)
+
 
 # 15.9.5.39
 @w_return
-def set_utc_full_year(this, args): pass
-    #date_args = to_dateargs(args, 3)
-    #return set_utc_datetime(this, date_args)
+@hide_on_translate(0)
+def set_utc_full_year(this, args):
+    date_args = to_dateargs(args, 3)
+    return set_utc_datetime(this, date_args)
+
 
 # B.2.4
 @w_return
-def get_year(this, args): pass
-    #d = w_date_to_datetime(this)
-    #local = to_local(d)
-    #y = local.year - 1900
-    #return y
+@hide_on_translate(0)
+def get_year(this, args):
+    d = w_date_to_datetime(this)
+    local = to_local(d)
+    y = local.year - 1900
+    return y
+
 
 # B.2.5
 @w_return
-def set_year(this, args): pass
-    #arg0 = get_arg(args, 0)
-    #year = arg0.ToInteger()
+@hide_on_translate(0)
+def set_year(this, args):
+    arg0 = get_arg(args, 0)
+    year = arg0.ToInteger()
 
-    #if isnan(year) or year < 0 or year > 99:
-        #this.set_primitive_value(NAN)
-        #return NAN
+    if isnan(year) or year < 0 or year > 99:
+        this.set_primitive_value(NAN)
+        return NAN
 
-    #y = year + 1900
+    y = year + 1900
 
-    #return set_datetime(this, [y])
+    return set_datetime(this, [y])
+
 
 # 15.9.5.42
 @w_return
-def to_utc_string(this, args): pass
-    #d = w_date_to_datetime(this)
-    #s = d.strftime('%c %z')
-    #return s
+@hide_on_translate(0)
+def to_utc_string(this, args):
+    d = w_date_to_datetime(this)
+    s = d.strftime('%c %z')
+    return s
+
 
 # B.2.6
 @w_return
-def to_gmt_string(this, args): pass
-    #return to_utc_string(this, args)
+@hide_on_translate(0)
+def to_gmt_string(this, args):
+    return to_utc_string(this, args)
+
 
 # 15.9.4.2
 @w_return
