@@ -18,7 +18,7 @@ class Map(object):
     @jit.elidable
     def contains(self, name):
         idx = self.lookup(name)
-        return self.not_found(idx)
+        return self.not_found(idx) is False
 
     @jit.elidable
     def not_found(self, idx):
