@@ -133,8 +133,10 @@ class W_Null(W_Primitive):
         raise JsTypeError(u'W_Null.ToObject')
 
 w_Undefined = W_Undefined()
+jit.promote(w_Undefined)
 
 w_Null = W_Null()
+jit.promote(w_Null)
 
 
 class PropertyIdenfidier(object):
@@ -1202,8 +1204,10 @@ def isnull_or_undefined(obj):
     return False
 
 w_True = W_Boolean(True)
+jit.promote(w_True)
 
 w_False = W_Boolean(False)
+jit.promote(w_False)
 
 
 def newbool(val):
