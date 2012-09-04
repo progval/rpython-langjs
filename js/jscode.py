@@ -32,6 +32,8 @@ class AlreadyRun(Exception):
 
 
 class JsCode(object):
+    _immutable_fields_ = ['_oppcodes_', '_symbols_']
+
     """ That object stands for code of a single javascript function
     """
     def __init__(self, symbol_map=empty_symbols):
@@ -213,7 +215,6 @@ class JsCode(object):
         assert pc >= 0
         return self.opcodes[pc]
 
-    @jit.elidable
     def _opcode_count(self):
         return len(self.opcodes)
 
