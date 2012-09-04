@@ -133,6 +133,8 @@ class DeclarativeEnvironmentRecord(EnvironmentRecord):
 
 
 class ObjectEnvironmentRecord(EnvironmentRecord):
+    _immutable_fields_ = ['binding_object']
+
     provide_this = False
 
     def __init__(self, obj, provide_this=False):
