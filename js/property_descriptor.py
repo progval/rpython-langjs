@@ -1,21 +1,18 @@
-from pypy.rlib import jit
+#from pypy.rlib import jit
 
 
-@jit.elidable
 def is_data_descriptor(desc):
     if desc is None:
         return False
     return desc.is_data_descriptor()
 
 
-@jit.elidable
 def is_accessor_descriptor(desc):
     if desc is None:
         return False
     return desc.is_accessor_descriptor()
 
 
-@jit.elidable
 def is_generic_descriptor(desc):
     if desc is None:
         return False

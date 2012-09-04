@@ -26,7 +26,6 @@ class Property(object):
     def update_with_descriptor(self, desc):
         raise NotImplementedError(self.__class__)
 
-    @jit.elidable
     def to_property_descriptor(self):
         return PropertyDescriptor(enumerable=self.enumerable, configurable=self.configurable)
 
@@ -63,7 +62,6 @@ class DataProperty(Property):
 
         return DataProperty(value, writable, enumerable, configurable)
 
-    @jit.elidable
     def to_property_descriptor(self):
         return DataPropertyDescriptor(self.value, self.writable, self.enumerable, self.configurable)
 
@@ -100,6 +98,5 @@ class AccessorProperty(Property):
 
         return AccessorProperty(getter, setter, enumerable, configurable)
 
-    @jit.elidable
     def to_property_descriptor(self):
         return AccessorPropertyDescriptor(self.getter, self.setter, self.enumerable, self.configurable)
