@@ -15,18 +15,17 @@ class Map(object):
         return "%(back)s, [%(index)d]:%(name)s" % \
             {'back': repr(self.back), 'index': self.index, 'name': self.name}
 
-    @jit.elidable
+    @jit.elidable_promote("0")
     def contains(self, name):
         idx = self.lookup(name)
         return self.not_found(idx) is False
 
-    @jit.elidable
+    @jit.elidable_promote("0")
     def not_found(self, idx):
         return idx == self.NOT_FOUND
 
-    @jit.elidable
+    @jit.elidable_promote("0")
     def lookup(self, name):
-        jit.promote(self)
         node = self._find_node_with_name(name)
         if node is not None:
             return node.index
