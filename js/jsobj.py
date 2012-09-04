@@ -240,8 +240,6 @@ class W_BasicObject(W_Root):
 
         if self._property_map_.not_found(idx):
             return
-        elif idx >= len(self._property_slots_):
-                return
 
         prop = self._property_slots_[idx]
         return prop
@@ -255,7 +253,7 @@ class W_BasicObject(W_Root):
         del(self._property_slots_[idx])
         self._property_map_ = self._property_map_.delete(name)
 
-    def _set_prop(self, name, value):
+    def _add_prop(self, name, value):
         idx = self._property_map_.lookup(name)
 
         if self._property_map_.not_found(idx):
@@ -265,6 +263,10 @@ class W_BasicObject(W_Root):
         if idx >= len(self._property_slots_):
             self._property_slots_ += ([None] * (1 + idx - len(self._property_slots_)))
 
+        self._property_slots_[idx] = value
+
+    def _set_prop(self, name, value):
+        idx = self._property_map_.lookup(name)
         self._property_slots_[idx] = value
 
     # 8.12.2
@@ -411,7 +413,7 @@ class W_BasicObject(W_Root):
                     desc.enumerable,
                     desc.configurable
                 )
-                self._set_prop(p, new_prop)
+                self._add_prop(p, new_prop)
             # 4.b
             else:
                 assert is_accessor_descriptor(desc) is True
@@ -421,7 +423,7 @@ class W_BasicObject(W_Root):
                     desc.enumerable,
                     desc.configurable
                 )
-                self._set_prop(p, new_prop)
+                self._add_prop(p, new_prop)
             # 4.c
             return True
 
