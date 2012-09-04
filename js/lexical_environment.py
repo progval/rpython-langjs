@@ -26,10 +26,10 @@ class LexicalEnvironment(object):
 
 
 class DeclarativeEnvironment(LexicalEnvironment):
-    def __init__(self, outer_environment=None):
+    def __init__(self, outer_environment=None, env_size=0, env_resize=True):
         LexicalEnvironment.__init__(self, outer_environment)
         from js.environment_record import DeclarativeEnvironmentRecord
-        self.environment_record = DeclarativeEnvironmentRecord()
+        self.environment_record = DeclarativeEnvironmentRecord(env_size, env_resize)
 
 
 class ObjectEnvironment(LexicalEnvironment):

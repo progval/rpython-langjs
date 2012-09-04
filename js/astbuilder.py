@@ -53,6 +53,9 @@ class SymbolMap(object):
             if idx == index:
                 return symbol
 
+    def len(self):
+        return self.next_index
+
 empty_symbols = SymbolMap()
 
 

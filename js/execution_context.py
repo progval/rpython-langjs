@@ -164,6 +164,7 @@ class FunctionExecutionContext(ExecutionContext):
         from js.object_space import object_space
 
         stack_size = code.estimated_stack_size()
+        env_size = code.env_size()
 
         ExecutionContext.__init__(self, stack_size)
 
@@ -177,7 +178,7 @@ class FunctionExecutionContext(ExecutionContext):
         self._calling_context_ = None
 
         from js.lexical_environment import DeclarativeEnvironment
-        localEnv = DeclarativeEnvironment(scope)
+        localEnv = DeclarativeEnvironment(scope, env_size, False)
         self._lexical_environment_ = localEnv
         self._variable_environment_ = localEnv
 

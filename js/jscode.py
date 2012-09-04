@@ -76,6 +76,9 @@ class JsCode(object):
 
         return self._estimated_stack_size
 
+    def symbol_size(self):
+        return self._symbols.len()
+
     def emit_label(self, num=-1):
         if num == -1:
             num = self.prealocate_label()

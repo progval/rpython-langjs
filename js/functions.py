@@ -43,6 +43,9 @@ class JsBaseFunction(object):
     def is_function_code(self):
         return False
 
+    def env_size(self):
+        return 0
+
 
 class JsNativeFunction(JsBaseFunction):
     def __init__(self, function, name=u''):
@@ -88,9 +91,13 @@ class JsExecutableCode(JsBaseFunction):
         assert isinstance(js_code, JsCode)
         self._js_code_ = js_code
         self._stack_size_ = js_code.estimated_stack_size()
+        self._symbol_size_ = js_code.symbol_size()
 
     def estimated_stack_size(self):
         return self._stack_size_
+
+    def env_size(self):
+        return self._symbol_size_
 
     def get_js_code(self):
         from js.jscode import JsCode

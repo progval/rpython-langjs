@@ -30,10 +30,11 @@ class EnvironmentRecord(object):
 
 
 class DeclarativeEnvironmentRecord(EnvironmentRecord):
-    def __init__(self):
+    def __init__(self, size=0, resize=True):
         EnvironmentRecord.__init__(self)
         self._binding_map_ = _new_map()
-        self._binding_slots_ = []
+        self._binding_slots_ = [None] * size
+        self._binding_resize_ = resize
         self._mutable_bindings_map_ = _new_map()
         self._deletable_bindings_map_ = _new_map()
 
@@ -55,25 +56,24 @@ class DeclarativeEnvironmentRecord(EnvironmentRecord):
 
     def _get_binding(self, name):
         idx = self._binding_map_.lookup(name)
-
-        if self._binding_map_.not_found(idx):
-            return
-        if idx >= len(self._binding_slots_):
-            return
-
         binding = self._binding_slots_[idx]
         return binding
 
-    def _set_binding(self, name, value):
+    def _add_binding(self, name, value):
         idx = self._binding_map_.lookup(name)
 
         if self._binding_map_.not_found(idx):
             self._binding_map_ = self._binding_map_.add(name)
             idx = self._binding_map_.index
 
-        if idx >= len(self._binding_slots_):
-            self._binding_slots_ += ([None] * (1 + idx - len(self._binding_slots_)))
+        if self._binding_resize_ is True:
+            if idx >= len(self._binding_slots_):
+                self._binding_slots_ += ([None] * (1 + idx - len(self._binding_slots_)))
 
+        self._binding_slots_[idx] = value
+
+    def _set_binding(self, name, value):
+        idx = self._binding_map_.lookup(name)
         self._binding_slots_[idx] = value
 
     def _del_binding(self, name):
@@ -88,7 +88,7 @@ class DeclarativeEnvironmentRecord(EnvironmentRecord):
     # 10.2.1.1.2
     def create_mutuable_binding(self, identifier, deletable):
         assert not self.has_binding(identifier)
-        self._set_binding(identifier, w_Undefined)
+        self._add_binding(identifier, w_Undefined)
         self._set_mutable_binding(identifier)
         if deletable:
             self._set_deletable_binding(identifier)
