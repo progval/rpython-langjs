@@ -15,6 +15,7 @@ def get_identifier_reference(lex, identifier, strict=False):
 
 
 class LexicalEnvironment(object):
+    _immutable_fields_ = ['outer_environment', 'environment_record']
 
     def __init__(self, outer_environment=None):
         assert isinstance(outer_environment, LexicalEnvironment) or outer_environment is None
