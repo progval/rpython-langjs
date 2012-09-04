@@ -1,6 +1,6 @@
 # encoding: utf-8
 #from pypy.rlib.jit import hint
-#from pypy.rlib import jit, debug
+from pypy.rlib import jit  # , debug
 
 
 class StackMixin(object):
@@ -14,22 +14,25 @@ class StackMixin(object):
         self._stack_pointer_ = 0
         self._stack_resize_ = resize
 
+    def _stack_pointer(self):
+        return jit.promote(self._stack_pointer_)
+
     def _stack_pop(self):
         e = self._stack_top()
-        i = self._stack_pointer_ - 1
+        i = self._stack_pointer() - 1
         assert i >= 0
         self._stack_[i] = None
         self._stack_pointer_ = i
         return e
 
     def _stack_top(self):
-        i = self._stack_pointer_ - 1
+        i = self._stack_pointer() - 1
         if i < 0:
             raise IndexError
         return self._stack_[i]
 
     def _stack_append(self, element):
-        i = self._stack_pointer_
+        i = self._stack_pointer()
         assert i >= 0
         if len(self._stack_) <= i and self._stack_resize_ is True:
             self._stack_ += [None]

@@ -87,10 +87,10 @@ class JsExecutableCode(JsBaseFunction):
         from js.jscode import JsCode
         assert isinstance(js_code, JsCode)
         self._js_code_ = js_code
-        #self.stack_size = js_code.estimated_stack_size()
+        self._stack_size_ = js_code.estimated_stack_size()
 
-    #def estimated_stack_size(self):
-        #return self.stack_size
+    def estimated_stack_size(self):
+        return self._stack_size_
 
     def get_js_code(self):
         from js.jscode import JsCode

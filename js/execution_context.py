@@ -3,11 +3,12 @@ from js.utils import StackMixin
 
 
 class ExecutionContext(StackMixin):
-    def __init__(self):
+    _immutable_fields_ = ['_stack_', '_stack_resize_', '_this_binding_', '_lexical_environment_', '_variable_environment_']
+    def __init__(self, stack_size=1):
         self._lexical_environment_ = None
         self._variable_environment_ = None
         self._this_binding_ = None
-        self._init_stack_()
+        self._init_stack_(size=stack_size, resize=False)
 
     def stack_append(self, value):
         self._stack_append(value)
@@ -117,8 +118,11 @@ class ExecutionContext(StackMixin):
         return ref
 
 class GlobalExecutionContext(ExecutionContext):
-        ExecutionContext.__init__(self)
     def __init__(self, code, global_object, strict=False):
+        stack_size = code.estimated_stack_size()
+
+        ExecutionContext.__init__(self, stack_size)
+
         self._code_ = code
         self._strict_ = strict
 
@@ -132,8 +136,10 @@ class GlobalExecutionContext(ExecutionContext):
 
 
 class EvalExecutionContext(ExecutionContext):
-        ExecutionContext.__init__(self)
     def __init__(self, code, calling_context=None):
+        stack_size = code.estimated_stack_size()
+
+        ExecutionContext.__init__(self, stack_size)
         self._code_ = code
         self._strict_ = code.strict
 
@@ -153,8 +159,14 @@ class EvalExecutionContext(ExecutionContext):
 
 
 class FunctionExecutionContext(ExecutionContext):
-        ExecutionContext.__init__(self)
     def __init__(self, code, formal_parameters=[], argv=[], this=w_Undefined, strict=False, scope=None, w_func=None):
+        from js.jsobj import isnull_or_undefined, W_BasicObject
+        from js.object_space import object_space
+
+        stack_size = code.estimated_stack_size()
+
+        ExecutionContext.__init__(self, stack_size)
+
         self._code_ = code
         self._formal_parameters_ = formal_parameters
         self._argument_values_ = argv
