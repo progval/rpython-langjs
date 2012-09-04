@@ -48,6 +48,8 @@ class JsBaseFunction(object):
 
 
 class JsNativeFunction(JsBaseFunction):
+    _immutable_fields_ = ['_name_', '_function_']
+
     def __init__(self, function, name=u''):
         self._name_ = name
         self._function_ = function
@@ -74,6 +76,8 @@ class JsNativeFunction(JsBaseFunction):
 
 
 class JsIntimateFunction(JsNativeFunction):
+    _immutable_fields_ = ['_name_', '_intimate_function_']
+
     def __init__(self, function, name=u''):
         self._name_ = name
         self._intimate_function_ = function
@@ -86,6 +90,8 @@ class JsIntimateFunction(JsNativeFunction):
 
 
 class JsExecutableCode(JsBaseFunction):
+    _immutable_fields_ = ['_js_code_', '_stack_size_', '_symbol_size_']
+
     def __init__(self, js_code):
         from js.jscode import JsCode
         assert isinstance(js_code, JsCode)
@@ -142,6 +148,8 @@ class JsEvalCode(JsExecutableCode):
 
 
 class JsFunction(JsExecutableCode):
+    _immutable_fields_ = ['_js_code_', '_stack_size_', '_symbol_size_', '_name_']
+
     def __init__(self, name, js_code):
         JsExecutableCode.__init__(self, js_code)
         self._name_ = name
