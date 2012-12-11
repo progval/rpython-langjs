@@ -143,8 +143,8 @@ class LOAD_VARIABLE(Opcode):
     # 11.1.2
     def eval(self, ctx):
         # TODO put ref onto stack
-        ref = ctx.get_ref(self.identifier)
         value = ref.get_value()
+        ref = ctx.get_ref(self.identifier, self.index)
         ctx.stack_append(value)
 
     def __str__(self):
@@ -491,7 +491,7 @@ class STORE_MEMBER(Opcode):
 
 
 class STORE(Opcode):
-    _immutable_fields_ = ['name']
+    _immutable_fields_ = ['identifier', 'index']
     _stack_change = 0
 
     def __init__(self, index, identifier):
@@ -501,8 +501,8 @@ class STORE(Opcode):
 
     def eval(self, ctx):
         value = ctx.stack_top()
-        ref = ctx.get_ref(self.identifier)
         ref.put_value(value)
+        ref = ctx.get_ref(self.identifier, self.index)
 
     def __str__(self):
         return 'STORE "%s"' % (self.identifier)
@@ -900,15 +900,16 @@ class WITH(Opcode):
 
 
 class DELETE(Opcode):
-    def __init__(self, name):
+    def __init__(self, name, index):
         self.name = name
+        self.index = index
 
     def eval(self, ctx):
         from js.lexical_environment import Reference
         from js.execution import JsSyntaxError
 
         # 11.4.1
-        ref = ctx.get_ref(self.name)
+        ref = ctx.get_ref(self.name, self.index)
         if not isinstance(ref, Reference):
             res = True
         if ref.is_unresolvable_reference():
@@ -923,6 +924,9 @@ class DELETE(Opcode):
                 raise JsSyntaxError()
             bindings = ref.base_env
             res = bindings.delete_binding(ref.get_referenced_name())
+
+        if res is True:
+            ctx.forget_ref(self.name, self.index)
         ctx.stack_append(_w(res))
 
 

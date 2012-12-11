@@ -576,7 +576,7 @@ class Delete(Expression):
     def emit(self, bytecode):
         what = self.what
         if isinstance(what, Identifier):
-            bytecode.emit('DELETE', what.name)
+            bytecode.emit('DELETE', what.name, what.index)
         elif isinstance(what, MemberDot):
             what.left.emit(bytecode)
             # XXX optimize

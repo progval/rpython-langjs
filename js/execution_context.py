@@ -4,10 +4,13 @@ from js.utils import StackMixin
 
 class ExecutionContext(StackMixin):
     _immutable_fields_ = ['_stack_', '_stack_resize_', '_this_binding_', '_lexical_environment_', '_variable_environment_']
-    def __init__(self, stack_size=1):
+    _refs_resizable_ = True
+
+    def __init__(self, stack_size=1, refs_size=1):
         self._lexical_environment_ = None
         self._variable_environment_ = None
         self._this_binding_ = None
+        self._refs_ = [None] * refs_size
         self._init_stack_(size=stack_size, resize=False)
 
     def stack_append(self, value):
@@ -96,6 +99,7 @@ class ExecutionContext(StackMixin):
             arguments = self._argument_values_
             names = self._formal_parameters_
             args_obj = W_Arguments(func, names, arguments, env, strict)
+
             if strict is True:
                 env.create_immutable_bining(u'arguments')
                 env.initialize_immutable_binding(u'arguments', args_obj)
@@ -111,11 +115,36 @@ class ExecutionContext(StackMixin):
                 env.create_mutuable_binding(dn, configurable_bindings)
                 env.set_mutable_binding(dn, w_Undefined, False)
 
-    def get_ref(self, symbol):
-        ## TODO pre-bind symbols, work with idndex, does not work, see test_foo18
-        lex_env = self.lexical_environment()
-        ref = lex_env.get_identifier_reference(symbol)
-        return ref
+    def _get_refs(self, index):
+        assert index <= len(self._refs_)
+        return self._refs_[index]
+
+    def _set_refs(self, index, value):
+        assert index <= len(self._refs_)
+        self._refs_[index] = value
+
+    def get_ref(self, symbol, index=-1):
+        ## TODO pre-bind symbols, work with idndex, does not work, see test_foo19
+        if index == -1:
+            lex_env = self.lexical_environment()
+            ref = lex_env.get_identifier_reference(symbol)
+            return ref
+
+        if self._refs_resizable_ is True and index >= len(self._refs_):
+            self._refs_ += ([None] * (1 + index - len(self._refs_)))
+
+        if self._get_refs(index) is None:
+            lex_env = self.lexical_environment()
+            ref = lex_env.get_identifier_reference(symbol)
+            if ref.is_unresolvable_reference() is True:
+                return ref
+            self._set_refs(index, ref)
+
+        return self._get_refs(index)
+
+    def forget_ref(self, symbol, index):
+        self._set_refs(index, None)
+
 
 class GlobalExecutionContext(ExecutionContext):
     def __init__(self, code, global_object, strict=False):
@@ -159,19 +188,19 @@ class EvalExecutionContext(ExecutionContext):
 
 
 class FunctionExecutionContext(ExecutionContext):
+    _refs_resizable_ = False
     def __init__(self, code, formal_parameters=[], argv=[], this=w_Undefined, strict=False, scope=None, w_func=None):
         from js.jsobj import isnull_or_undefined, W_BasicObject
         from js.object_space import object_space
 
         stack_size = code.estimated_stack_size()
-        env_size = code.env_size()
+        env_size = code.env_size() + 1  # neet do add one for the arguments object
 
-        ExecutionContext.__init__(self, stack_size)
+        ExecutionContext.__init__(self, stack_size, env_size)
 
         self._code_ = code
         self._formal_parameters_ = formal_parameters
         self._argument_values_ = argv
-        self._this_ = this
         self._strict_ = strict
         self._scope_ = scope
         self._w_func_ = w_func
@@ -182,17 +211,18 @@ class FunctionExecutionContext(ExecutionContext):
         self._lexical_environment_ = localEnv
         self._variable_environment_ = localEnv
 
-        from js.jsobj import isnull_or_undefined
-
         if strict:
             self._this_binding_ = this
-        elif this is None or isnull_or_undefined(this):
-            from js.object_space import object_space
-            self._this_binding_ = object_space.global_object
-        elif this.klass() is not 'Object':
-            self._this_binding_ = this.ToObject()
         else:
-            self._this_binding_ = this
+            if this is None or isnull_or_undefined(this):
+                self._this_binding_ = object_space.global_object
+            else:
+                assert isinstance(this, W_BasicObject)
+
+                if this.klass() is not 'Object':
+                    self._this_binding_ = this.ToObject()
+                else:
+                    self._this_binding_ = this
 
         self.declaration_binding_initialization()
 
