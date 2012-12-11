@@ -8,7 +8,7 @@ from js.execution import JsException
 from pypy.rlib.parsing.parsing import ParseError
 
 EXCLUSIONLIST = ['shell.js', 'browser.js']
-SKIP = [\
+SKIP = [
     '7.2-1.0',
     '7.2-1.1',
     '7.2-1.2',
@@ -133,30 +133,31 @@ SKIP = [\
     '15.5.4.12-1.184',
     '15.5.4.12-4.80',
     '15.5.4.12-4.93',
-    ]
+]
 
 
 def pytest_ignore_collect(path, config):
     if path.basename in EXCLUSIONLIST:
         return True
 
+
 def pytest_collect_file(path, parent):
     if path.ext == ".js":
         return JSTestFile(path, parent=parent)
 
+
 def pytest_addoption(parser):
     parser.addoption('--ecma',
-           action="store_true", dest="ecma", default=False,
-           help="run js interpreter ecma tests"
-    )
+                     action="store_true", dest="ecma", default=False,
+                     help="run js interpreter ecma tests")
     parser.addoption('--ecma-compile',
-           action="store_true", dest="ecma-compile", default=False,
-           help="run js interpreter ecma tests"
-    )
+                     action="store_true", dest="ecma-compile", default=False,
+                     help="run js interpreter ecma tests")
 
 rootdir = py.path.local(__file__).dirpath()
-shellpath = rootdir/'shell.js'
+shellpath = rootdir / 'shell.js'
 _compiled_f = None
+
 
 class InterpreterResults(object):
     compiled_interpreter = None
@@ -166,7 +167,7 @@ class InterpreterResults(object):
 
     def get_interp(self):
         def f(testfile):
-            interp = Interpreter({'no-exception-jseval':True})
+            interp = Interpreter({'no-exception-jseval': True})
 
             interp.run_file(str(shellpath))
             interp.run_file(testfile)
@@ -182,10 +183,10 @@ class InterpreterResults(object):
 
             for number in xrange(testcount):
                 w_test_number = _w(number)
-                result_obj = run_test_func.Call(args = [w_test_number])
+                result_obj = run_test_func.Call(args=[w_test_number])
                 result_passed = result_obj.get(u'passed').to_boolean()
                 result_reason = str(result_obj.get(u'reason').to_string())
-                test_results.append({'number': number, 'passed':result_passed, 'reason':result_reason})
+                test_results.append({'number': number, 'passed': result_passed, 'reason': result_reason})
 
             return test_results
 
@@ -201,11 +202,11 @@ class InterpreterResults(object):
         interp = self.get_interp()
         return interp(test_file)
 
+
 class JSTestFile(pytest.File):
     def __init__(self, fspath, parent=None, config=None, session=None):
         super(JSTestFile, self).__init__(fspath, parent, config, session)
         self.name = self.fspath.purebasename
-
 
     def collect(self):
         if self.session.config.getvalue("ecma") is not True:
@@ -219,16 +220,16 @@ class JSTestFile(pytest.File):
         try:
             results = interp.get_results(str(self.fspath))
         except ParseError, e:
-            raise Failed(msg=e.nice_error_message(filename=str(self.fspath))) #, excinfo=None)
+            raise Failed(msg=e.nice_error_message(filename=str(self.fspath)))  # excinfo=None)
         except JsException, e:
-            import pdb; pdb.set_trace()
-            raise Failed(msg="Javascript Error: "+str(e)) #, excinfo=py.code.ExceptionInfo())
+            raise Failed(msg="Javascript Error: " + str(e))  # excinfo=py.code.ExceptionInfo())
 
         for test_result in results:
             number = test_result.get('number')
             passed = test_result.get('passed')
             reason = test_result.get('reason')
             yield JSTestItem(str(number), passed, reason, parent=self)
+
 
 class JSTestItem(pytest.Item):
     def __init__(self, name, passed, reason, parent=None, config=None, session=None):
@@ -243,8 +244,9 @@ class JSTestItem(pytest.Item):
         passed = self.passed
         if self.name in SKIP:
             py.test.skip()
-        __tracebackhide__ = True
-        if passed != True:
+
+        # __tracebackhide__ = True
+        if passed is False:
             raise JsTestException(self, reason)
 
     def repr_failure(self, excinfo):
@@ -257,8 +259,8 @@ class JSTestItem(pytest.Item):
 
     _handling_traceback = False
 
+
 class JsTestException(Exception):
     def __init__(self, item, result):
         self.item = item
         self.result = result
-

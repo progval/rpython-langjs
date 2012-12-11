@@ -787,6 +787,7 @@ class Try(Statement):
 
         trycode = JsCode()
         self.tryblock.emit(trycode)
+
         tryexec = JsExecutableCode(trycode)
 
         if self.catchblock:
