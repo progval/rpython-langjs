@@ -281,6 +281,7 @@ class W_BasicObject(W_Root):
         if proto is w_Null:
             return None
 
+        assert isinstance(proto, W_BasicObject)
         return proto.get_property(p)
 
     # 8.12.5
@@ -324,6 +325,7 @@ class W_BasicObject(W_Root):
         if proto is w_Null or proto is w_Undefined:
             return self.extensible()
 
+        assert isinstance(proto, W_BasicObject)
         inherited = proto.get_property(p)
         if inherited is None:
             return self.extensible()
@@ -380,7 +382,9 @@ class W_BasicObject(W_Root):
 
     def _default_value_string_(self):
         to_string = self.get(u'toString')
+
         if to_string.is_callable():
+            assert isinstance(to_string, W_BasicFunction)
             _str = to_string.Call(this=self)
             if isinstance(_str, W_Primitive):
                 return _str
@@ -388,6 +392,7 @@ class W_BasicObject(W_Root):
     def _default_value_number_(self):
         value_of = self.get(u'valueOf')
         if value_of.is_callable():
+            assert isinstance(value_of, W_BasicFunction)
             val = value_of.Call(this=self)
             if isinstance(val, W_Primitive):
                 return val
@@ -512,6 +517,7 @@ class W_BasicObject(W_Root):
 
         proto = self.prototype()
         if not isnull_or_undefined(proto):
+            assert isinstance(proto, W_BasicObject)
             proto_d = proto._named_properties_dict()
         else:
             proto_d = {}
@@ -638,6 +644,7 @@ class W_BasicFunction(W_BasicObject):
             raise JsTypeError(u'has_instance')
 
         while True:
+            assert isinstance(v, W_BasicObject)
             v = v.prototype()
             if isnull_or_undefined(v):
                 return False

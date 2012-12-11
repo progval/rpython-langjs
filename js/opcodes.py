@@ -677,8 +677,9 @@ class POP(Opcode):
 
 
 def common_call(ctx, r1, args, this, name):
+    from js.jsobj import W_BasicFunction, W_List
+    assert isinstance(args, W_List)
     # TODO
-    from js.jsobj import W_BasicFunction
     if not (isinstance(r1, W_BasicFunction)):
         #err = (u"%s is not a callable (%s)"%(r1.to_string(), name.to_string()))
         err = u"is not a callable (%s)"
