@@ -1061,19 +1061,21 @@ class W_String(W_Primitive):
 
             return float(num_lit)
 
+        from builtins_global import _parse_int
+
         match_data = hex_rexp.match(s)
         if match_data is not None:
             hex_lit = match_data.group(1)
             assert hex_lit is not None
             assert hex_lit.startswith('0x') is False
             assert hex_lit.startswith('0X') is False
-            return int(hex_lit, 16)
+            return float(_parse_int(unicode(hex_lit), 16))
 
         match_data = oct_rexp.match(s)
         if match_data is not None:
             oct_lit = match_data.group(1)
             assert oct_lit is not None
-            return int(oct_lit, 8)
+            return float(_parse_int(unicode(oct_lit), 8))
 
         return NAN
 

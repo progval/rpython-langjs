@@ -110,11 +110,16 @@ def _string_match_chars(string, chars):
 # 15.1.2.2
 @w_return
 def parse_int(this, args):
-    NUMERALS = u'0123456789abcdefghijklmnopqrstuvwxyz'
     string = get_arg(args, 0)
     radix = get_arg(args, 1)
 
-    input_string = string.to_string()
+    return _parse_int(string.to_string(), radix.ToInt32())
+
+
+def _parse_int(string, radix):
+    assert isinstance(string, unicode)
+    NUMERALS = u'0123456789abcdefghijklmnopqrstuvwxyz'
+    input_string = string
     s = _strip(input_string)
     sign = 1
 
@@ -123,7 +128,7 @@ def parse_int(this, args):
     if s.startswith(u'-') or s.startswith(u'+'):
         s = s[1:]
 
-    r = radix.ToInt32()
+    r = radix
     strip_prefix = True
 
     if r != 0:
