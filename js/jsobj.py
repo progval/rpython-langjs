@@ -218,10 +218,10 @@ class W_BasicObject(W_Root):
         if is_data_descriptor(desc):
             return desc.value
 
-        getter = desc.getter
-        if getter is None:
+        if desc.has_set_getter() is False:
             return w_Undefined
 
+        getter = desc.getter
         res = getter.Call(this=self)
         return res
 
@@ -1266,7 +1266,7 @@ class W__Array(W_BasicObject):
 
         # 3
         if p == u'length':
-            if desc.value is None:
+            if desc.has_set_value() is False:
                 return W_BasicObject.define_own_property(self, u'length', desc, throw)
             new_len_desc = desc.copy()
             new_len = desc.value.ToUInt32()
@@ -1284,12 +1284,12 @@ class W__Array(W_BasicObject):
                 return reject(throw, p)
 
             # h
-            if new_len_desc.writable is None or new_len_desc.writable is True:
+            if new_len_desc.has_set_writable() is False or new_len_desc.writable is True:
                 new_writable = True
             # i
             else:
-                new_len_desc.writable = True
                 new_writable = False
+                new_len_desc.writable = True
 
             # j
             succeeded = W_BasicObject.define_own_property(self, u'length', new_len_desc, throw)
