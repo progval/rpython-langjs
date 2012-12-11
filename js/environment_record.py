@@ -30,6 +30,8 @@ class EnvironmentRecord(object):
 
 
 class DeclarativeEnvironmentRecord(EnvironmentRecord):
+    _immutable_fields_ = ['_binding_slots_', '_binding_resize_']
+
     def __init__(self, size=0, resize=True):
         EnvironmentRecord.__init__(self)
         self._binding_map_ = _new_map()

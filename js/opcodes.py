@@ -106,7 +106,7 @@ class LOAD_FLOATCONSTANT(Opcode):
 
 
 class LOAD_STRINGCONSTANT(Opcode):
-    _immutable_fields_ = ['w_stringvalue']
+    _immutable_fields_ = ['strval']
 
     def __init__(self, value):
         #assert isinstance(value, unicode)

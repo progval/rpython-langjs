@@ -816,6 +816,7 @@ class W_DateConstructor(W_BasicFunction):
 
 
 class W__Function(W_BasicFunction):
+    _immutable_fields_ = ['_type_', '_class_', '_extensible_', '_scope_', '_params_', '_strict_', '_function_']
 
     def __init__(self, function_body, formal_parameter_list=[], scope=None, strict=False):
         W_BasicFunction.__init__(self)
@@ -1153,6 +1154,8 @@ def uint16(n):
 
 
 class W_FloatNumber(W_Number):
+    _immutable_fields_ = ['_floatval_']
+
     """ Number known to be a float
     """
     def __init__(self, floatval):

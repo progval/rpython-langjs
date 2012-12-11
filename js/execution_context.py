@@ -188,6 +188,7 @@ class EvalExecutionContext(ExecutionContext):
 
 
 class FunctionExecutionContext(ExecutionContext):
+    _immutable_fields_ = ['_scope_', '_calling_context_']
     _refs_resizable_ = False
     def __init__(self, code, formal_parameters=[], argv=[], this=w_Undefined, strict=False, scope=None, w_func=None):
         from js.jsobj import isnull_or_undefined, W_BasicObject
