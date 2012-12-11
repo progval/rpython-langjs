@@ -108,7 +108,12 @@ class DeclarativeEnvironmentRecord(EnvironmentRecord):
     # 10.2.1.1.4
     def get_binding_value(self, identifier, strict=False):
         assert identifier is not None and isinstance(identifier, unicode)
-        assert self.has_binding(identifier)
+        if not self.has_binding(identifier):
+            if strict:
+                from js.execution import JsReferenceError
+                raise JsReferenceError(identifier)
+            else:
+                return w_Undefined
         return self._get_binding(identifier)
 
     # 10.2.1.1.5
