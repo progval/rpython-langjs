@@ -72,7 +72,7 @@ def printmessage(msg):
 
 def print_sourcepos(filename, source_pos, source):
     marker_indent = u' ' * source_pos.columnno
-    error_lineno = source_pos.lineno
+    error_lineno = source_pos.lineno - 1
     error_line = (source.splitlines())[error_lineno]
     printmessage(u'Syntax Error in: %s:%d\n' % (unicode(filename), error_lineno))
     printmessage(u'%s\n' % (unicode(error_line)))
