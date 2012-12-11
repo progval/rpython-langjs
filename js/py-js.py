@@ -4,6 +4,7 @@ import os
 from js.execution import JsException
 from pypy.rlib.objectmodel import enforceargs
 from pypy.rlib.parsing.parsing import ParseError
+from pypy.rlib.parsing.deterministic import LexerError
 
 
 def main(argv):
@@ -54,6 +55,9 @@ def repl(interpreter):
         except ParseError as exc:
             printsyntaxerror(filename, exc, line)
             continue
+        except LexerError as e:
+            printlexererror(filename, e, line)
+            continue
         except JsException as e:
             printerrormessage(filename, e._msg())
             continue
@@ -66,15 +70,23 @@ def printmessage(msg):
     os.write(1, encode_unicode_utf8(msg))
 
 
-def printsyntaxerror(filename, exc, source):
-    # XXX format syntax errors nicier
-    marker_indent = u' ' * exc.source_pos.columnno
-    error = exc.errorinformation.failure_reasons
-    error_lineno = exc.source_pos.lineno
+def print_sourcepos(filename, source_pos, source):
+    marker_indent = u' ' * source_pos.columnno
+    error_lineno = source_pos.lineno
     error_line = (source.splitlines())[error_lineno]
     printmessage(u'Syntax Error in: %s:%d\n' % (unicode(filename), error_lineno))
     printmessage(u'%s\n' % (unicode(error_line)))
     printmessage(u'%s^\n' % (marker_indent))
+
+
+def printlexererror(filename, exc, source):
+    print_sourcepos(filename, exc.source_pos, source)
+
+
+def printsyntaxerror(filename, exc, source):
+    # XXX format syntax errors nicier
+    print_sourcepos(filename, exc.source_pos, source)
+    error = exc.errorinformation.failure_reasons
     printmessage(u'Error: %s\n' % (unicode(str(error))))
 
 
