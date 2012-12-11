@@ -90,6 +90,9 @@ def setup(global_object):
 
     put_native_function(w_Date, u'UTC', parse)
 
+    # 15.9.5.1
+    put_property(w_DatePrototype, u'constructor', w_DatePrototype)
+
 
 @w_return
 def to_string(this, args):
