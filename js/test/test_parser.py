@@ -9,7 +9,7 @@ from pypy import conftest
 from js.astbuilder import FakeParseError
 from js.astbuilder import ASTBuilder
 from js.jscode import JsCode
-import sys
+
 
 xfail = py.test.mark.xfail
 

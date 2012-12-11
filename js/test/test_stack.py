@@ -81,7 +81,7 @@ class TestStack(object):
         s = Stack(2, False)
         s.append(1)
         s.append(1)
-        py.test.raises(IndexError, s.append,1)
+        py.test.raises(AssertionError, s.append,1)
 
     def test_stack_resize(self):
         s = Stack(0)

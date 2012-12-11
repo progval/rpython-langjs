@@ -1,6 +1,5 @@
-import py
-
 from js.jsobj import W_String
+
 
 def test_string_to_number():
     assert W_String(u'').ToNumber() == 0
@@ -10,9 +9,10 @@ def test_string_to_number():
     assert W_String(u'\r').ToNumber() == 0
     assert W_String(u'\r\n').ToNumber() == 0
 
+
 def test_isspace():
-    from js.jsobj import _isspace
-    assert _isspace(' ') is True
-    assert _isspace('    ') is True
-    assert _isspace('  \t\t\r\n  ') is True
-    assert _isspace('  \t\ts\r\n  ') is False
+    from js.builtins_global import _strip
+    assert _strip(u' ') == u''
+    assert _strip(u'    ') == u''
+    assert _strip(u'  \t\t\r\n  ') == u''
+    assert _strip(u'  \t\ts\r\n  ') == u's'

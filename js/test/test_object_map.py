@@ -2,6 +2,7 @@ import py
 
 from js.object_map import Map, MapRoot, MapNode
 
+
 class TestMap(object):
     def setup_class(cls):
         pass
@@ -134,42 +135,3 @@ class TestMap(object):
         assert a.lookup('baz') == 1
 
         assert a == b
-
-    def test_add_with_flags(self):
-        r = MapRoot()
-        a = r.add('foo', 23)
-        a = a.add('bar')
-        b = r.add('foo', 42)
-        b = b.add('bar')
-
-        assert a.lookup('foo') == 0
-        assert a.lookup('bar') == 1
-
-        assert b.lookup('foo') == 0
-        assert b.lookup('bar') == 1
-
-        assert a.lookup_flag('foo') == 23
-        assert a.lookup_flag('bar') == 0
-        assert b.lookup_flag('foo') == 42
-        assert b.lookup_flag('bar') == 0
-
-    def test_set_flags(self):
-        r = MapRoot()
-        a = r.add('foo', 23)
-        a = a.add('bar')
-        a = a.add('baz')
-        b = r.add('foo', 42)
-        b = b.add('bar')
-        b = b.add('baz')
-
-
-        c = a.set_flags('bar', 42)
-        d = b.set_flags('bar', 23)
-
-        assert a.lookup_flag('bar') == 0
-        assert b.lookup_flag('bar') == 0
-        assert c.lookup_flag('bar') == 42
-        assert d.lookup_flag('bar') == 23
-
-        assert a.back.back == c.back.back
-        assert b.back.back == d.back.back

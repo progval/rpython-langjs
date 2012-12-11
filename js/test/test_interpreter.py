@@ -1,11 +1,11 @@
-import py
 from js.jsobj import _w
 from js.interpreter import Interpreter
 from js.astbuilder import parse_to_ast
 
+
 class TestInterpreter(object):
     def test_foo1(self):
-        src = '''
+        src = u'''
         var a = 40;
         var b = 2;
         a + b;

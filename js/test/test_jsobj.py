@@ -1,37 +1,37 @@
-import py
 from js.jsobj import W_BasicObject, PropertyDescriptor
+
 
 class TestWObjectProperties(object):
     def test_has_property(self):
         obj = W_BasicObject()
-        assert obj.has_property('foo') is False
+        assert obj.has_property(u'foo') is False
 
     def test_define_property(self):
         obj = W_BasicObject()
 
-        desc = PropertyDescriptor(enumerable = True, configurable = True)
-        obj.define_own_property('foo', desc)
-        assert obj.has_property('foo') is True
+        desc = PropertyDescriptor(enumerable=True, configurable=True)
+        obj.define_own_property(u'foo', desc)
+        assert obj.has_property(u'foo') is True
 
     def test_define_data_property(self):
         obj = W_BasicObject()
 
-        desc = PropertyDescriptor(value = 1)
-        obj.define_own_property('foo', desc)
-        assert obj.has_property('foo') is True
+        desc = PropertyDescriptor(value=1)
+        obj.define_own_property(u'foo', desc)
+        assert obj.has_property(u'foo') is True
 
     def test_get(self):
         obj = W_BasicObject()
 
-        desc = PropertyDescriptor(value = 1)
-        obj.define_own_property('foo', desc)
-        assert obj.get('foo') == 1
+        desc = PropertyDescriptor(value=1, writable=True)
+        obj.define_own_property(u'foo', desc)
+        assert obj.get(u'foo') == 1
 
     def test_put(self):
         obj = W_BasicObject()
 
-        obj.put('foo', 1)
-        assert obj.get('foo') == 1
+        obj.put(u'foo', 1)
+        assert obj.get(u'foo') == 1
 
 #def test_intnumber():
     #n = W_IntNumber(0x80000000)
