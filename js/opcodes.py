@@ -143,8 +143,8 @@ class LOAD_VARIABLE(Opcode):
     # 11.1.2
     def eval(self, ctx):
         # TODO put ref onto stack
-        value = ref.get_value()
         ref = ctx.get_ref(self.identifier, self.index)
+        value = ref.get_value(self.identifier)
         ctx.stack_append(value)
 
     def __str__(self):
@@ -501,8 +501,8 @@ class STORE(Opcode):
 
     def eval(self, ctx):
         value = ctx.stack_top()
-        ref.put_value(value)
         ref = ctx.get_ref(self.identifier, self.index)
+        ref.put_value(value, self.identifier)
 
     def __str__(self):
         return 'STORE "%s"' % (self.identifier)
