@@ -269,11 +269,16 @@ class WithExecutionContext(SubExecutionContext):
         self.declaration_binding_initialization()
 
 
-class CatchExecutionContext(SubExecutionContext):
+class CatchExecutionContext(ExecutionContext):
     def __init__(self, code, catchparam, exception_value, parent_context):
-        SubExecutionContext.__init__(self, parent_context)
         self._code_ = code
         self._strict_ = code.strict
+        self._parent_context_ = parent_context
+
+        stack_size = code.estimated_stack_size()
+        env_size = code.env_size() + 1  # neet do add one for the arguments object
+
+        ExecutionContext.__init__(self, stack_size, env_size)
 
         parent_env = parent_context.lexical_environment()
 
@@ -287,3 +292,6 @@ class CatchExecutionContext(SubExecutionContext):
         self._variable_environment_ = local_env
 
         self.declaration_binding_initialization()
+
+    def this_binding(self):
+        return self._parent_context_.this_binding()

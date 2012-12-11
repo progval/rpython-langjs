@@ -33,12 +33,19 @@ class StackMixin(object):
 
     def _stack_append(self, element):
         i = self._stack_pointer()
+        len_stack = len(self._stack_)
+
         assert i >= 0
-        if len(self._stack_) <= i and self._stack_resize_ is True:
+        if len_stack <= i and self._stack_resize_ is True:
             self._stack_ += [None]
+        else:
+            assert len_stack > i
 
         self._stack_[i] = element
         self._stack_pointer_ = i + 1
+
+    def _set_stack_pointer(self, p):
+        self._stack_pointer_ = p
 
     #@jit.unroll_safe
     def _stack_pop_n(self, n):

@@ -727,13 +727,25 @@ class THROW(Opcode):
 
 
 class TRYCATCHBLOCK(Opcode):
-    _stack_change = 0
-
     def __init__(self, tryfunc, catchparam, catchfunc, finallyfunc):
         self.tryexec = tryfunc
         self.catchexec = catchfunc
         self.catchparam = catchparam
         self.finallyexec = finallyfunc
+
+    def stack_change(self):
+        trystack = 0
+        catchstack = 0
+        finallystack = 0
+
+        if self.tryexec is not None:
+            trystack = self.tryexec.estimated_stack_size()
+        #if self.catchexec is not None:
+            #catchstack = self.catchexec.estimated_stack_size()
+        if self.finallyexec is not None:
+            finallystack = self.finallyexec.estimated_stack_size()
+
+        return trystack + catchstack + finallystack
 
     def eval(self, ctx):
         from js.completion import is_return_completion, is_completion, NormalCompletion
@@ -744,10 +756,14 @@ class TRYCATCHBLOCK(Opcode):
         finallyexec = self.finallyexec
         catchparam = self.catchparam
 
+        stack_p = ctx._stack_pointer()
+
         try:
             b = tryexec.run(ctx)
             assert is_completion(b)
+            ctx.stack_pop()
         except JsException, e:
+            ctx._set_stack_pointer(stack_p)
             if catchexec is not None:
                 from js.execution_context import CatchExecutionContext
                 msg = e.msg()
