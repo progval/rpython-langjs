@@ -4,7 +4,7 @@ operations.py
 Implements the javascript operations nodes for the interpretation tree
 """
 
-from js.execution import JsTypeError
+from js.execution import JsTypeError, JsException
 from pypy.rlib.unroll import unrolling_iterable
 from pypy.rlib.objectmodel import enforceargs
 
@@ -989,6 +989,8 @@ class ForIn(Statement):
         bytecode.emit('NEXT_ITERATOR')
 
         # store iterrator value into approperiate place
+        if isinstance(left_expr, This):
+            raise JsException(u'Invalid left-hand side in for-in')
         if isinstance(left_expr, Identifier):
             name = left_expr.name
             index = left_expr.index

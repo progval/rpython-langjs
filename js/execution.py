@@ -29,8 +29,15 @@ class ThrowException(JsBaseExcept):
 
 
 class JsException(Exception):
+    message = u'Exception'
+
+    def __init__(self, message=None):
+        if message is not None:
+            assert isinstance(message, unicode)
+            self.message = message
+
     def _msg(self):
-        return u'Exception'
+        return self.message
 
     def msg(self):
         from js.jsobj import _w
