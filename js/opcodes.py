@@ -682,7 +682,7 @@ def common_call(ctx, r1, args, this, name):
     # TODO
     if not (isinstance(r1, W_BasicFunction)):
         #err = (u"%s is not a callable (%s)"%(r1.to_string(), name.to_string()))
-        err = u"is not a callable (%s)"
+        err = u"is not a callable (%s)" % (r1.to_string())
         raise JsTypeError(err)
     argv = args.to_list()
     res = r1.Call(args=argv, this=this, calling_context=ctx)
