@@ -242,7 +242,7 @@ class JsCode(object):
             result = opcode.eval(ctx)
 
             if debug:
-                d = '%s\t%s' % (str(pc), str(opcode))
+                d = u'%s\t%s' % (unicode(str(pc)), unicode(str(opcode)))
                 #d = u'%s' % (unicode(str(pc)))
                 #d = u'%3d %25s %s %s' % (pc, unicode(opcode), unicode([unicode(s) for s in ctx._stack_]), unicode(result))
                 print(d)

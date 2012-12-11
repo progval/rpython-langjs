@@ -2,6 +2,7 @@ from js.execution import JsReferenceError
 
 
 def get_identifier_reference(lex, identifier, strict=False):
+    assert isinstance(identifier, unicode)
     if lex is None:
         return Reference(referenced=identifier, strict=strict)
 

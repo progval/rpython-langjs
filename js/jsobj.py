@@ -285,7 +285,6 @@ class W_BasicObject(W_Root):
 
     # 8.12.5
     def put(self, p, v, throw=False):
-        #assert isinstance(p, unicode)
         assert p is not None and isinstance(p, unicode)
 
         if self.can_put(p) is False:
@@ -342,7 +341,6 @@ class W_BasicObject(W_Root):
 
     # 8.12.6
     def has_property(self, p):
-        #assert isinstance(p, unicode)
         assert p is not None and isinstance(p, unicode)
 
         desc = self.get_property(p)
@@ -1318,7 +1316,6 @@ class W__Array(W_BasicObject):
 
         # 4
         elif is_array_index(p):
-            #assert isinstance(p, unicode)
             assert p is not None and isinstance(p, unicode)
 
             # a

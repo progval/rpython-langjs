@@ -87,6 +87,7 @@ class DeclarativeEnvironmentRecord(EnvironmentRecord):
 
     # 10.2.1.1.2
     def create_mutuable_binding(self, identifier, deletable):
+        assert identifier is not None and isinstance(identifier, unicode)
         assert not self.has_binding(identifier)
         self._add_binding(identifier, w_Undefined)
         self._set_mutable_binding(identifier)
@@ -95,7 +96,7 @@ class DeclarativeEnvironmentRecord(EnvironmentRecord):
 
     # 10.2.1.1.3
     def set_mutable_binding(self, identifier, value, strict):
-        #assert isinstance(identifier, unicode)
+        assert identifier is not None and isinstance(identifier, unicode)
         assert self.has_binding(identifier)
         if not self._is_mutable_binding(identifier):
             from js.execution import JsTypeError
@@ -104,11 +105,13 @@ class DeclarativeEnvironmentRecord(EnvironmentRecord):
 
     # 10.2.1.1.4
     def get_binding_value(self, identifier, strict=False):
+        assert identifier is not None and isinstance(identifier, unicode)
         assert self.has_binding(identifier)
         return self._get_binding(identifier)
 
     # 10.2.1.1.5
     def delete_binding(self, identifier):
+        assert identifier is not None and isinstance(identifier, unicode)
         if not self.has_binding(identifier):
             return True
         if self._is_mutable_binding(identifier) is False:
@@ -144,11 +147,13 @@ class ObjectEnvironmentRecord(EnvironmentRecord):
 
     # 10.2.1.2.1
     def has_binding(self, n):
+        assert n is not None and isinstance(n, unicode)
         bindings = self.binding_object
         return bindings.has_property(n)
 
     # 10.2.1.2.2
     def create_mutuable_binding(self, n, d):
+        assert n is not None and isinstance(n, unicode)
         bindings = self.binding_object
         assert bindings.has_property(n) is False
         if d is True:
@@ -162,12 +167,13 @@ class ObjectEnvironmentRecord(EnvironmentRecord):
 
     # 10.2.1.2.3
     def set_mutable_binding(self, n, v, s):
-        #assert isinstance(n, unicode)
+        assert n is not None and isinstance(n, unicode)
         bindings = self.binding_object
         bindings.put(n, v, s)
 
     # 10.2.1.2.4
     def get_binding_value(self, n, s=False):
+        assert n is not None and isinstance(n, unicode)
         bindings = self.binding_object
         value = bindings.has_property(n)
         if value is False:
@@ -181,6 +187,7 @@ class ObjectEnvironmentRecord(EnvironmentRecord):
 
     # 10.2.1.2.5
     def delete_binding(self, n):
+        assert n is not None and isinstance(n, unicode)
         bindings = self.binding_object
         return bindings.delete(n, False)
 
