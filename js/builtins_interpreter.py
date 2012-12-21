@@ -20,8 +20,10 @@ def setup_builtins(global_object, overwrite_eval=False):
 @w_return
 def js_load(this, args):
     from js.object_space import object_space
+    from js.interpreter import load_file
     filename = args[0].to_string()
-    object_space.interpreter.run_file(str(filename))
+    src = load_file(str(filename))
+    object_space.interpreter.run_src(src)
 
 
 @w_return

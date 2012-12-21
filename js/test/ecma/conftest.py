@@ -1,7 +1,7 @@
 import pytest
 import py
 
-from js.interpreter import Interpreter
+from js.interpreter import Interpreter, load_file
 from _pytest.runner import Failed
 from js.jsobj import _w
 from js.execution import JsException
@@ -222,8 +222,10 @@ class InterpreterResults(object):
         def f(testfile):
             interp = Interpreter({'no-exception-jseval': True})
 
-            interp.run_file(str(shellpath))
-            interp.run_file(testfile)
+            shell_src = load_file(str(shellpath))
+            interp.run_src(shell_src)
+            test_src = load_file(testfile)
+            interp.run_src(test_src)
 
             global_object = interp.global_object
             testcases = global_object.get(u'testcases')

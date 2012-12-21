@@ -2,16 +2,9 @@ from pypy.rlib.streamio import open_file_as_stream
 
 
 def load_file(filename):
-    from js.astbuilder import parse_to_ast
-    from runistr import decode_str_utf8
-
     f = open_file_as_stream(str(filename))
     src = f.readall()
-    usrc = decode_str_utf8(src)
-    assert usrc is not None
-    ast = parse_to_ast(usrc)
-    f.close()
-    return ast
+    return src
 
 
 class InterpreterConfig(object):
@@ -37,10 +30,6 @@ class Interpreter(object):
         js.builtins_interpreter.setup_builtins(self.global_object, self.config.no_exception_jseval)
 
         object_space.assign_proto(self.global_object)
-
-    def run_file(self, filename):
-        ast = load_file(filename)
-        return self.run_ast(ast)
 
     def run_ast(self, ast):
         symbol_map = ast.symbol_map
