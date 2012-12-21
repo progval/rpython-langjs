@@ -88,10 +88,18 @@ def setup(global_object):
 
     put_native_function(w_Date, u'parse', parse)
 
+    put_native_function(w_Date, u'now', now)
+
     put_native_function(w_Date, u'UTC', parse)
 
     # 15.9.5.1
     put_property(w_DatePrototype, u'constructor', w_Date)
+
+
+@w_return
+def now(this, args):
+    import time
+    return int(time.time() * 1000)
 
 
 @w_return
