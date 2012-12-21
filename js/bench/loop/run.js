@@ -27,11 +27,7 @@
 
 
 load('base.js');
-load('richards.js');
-load('deltablue.js');
-load('crypto.js');
-//load('raytrace.js');
-load('earley-boyer.js');
+load('looping.js');
 
 
 function PrintResult(name, result) {
