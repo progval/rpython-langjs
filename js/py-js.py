@@ -126,7 +126,6 @@ def parse_args(argv):
 
     opts['debug'] = _parse_bool_arg('-d', argv) or _parse_bool_arg('--debug', argv)
     opts['inspect'] = _parse_bool_arg('-i', argv) or _parse_bool_arg('--inspect', argv)
-    opts['no-exception-jseval'] = _parse_bool_arg('--no-exception-jseval', argv)
 
     del(argv[0])
 

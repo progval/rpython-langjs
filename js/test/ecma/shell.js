@@ -55,6 +55,17 @@ var DEBUG = false;
 var DESCRIPTION;
 var EXPECTED;
 
+(function () {
+  var _eval = eval;
+  eval = function(src) {
+    try {
+        return _eval(src);
+    } catch(e) {
+        return "error";
+    }
+  };
+})();
+
 /*
  * wrapper for test case constructor that doesn't require the SECTION
  * argument.

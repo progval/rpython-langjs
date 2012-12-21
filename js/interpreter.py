@@ -10,7 +10,6 @@ def load_file(filename):
 class InterpreterConfig(object):
     def __init__(self, config={}):
         self.debug = config.get('debug', False)
-        self.no_exception_jseval = config.get('no-exception-jseval', False)
 
 
 class Interpreter(object):
@@ -27,7 +26,7 @@ class Interpreter(object):
         object_space.interpreter = self
 
         js.builtins.setup_builtins(self.global_object)
-        js.builtins_interpreter.setup_builtins(self.global_object, self.config.no_exception_jseval)
+        js.builtins_interpreter.setup_builtins(self.global_object)
 
         object_space.assign_proto(self.global_object)
 
