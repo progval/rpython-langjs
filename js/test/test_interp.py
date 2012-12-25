@@ -1097,3 +1097,7 @@ def test_try_catch_loop():
 def test_instanceof():
     assertv("function f(){this.a = 1;}; x = new f(); x instanceof f;", True)
     assertv("function f(){this.a = 1;}; function g(){this.a = b;}; x = new f(); x instanceof g;", False)
+
+
+def test_repeated_for_loop():
+    assertv("var a = 0; for(var x = 0; x < 10; x++){for(var y = 0; y < 10; y++) {a += y}}; a;", 450)

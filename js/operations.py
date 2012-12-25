@@ -1031,7 +1031,7 @@ class For(Statement):
 
     def emit(self, bytecode):
         self.setup.emit(bytecode)
-        if isinstance(self.setup, Expression):
+        if isinstance(self.setup, Expression) or isinstance(self.setup, VariableDeclList):
             bytecode.emit('POP')
         bytecode.emit('LOAD_UNDEFINED')
         precond = bytecode.emit_startloop_label()
