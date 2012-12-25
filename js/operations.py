@@ -982,7 +982,7 @@ class ForIn(Statement):
         # load the "last" iterations result
         bytecode.emit('LOAD_UNDEFINED')
         precond = bytecode.emit_startloop_label()
-        finish = bytecode.prealocate_endloop_label()
+        finish = bytecode.prealocate_endloop_label(True)
 
         bytecode.emit('JUMP_IF_ITERATOR_EMPTY', finish)
 

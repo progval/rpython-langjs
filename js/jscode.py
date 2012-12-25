@@ -42,6 +42,7 @@ class JsCode(object):
         self.has_labels = True
         self.startlooplabel = []
         self.endlooplabel = []
+        self.pop_after_break = []
         self.updatelooplabel = []
         self._estimated_stack_size = -1
         self._symbols = symbol_map
@@ -97,9 +98,10 @@ class JsCode(object):
         self.label_count += 1
         return num
 
-    def prealocate_endloop_label(self):
+    def prealocate_endloop_label(self, pop_after_break=False):
         num = self.prealocate_label()
         self.endlooplabel.append(num)
+        self.pop_after_break.append(pop_after_break)
         return num
 
     def prealocate_updateloop_label(self):
@@ -110,6 +112,7 @@ class JsCode(object):
     def emit_endloop_label(self, label):
         self.endlooplabel.pop()
         self.startlooplabel.pop()
+        self.pop_after_break.pop()
         self.emit_label(label)
 
     def emit_updateloop_label(self, label):
@@ -119,6 +122,8 @@ class JsCode(object):
     def emit_break(self):
         if not self.endlooplabel:
             raise JsThrowException(W_String(u"Break outside loop"))
+        if self.pop_after_break[-1] is True:
+            self.emit('POP')
         self.emit('JUMP', self.endlooplabel[-1])
 
     def emit_continue(self):

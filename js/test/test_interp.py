@@ -1101,3 +1101,7 @@ def test_instanceof():
 
 def test_repeated_for_loop():
     assertv("var a = 0; for(var x = 0; x < 10; x++){for(var y = 0; y < 10; y++) {a += y}}; a;", 450)
+
+
+def test_repeated_for_in():
+    assertv("var a = [1,2,3]; var b = 0; for(var x = 0; x < 10; x++){for(var y in a) {b += y}}; b;", '0012012012012012012012012012012')
