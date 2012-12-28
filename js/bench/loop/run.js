@@ -1,45 +1,100 @@
-// Copyright 2008 Google Inc. All Rights Reserved.
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//     * Neither the name of Google Inc. nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-
-load('base.js');
-load('looping.js');
-
-
-function PrintResult(name, result) {
-  print(name + ': ' + result);
+function _run(name, func) {
+    var d = Date.now();
+    func();
+    print(name + ': ' + (Date.now() - d));
 }
 
-
-function PrintScore(score) {
-  print('----');
-  print('Score: ' + score);
+function loop1a() {
+  var x = 0;
+  while(x < 10000000) {
+      x += 1;
+  }
 }
 
+function loop1() {
+  var x = 0;
+  function f() {
+      while(x < 10000000) {
+          x += 1;
+      }
+  }
+  f();
+}
 
-BenchmarkSuite.RunSuites({ NotifyResult: PrintResult,
-                           NotifyScore: PrintScore });
+function loop2() {
+  var x = {i:0};
+  function f() {
+    while(x.i < 10000000) {
+      x.i = x.i + 1;
+    }
+  }
+  f();
+}
+
+function loop2a() {
+  function f() {
+    var x = {i:0};
+    while(x.i < 10000000) {
+      x.i = x.i + 1;
+    }
+  }
+  f();
+}
+
+function loop3() {
+  var x = {i:0};
+  function f() {
+    while(x.i < 10000000) {
+      x = {i:x.i + 1};
+    }
+  }
+  f();
+}
+
+function loop3a() {
+  function f() {
+    var x = {i:0};
+    while(x.i < 10000000) {
+      x = {i:x.i + 1};
+    }
+  }
+  f();
+}
+
+function loop4() {
+  function g(x) {return x + 1;}
+  var x = 0;
+  function f() {
+      while(x < 10000000) {
+          x = g(x);
+      }
+  }
+  f();
+}
+
+function loop4a() {
+  function f() {
+      function g(x) {return x + 1;}
+      var x = 0;
+      while(x < 10000000) {
+          x = g(x);
+      }
+  }
+  f();
+}
+
+function loop5() {
+    for(var i = 0; i < 10000000; i++) {
+        i;
+    }
+}
+
+_run('loop1', loop1);
+_run('loop1 local', loop1a);
+_run('loop2', loop2);
+_run('loop2 local', loop2a);
+_run('loop3', loop3);
+_run('loop3 local', loop3);
+_run('loop4', loop4);
+_run('loop4 local', loop4);
+_run('loop5', loop5);
