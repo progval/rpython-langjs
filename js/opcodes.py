@@ -148,7 +148,7 @@ class LOAD_VARIABLE(Opcode):
         ctx.stack_append(value)
 
     def __str__(self):
-        return 'LOAD_VARIABLE "%s"' % (self.identifier)
+        return 'LOAD_VARIABLE "%s" (%d)' % (self.identifier, self.index)
 
 
 class LOAD_THIS(Opcode):
@@ -505,7 +505,7 @@ class STORE(Opcode):
         ref.put_value(value, self.identifier)
 
     def __str__(self):
-        return 'STORE "%s"' % (self.identifier)
+        return 'STORE "%s" (%d)' % (self.identifier, self.index)
 
 
 class LABEL(Opcode):
