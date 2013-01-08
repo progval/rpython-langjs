@@ -17,8 +17,7 @@ class Interpreter(object):
     def __init__(self, config={}):
         from js.jsobj import W_GlobalObject
         from js.object_space import object_space
-        import js.builtins
-        import js.builtins_interpreter
+        import js.builtins.interpreter
 
         self.config = InterpreterConfig(config)
         self.global_object = W_GlobalObject()
@@ -26,7 +25,7 @@ class Interpreter(object):
         object_space.interpreter = self
 
         js.builtins.setup_builtins(self.global_object)
-        js.builtins_interpreter.setup_builtins(self.global_object)
+        js.builtins.interpreter.setup_builtins(self.global_object)
 
         object_space.assign_proto(self.global_object)
 
@@ -40,7 +39,7 @@ class Interpreter(object):
 
     def run_src(self, src):
         from js.astbuilder import parse_to_ast
-        from runistr import decode_str_utf8
+        from js.runistr import decode_str_utf8
         ast = parse_to_ast(decode_str_utf8(src))
         return self.run_ast(ast)
 

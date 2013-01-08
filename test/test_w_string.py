@@ -11,7 +11,7 @@ def test_string_to_number():
 
 
 def test_isspace():
-    from js.builtins_global import _strip
+    from js.builtins.js_global import _strip
     assert _strip(u' ') == u''
     assert _strip(u'    ') == u''
     assert _strip(u'  \t\t\r\n  ') == u''

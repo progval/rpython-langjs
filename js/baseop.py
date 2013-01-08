@@ -6,7 +6,7 @@ from js.jsobj import W_String, W_IntNumber, W_FloatNumber, _w
 
 from pypy.rlib.rarithmetic import ovfcheck
 from pypy.rlib.rfloat import isnan, isinf
-from js.builtins_number import w_NAN, w_POSITIVE_INFINITY, w_NEGATIVE_INFINITY
+from js.builtins.number import w_NAN, w_POSITIVE_INFINITY, w_NEGATIVE_INFINITY
 
 import math
 

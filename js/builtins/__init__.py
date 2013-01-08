@@ -48,10 +48,10 @@ def setup_builtins(global_object):
     put_property(global_object, u'Function', w_Function)
 
     # 15.3.4 Properties of the Function Prototype Object
-    import js.builtins_function as function_builtins
     from js.functions import JsNativeFunction
 
-    empty_func = JsNativeFunction(function_builtins.empty, u'Empty')
+    import js.builtins.function
+    empty_func = JsNativeFunction(js.builtins.function.empty, u'Empty')
     w_FunctionPrototype = object_space.new_func(empty_func)
     object_space.assign_proto(w_FunctionPrototype, object_space.proto_object)
     object_space.proto_function = w_FunctionPrototype
@@ -75,13 +75,13 @@ def setup_builtins(global_object):
     # 14.2.4.1 Object.prototype.constructor
     put_property(w_ObjectPrototype, u'constructor', w_Object)
 
-    import js.builtins_object as object_builtins
+    import js.builtins.object
     # 15.2.4.2 Object.prototype.toString()
-    put_native_function(w_ObjectPrototype, u'toString', object_builtins.to_string)
-    put_native_function(w_ObjectPrototype, u'toLocaleString', object_builtins.to_string)
+    put_native_function(w_ObjectPrototype, u'toString', js.builtins.object.to_string)
+    put_native_function(w_ObjectPrototype, u'toLocaleString', js.builtins.object.to_string)
 
     # 15.2.4.3 Object.prototype.valueOf()
-    put_native_function(w_ObjectPrototype, u'valueOf', object_builtins.value_of)
+    put_native_function(w_ObjectPrototype, u'valueOf', js.builtins.object.value_of)
 
     # 15.3 Function Objects
     # 15.3.3 Properties of the Function Constructor
@@ -95,38 +95,35 @@ def setup_builtins(global_object):
     # 14.3.4.1 Function.prototype.constructor
     put_property(w_FunctionPrototype, u'constructor', w_Function)
 
-    import js.builtins_function as function_builtins
-
     # 15.3.4.2 Function.prototype.toString()
-    put_native_function(w_FunctionPrototype, u'toString', function_builtins.to_string)
+    put_native_function(w_FunctionPrototype, u'toString', js.builtins.function.to_string)
 
     # 15.3.4.3 Function.prototype.apply
-    put_intimate_function(w_FunctionPrototype, u'apply', function_builtins.js_apply)
+    put_intimate_function(w_FunctionPrototype, u'apply', js.builtins.function.js_apply)
 
     # 15.3.4.4 Function.prototype.call
-    put_intimate_function(w_FunctionPrototype, u'call', function_builtins.js_call)
+    put_intimate_function(w_FunctionPrototype, u'call', js.builtins.function.js_call)
 
-    import js.builtins_boolean
-    js.builtins_boolean.setup(global_object)
+    import js.builtins.boolean
+    js.builtins.boolean.setup(global_object)
 
-    import js.builtins_number
-    js.builtins_number.setup(global_object)
+    import js.builtins.number
+    js.builtins.number.setup(global_object)
 
-    import js.builtins_string
-    js.builtins_string.setup(global_object)
+    import js.builtins.string
+    js.builtins.string.setup(global_object)
 
-    import js.builtins_array
-    js.builtins_array.setup(global_object)
+    import js.builtins.array
+    js.builtins.array.setup(global_object)
 
-    #Math
-    import js.builtins_math
-    js.builtins_math.setup(global_object)
+    import js.builtins.js_math
+    js.builtins.js_math.setup(global_object)
 
-    import js.builtins_date
-    js.builtins_date.setup(global_object)
+    import js.builtins.date
+    js.builtins.date.setup(global_object)
 
-    import js.builtins_global
-    js.builtins_global.setup(global_object)
+    import js.builtins.js_global
+    js.builtins.js_global.setup(global_object)
 
 
 def get_arg(args, index, default=w_Undefined):

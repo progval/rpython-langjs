@@ -1042,8 +1042,8 @@ class W_String(W_Primitive):
             return True
 
     def ToNumber(self):
-        from js.builtins_global import _strip
-        from runistr import encode_unicode_utf8
+        from js.builtins.js_global import _strip
+        from js.runistr import encode_unicode_utf8
         from js.constants import hex_rexp, oct_rexp, num_rexp
 
         u_strval = self._strval_
@@ -1067,7 +1067,7 @@ class W_String(W_Primitive):
 
             return float(num_lit)
 
-        from builtins_global import _parse_int
+        from js.builtins.js_global import _parse_int
 
         match_data = hex_rexp.match(s)
         if match_data is not None:

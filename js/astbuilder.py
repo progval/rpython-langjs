@@ -218,8 +218,8 @@ class ASTBuilder(RPythonVisitor):
         return operations.IntNumber(pos, int(node.additional_info, 8))
 
     def string(self, node):
-        from operations import string_unquote
-        from runistr import unicode_unescape, decode_str_utf8
+        from js.operations import string_unquote
+        from js.runistr import unicode_unescape, decode_str_utf8
 
         # TODO decode utf-8
         pos = self.get_pos(node)
@@ -717,7 +717,7 @@ def parse_tree_to_ast(parse_tree):
 def parse_to_ast(code):
     #assert isinstance(code, unicode)
     from js.jsparser import parse
-    from runistr import encode_unicode_utf8
+    from js.runistr import encode_unicode_utf8
     src = encode_unicode_utf8(code)
     parse_tree = parse(src)
     ast = parse_tree_to_ast(parse_tree)

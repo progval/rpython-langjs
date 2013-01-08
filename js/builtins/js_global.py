@@ -8,8 +8,8 @@ from pypy.module.unicodedata import unicodedb
 
 def setup(global_object):
     from js.builtins import put_intimate_function, put_native_function, put_property
-    from js.builtins_number import w_NAN
-    from js.builtins_number import w_POSITIVE_INFINITY
+    from js.builtins.number import w_NAN
+    from js.builtins.number import w_POSITIVE_INFINITY
     from js.jsobj import w_Undefined
     from pypy.rlib.objectmodel import we_are_translated
 
@@ -183,7 +183,7 @@ def _parse_int(string, radix):
 # 15.1.2.3
 @w_return
 def parse_float(this, args):
-    from runistr import encode_unicode_utf8
+    from js.runistr import encode_unicode_utf8
     from js.constants import num_lit_rexp
 
     string = get_arg(args, 0)
@@ -222,7 +222,7 @@ def printjs(this, args):
         return
 
     from pypy.rlib.rstring import UnicodeBuilder
-    from runistr import encode_unicode_utf8
+    from js.runistr import encode_unicode_utf8
 
     builder = UnicodeBuilder()
     for arg in args[:-1]:
