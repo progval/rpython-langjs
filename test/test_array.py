@@ -1,4 +1,4 @@
-from js.test.test_interp import assertv, assertp
+from test.test_interp import assertv, assertp
 
 def test_array_push(capsys):
     assertv("var x = []; x.push(42); x.length;", 1)

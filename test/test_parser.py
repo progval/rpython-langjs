@@ -9,33 +9,35 @@ from pypy import conftest
 from js.astbuilder import FakeParseError
 from js.astbuilder import ASTBuilder
 from js.jscode import JsCode
+from pypy.rlib.parsing.parsing import ParseError
 
 
 xfail = py.test.mark.xfail
 
-GFILE = py.path.local(__file__).dirpath().join('../jsgrammar.txt')
+GFILE = py.path.local(__file__).dirpath().join('../js/jsgrammar.txt')
 try:
     t = GFILE.read(mode='U')
     regexs, rules, ToAST = parse_ebnf(t)
-except ParseError,e:
-    print e.nice_error_message(filename=str(GFILE),source=t)
+except ParseError, e:
+    print e.nice_error_message(filename=str(GFILE), source=t)
     raise
 
 parse_function = make_parse_function(regexs, rules, eof=True)
 
+
 def setstartrule(rules, start):
     "takes the rule start and put it on the beginning of the rules"
-    oldpos = 0
     newrules = [Rule("hacked_first_symbol", [[start, "EOF"]])] + rules
     return newrules
+
 
 def get_defaultparse():
     return parse_function
 
+
 def parse_func(start=None):
     if start is not None:
-        parse_function = make_parse_function(regexs, setstartrule(rules, start),
-                                    eof=True)
+        parse_function = make_parse_function(regexs, setstartrule(rules, start), eof=True)
     else:
         parse_function = get_defaultparse()
 
@@ -50,6 +52,7 @@ def parse_func(start=None):
         return tree
     return methodparse
 
+
 class CountingVisitor(RPythonVisitor):
     def __init__(self):
         self.counts = {}
@@ -63,9 +66,11 @@ class CountingVisitor(RPythonVisitor):
     def general_symbol_visit(self, node):
         self.counts[node.symbol] = self.counts.get(node.symbol, 0) + 1
 
+
 class BaseGrammarTest(object):
     def setup_class(cls):
         cls.parse = parse_func()
+
 
 class TestLiterals(BaseGrammarTest):
     def setup_class(cls):
@@ -76,6 +81,7 @@ class TestLiterals(BaseGrammarTest):
             dc = CountingVisitor()
             self.parse(str(i)).visit(dc)
             assert dc.counts["DECIMALLITERAL"] == 1
+
 
 class IntEvaluationVisitor(RPythonVisitor):
     def general_symbol_visit(self, node):
@@ -100,7 +106,7 @@ class IntEvaluationVisitor(RPythonVisitor):
         else:
             arg1 = self.dispatch(node.children[1])
             op = self.dispatch(node.children[0])
-            return self.evalop(arg1,op)
+            return self.evalop(arg1, op)
 
     opmap = {'+': lambda x,y: x+y,
             '-': lambda x,y: x-y,

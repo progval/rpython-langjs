@@ -1,5 +1,5 @@
 import py
-from js.test.test_interp import assertv
+from test.test_interp import assertv
 
 def test_load():
     pwd = py.path.local(__file__)

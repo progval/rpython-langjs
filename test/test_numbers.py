@@ -1,5 +1,5 @@
 
-from js.test.test_interp import assertp
+from test.test_interp import assertp
 
 def test_infinity_nan(capsys):
     assertp('print(1/0)', 'Infinity', capsys)
