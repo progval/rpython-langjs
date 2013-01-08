@@ -2,7 +2,8 @@
 """ Base operations implementations
 """
 
-from js.jsobj import W_String, W_IntNumber, W_FloatNumber, _w
+from js.jsobj import W_String, W_IntNumber, W_FloatNumber
+from js.object_space import _w
 
 from pypy.rlib.rarithmetic import ovfcheck
 from pypy.rlib.rfloat import isnan, isinf

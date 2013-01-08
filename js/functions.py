@@ -1,4 +1,4 @@
-from js.jsobj import _w
+from js.object_space import _w
 
 
 class JsBaseFunction(object):

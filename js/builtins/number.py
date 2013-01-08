@@ -1,7 +1,7 @@
 from pypy.rlib.rfloat import NAN, INFINITY
 from js.execution import JsRangeError, JsTypeError
-from js.jsobj import W_Number, W_NumericObject, _w
-from js.object_space import w_return
+from js.jsobj import W_Number, W_NumericObject
+from js.object_space import w_return, _w
 
 
 def setup(global_object):

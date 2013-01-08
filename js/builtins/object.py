@@ -1,4 +1,4 @@
-from js.jsobj import _w
+from js.object_space import _w
 
 
 def to_string(this, args):

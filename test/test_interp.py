@@ -54,7 +54,7 @@ def assertp(code, prints, captured):
 
 def assertv(code, value):
     from js.interpreter import Interpreter
-    from js.jsobj import _w
+    from js.object_space import _w
 
     jsint = Interpreter()
     ret_val = jsint.run_src(code)

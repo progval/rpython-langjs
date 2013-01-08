@@ -1,4 +1,4 @@
-from js.jsobj import _w
+from js.object_space import _w
 from js.jscode import JsCode
 from js.execution_context import ExecutionContext, FunctionExecutionContext, GlobalExecutionContext, EvalExecutionContext
 from js.functions import JsFunction, JsExecutableCode, JsNativeFunction, JsGlobalCode, JsEvalCode

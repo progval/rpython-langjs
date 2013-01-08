@@ -40,7 +40,7 @@ class JsException(Exception):
         return self.message
 
     def msg(self):
-        from js.jsobj import _w
+        from js.object_space import _w
         return _w(self._msg())
 
 

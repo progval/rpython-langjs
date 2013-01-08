@@ -1,5 +1,6 @@
 from js.jsobj import W_IntNumber, W_FloatNumber, W_String, \
-    w_Undefined, newbool, w_Null, _w
+    w_Undefined, newbool, w_Null
+from js.object_space import _w
 from js.execution import JsTypeError
 from js.baseop import plus, sub, compare, AbstractEC, StrictEC,\
     compare_e, increment, decrement, mult, division, uminus, mod

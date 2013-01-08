@@ -1,6 +1,6 @@
-from js.jsobj import isnull_or_undefined, _w, w_Undefined
+from js.jsobj import isnull_or_undefined, w_Undefined
 from js.builtins import get_arg
-from js.object_space import w_return
+from js.object_space import w_return, _w
 
 
 def setup(global_object):

@@ -1,8 +1,8 @@
-from js.jsobj import _w, w_Undefined, W_String, W_StringObject
+from js.jsobj import w_Undefined, W_String, W_StringObject
 from pypy.rlib.rfloat import NAN
 from js.execution import JsTypeError
 from js.builtins import get_arg
-from js.object_space import w_return
+from js.object_space import w_return, _w
 from pypy.rlib.rstring import UnicodeBuilder
 
 

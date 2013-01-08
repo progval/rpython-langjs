@@ -1,8 +1,36 @@
-from js.jsobj import _w, W__Object, W_BasicFunction, W__Function, W_DateObject, W_BooleanObject, W_StringObject, W_NumericObject, W__Array, w_Null
+from pypy.rlib.objectmodel import specialize
+
+
+@specialize.argtype(0)
+def _w(value):
+    from js.jsobj import w_Null, newbool, W_IntNumber, W_FloatNumber, W_String, W_Root, put_property
+    if value is None:
+        return w_Null
+    elif isinstance(value, W_Root):
+        return value
+    elif isinstance(value, bool):
+        return newbool(value)
+    elif isinstance(value, int):
+        return W_IntNumber(value)
+    elif isinstance(value, float):
+        return W_FloatNumber(value)
+    elif isinstance(value, unicode):
+        return W_String(value)
+    elif isinstance(value, str):
+        u_str = unicode(value)
+        return W_String(u_str)
+    elif isinstance(value, list):
+        a = object_space.new_array()
+        for index, item in enumerate(value):
+            put_property(a, unicode(str(index)), _w(item), writable=True, enumerable=True, configurable=True)
+        return a
+
+    raise TypeError("ffffuuu %s" % (value,))
 
 
 class ObjectSpace(object):
     def __init__(self):
+        from js.jsobj import w_Null
         self.global_context = None
         self.global_object = None
         self.proto_function = w_Null
@@ -18,6 +46,7 @@ class ObjectSpace(object):
         return self.global_context.variable_environment()
 
     def assign_proto(self, obj, proto=None):
+        from js.jsobj import W_BasicFunction, W_DateObject, W_BooleanObject, W_StringObject, W_NumericObject, W__Array
         if proto is not None:
             obj._prototype_ = proto
             return obj
@@ -39,46 +68,53 @@ class ObjectSpace(object):
         return obj
 
     def new_obj(self):
+        from js.jsobj import W__Object
         obj = W__Object()
         self.assign_proto(obj)
         return obj
 
     def new_func(self, function_body, formal_parameter_list=[], scope=None, strict=False):
+        from js.jsobj import W__Function
         obj = W__Function(function_body, formal_parameter_list, scope, strict)
         self.assign_proto(obj)
         return obj
 
     def new_date(self, value):
+        from js.jsobj import W_DateObject
         obj = W_DateObject(value)
         self.assign_proto(obj)
         return obj
 
     def new_array(self, length=_w(0)):
+        from js.jsobj import W__Array
         obj = W__Array(length)
         self.assign_proto(obj)
         return obj
 
     def new_bool(self, value):
+        from js.jsobj import W_BooleanObject
         obj = W_BooleanObject(value)
         self.assign_proto(obj)
         return obj
 
     def new_string(self, value):
+        from js.jsobj import W_StringObject
         obj = W_StringObject(value)
         self.assign_proto(obj)
         return obj
 
     def new_number(self, value):
+        from js.jsobj import W_NumericObject
         obj = W_NumericObject(value)
         self.assign_proto(obj)
         return obj
+
 
 object_space = ObjectSpace()
 
 
 def w_return(fn):
     def f(*args):
-        from js.jsobj import _w
         return _w(fn(*args))
     return f
 

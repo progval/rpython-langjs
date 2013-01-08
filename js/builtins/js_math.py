@@ -1,9 +1,8 @@
 import math
-from js.jsobj import _w
 
 from pypy.rlib.rfloat import NAN, INFINITY, isnan, isinf
 from js.builtins import get_arg
-from js.object_space import w_return
+from js.object_space import w_return, _w
 
 
 def setup(global_object):

@@ -1,4 +1,5 @@
-from js.jsobj import w_Undefined, _w
+from js.jsobj import w_Undefined
+from js.object_space import _w
 
 #from pypy.rlib import jit
 

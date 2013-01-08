@@ -1,9 +1,8 @@
 from pypy.rlib.rfloat import NAN, isnan
-from js.jsobj import _w
 
 import datetime
 from js.builtins import get_arg
-from js.object_space import w_return, hide_on_translate
+from js.object_space import w_return, hide_on_translate, _w
 from pypy.rlib.objectmodel import we_are_translated
 
 

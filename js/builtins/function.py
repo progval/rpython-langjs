@@ -1,9 +1,9 @@
 from js.jsobj import isnull_or_undefined
 from js.execution import JsTypeError
-from js.jsobj import w_Undefined, _w
+from js.jsobj import w_Undefined
 from js.builtins import get_arg
 from js.completion import NormalCompletion
-from js.object_space import w_return
+from js.object_space import w_return, _w
 
 
 @w_return

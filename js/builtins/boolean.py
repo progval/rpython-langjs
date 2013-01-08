@@ -1,7 +1,6 @@
 from js.jsobj import W_Boolean, W_BooleanObject
 from js.execution import JsTypeError
-from js.jsobj import _w
-from js.object_space import w_return
+from js.object_space import w_return, _w
 
 
 def setup(global_object):

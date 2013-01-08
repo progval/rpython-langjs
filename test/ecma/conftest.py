@@ -3,7 +3,7 @@ import py
 
 from js.interpreter import Interpreter, load_file
 from _pytest.runner import Failed
-from js.jsobj import _w
+from js.object_space import _w
 from js.execution import JsException
 from pypy.rlib.parsing.parsing import ParseError
 

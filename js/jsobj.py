@@ -559,6 +559,7 @@ class W_StringObject(W__PrimitiveObject):
     _class_ = 'String'
 
     def __init__(self, primitive_value):
+        from js.object_space import _w
         W__PrimitiveObject.__init__(self, primitive_value)
         length = len(self._primitive_value_.to_string())
         descr = PropertyDescriptor(value=_w(length), enumerable=False, configurable=False, writable=False)
@@ -580,6 +581,7 @@ class W_StringObject(W__PrimitiveObject):
             return None
 
         result_string = string[index]
+        from js.object_space import _w
         d = PropertyDescriptor(value=_w(result_string), enumerable=True, writable=False, configurable=False)
         return d
 
@@ -730,6 +732,7 @@ class W_FunctionConstructor(W_BasicFunction):
 class W_NumberConstructor(W_BasicFunction):
     # 15.7.1.1
     def Call(self, args=[], this=None, calling_context=None):
+        from js.object_space import _w
         if len(args) >= 1 and not isnull_or_undefined(args[0]):
             return _w(args[0].ToNumber())
         elif len(args) >= 1 and args[0] is w_Undefined:
@@ -749,6 +752,7 @@ class W_NumberConstructor(W_BasicFunction):
 class W_StringConstructor(W_BasicFunction):
     def Call(self, args=[], this=None, calling_context=None):
         from js.builtins import get_arg
+        from js.object_space import _w
         arg0 = get_arg(args, 0, _w(u""))
         strval = arg0.to_string()
         return W_String(strval)
@@ -763,6 +767,7 @@ class W_StringConstructor(W_BasicFunction):
 # 15.6.2
 class W_BooleanConstructor(W_BasicFunction):
     def Call(self, args=[], this=None, calling_context=None):
+        from js.object_space import _w
         if len(args) >= 1 and not isnull_or_undefined(args[0]):
             boolval = args[0].to_boolean()
             return _w(boolval)
@@ -808,6 +813,7 @@ class W_DateConstructor(W_BasicFunction):
         #        value = _w(int(num))
         #else:
         #    value = _w(int(time.time() * 1000))
+        from js.object_space import _w
         value = _w(int(time.time() * 1000))
 
         from js.object_space import object_space
@@ -828,6 +834,7 @@ class W__Function(W_BasicFunction):
     def __init__(self, function_body, formal_parameter_list=[], scope=None, strict=False):
         W_BasicFunction.__init__(self)
         from js.object_space import object_space
+        from js.object_space import _w
         self._function_ = function_body
         self._scope_ = scope
         self._params_ = formal_parameter_list
@@ -902,6 +909,7 @@ class W_Arguments(W__Object):
     _class_ = 'Arguments'
 
     def __init__(self, func, names, args, env, strict=False):
+        from js.object_space import _w
         W__Object.__init__(self)
         self.strict = strict
         _len = len(args)
@@ -948,6 +956,7 @@ def make_arg_setter(name, env):
 # 15.4.2
 class W_ArrayConstructor(W_BasicFunction):
     def __init__(self):
+        from js.object_space import _w
         W_BasicFunction.__init__(self)
         put_property(self, u'length', _w(1), writable=False, enumerable=False, configurable=False)
 
@@ -956,6 +965,7 @@ class W_ArrayConstructor(W_BasicFunction):
 
     def Call(self, args=[], this=None, calling_context=None):
         from js.object_space import object_space
+        from js.object_space import _w
 
         if len(args) == 1:
             _len = args[0]
@@ -1268,6 +1278,7 @@ class W__Array(W_BasicObject):
 
     # 15.4.5.1
     def define_own_property(self, p, desc, throw=False):
+        from js.object_space import _w
         old_len_desc = self.get_own_property(u'length')
         assert old_len_desc is not None
         old_len = old_len_desc.value.ToUInt32()
@@ -1349,36 +1360,6 @@ class W__Array(W_BasicObject):
             return True
         # 5
         return W_BasicObject.define_own_property(self, p, desc, throw)
-
-
-from pypy.rlib.objectmodel import specialize
-
-
-@specialize.argtype(0)
-def _w(value):
-    if value is None:
-        return w_Null
-    elif isinstance(value, W_Root):
-        return value
-    elif isinstance(value, bool):
-        return newbool(value)
-    elif isinstance(value, int):
-        return W_IntNumber(value)
-    elif isinstance(value, float):
-        return W_FloatNumber(value)
-    elif isinstance(value, unicode):
-        return W_String(value)
-    elif isinstance(value, str):
-        u_str = unicode(value)
-        return W_String(u_str)
-    elif isinstance(value, list):
-        from js.object_space import object_space
-        a = object_space.new_array()
-        for index, item in enumerate(value):
-            put_property(a, unicode(str(index)), _w(item), writable=True, enumerable=True, configurable=True)
-        return a
-
-    raise TypeError("ffffuuu %s" % (value,))
 
 
 def put_property(obj, name, value, writable=False, configurable=False, enumerable=False, throw=False):
