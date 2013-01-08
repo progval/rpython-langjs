@@ -1,4 +1,3 @@
-from js.jsobj import w_Undefined
 from js.object_map import ROOT_MAP
 
 
@@ -89,9 +88,10 @@ class DeclarativeEnvironmentRecord(EnvironmentRecord):
 
     # 10.2.1.1.2
     def create_mutuable_binding(self, identifier, deletable):
+        from js.object_space import newundefined
         assert identifier is not None and isinstance(identifier, unicode)
         assert not self.has_binding(identifier)
-        self._add_binding(identifier, w_Undefined)
+        self._add_binding(identifier, newundefined())
         self._set_mutable_binding(identifier)
         if deletable:
             self._set_deletable_binding(identifier)
@@ -107,13 +107,14 @@ class DeclarativeEnvironmentRecord(EnvironmentRecord):
 
     # 10.2.1.1.4
     def get_binding_value(self, identifier, strict=False):
+        from js.object_space import newundefined
         assert identifier is not None and isinstance(identifier, unicode)
         if not self.has_binding(identifier):
             if strict:
                 from js.execution import JsReferenceError
                 raise JsReferenceError(identifier)
             else:
-                return w_Undefined
+                return newundefined()
         return self._get_binding(identifier)
 
     # 10.2.1.1.5
@@ -132,7 +133,8 @@ class DeclarativeEnvironmentRecord(EnvironmentRecord):
 
     # 10.2.1.1.6
     def implicit_this_value(self):
-        return w_Undefined
+        from js.object_space import newundefined
+        return newundefined()
 
     # 10.2.1.1.7
     def create_immutable_bining(self, identifier):
@@ -169,7 +171,8 @@ class ObjectEnvironmentRecord(EnvironmentRecord):
             config_value = True
 
         from js.jsobj import PropertyDescriptor
-        desc = PropertyDescriptor(value=w_Undefined, writable=True, enumerable=True, configurable=config_value)
+        from js.object_space import newundefined
+        desc = PropertyDescriptor(value=newundefined(), writable=True, enumerable=True, configurable=config_value)
         bindings.define_own_property(n, desc, True)
 
     # 10.2.1.2.3
@@ -180,12 +183,13 @@ class ObjectEnvironmentRecord(EnvironmentRecord):
 
     # 10.2.1.2.4
     def get_binding_value(self, n, s=False):
+        from js.object_space import newundefined
         assert n is not None and isinstance(n, unicode)
         bindings = self.binding_object
         value = bindings.has_property(n)
         if value is False:
             if s is False:
-                return w_Undefined
+                return newundefined()
             else:
                 from execution import JsReferenceError
                 raise JsReferenceError(self.__class__)
@@ -200,9 +204,10 @@ class ObjectEnvironmentRecord(EnvironmentRecord):
 
     # 10.2.1.2.6
     def implicit_this_value(self):
+        from js.object_space import newundefined
         if self.provide_this is True:
             return self.binding_object
-        return w_Undefined
+        return newundefined()
 
 
 class GlobalEnvironmentRecord(ObjectEnvironmentRecord):

@@ -1,10 +1,4 @@
 import py
-#from js import interpreter
-#from js.operations import IntNumber, FloatNumber, Position, Plus
-#from js.jsobj import W_Root, w_Null, W___Root
-#from js.execution import ThrowException
-#from js.jscode import JsCode
-#from js.baseop import AbstractEC
 
 xfail = py.test.mark.xfail
 
@@ -527,7 +521,7 @@ def test_strangefunc(capsys):
 
 
 def test_null():
-    from js.jsobj import w_Null
+    from js.object_space import w_Null
     assertv("null;", w_Null)
 
 

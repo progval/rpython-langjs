@@ -1,24 +1,102 @@
-from pypy.rlib.objectmodel import specialize
+from pypy.rlib.objectmodel import specialize, enforceargs
+from pypy.rlib import jit
+
+
+@enforceargs(int)
+def newint(i):
+    from js.jsobj import W_IntNumber
+    return W_IntNumber(i)
+
+
+@enforceargs(float)
+def newfloat(f):
+    from js.jsobj import W_FloatNumber
+    return W_FloatNumber(f)
+
+
+@enforceargs(unicode)
+def newstring(s):
+    from js.jsobj import W_String
+    return W_String(s)
+
+
+@enforceargs(bool)
+def _makebool(b):
+    from js.jsobj import W_Boolean
+    return W_Boolean(b)
+
+
+w_True = _makebool(True)
+jit.promote(w_True)
+
+
+w_False = _makebool(False)
+jit.promote(w_False)
+
+
+def _makeundefined():
+    from js.jsobj import W_Undefined
+    return W_Undefined()
+
+w_Undefined = _makeundefined()
+jit.promote(w_Undefined)
+
+
+def _makenull():
+    from js.jsobj import W_Null
+    return W_Null()
+
+w_Null = _makenull()
+jit.promote(w_Null)
+
+
+def isnull(value):
+    return value is w_Null
+
+
+def newnull():
+    return w_Null
+
+
+def isundefined(value):
+    return value is w_Undefined
+
+
+def newundefined():
+    return w_Undefined
+
+
+def isnull_or_undefined(obj):
+    if isnull(obj) or isundefined(obj):
+        return True
+    return False
+
+
+@enforceargs(bool)
+def newbool(val):
+    if val is True:
+        return w_True
+    return w_False
 
 
 @specialize.argtype(0)
 def _w(value):
-    from js.jsobj import w_Null, newbool, W_IntNumber, W_FloatNumber, W_String, W_Root, put_property
+    from js.jsobj import W_Root, put_property
     if value is None:
-        return w_Null
+        return newnull()
     elif isinstance(value, W_Root):
         return value
     elif isinstance(value, bool):
         return newbool(value)
     elif isinstance(value, int):
-        return W_IntNumber(value)
+        return newint(value)
     elif isinstance(value, float):
-        return W_FloatNumber(value)
+        return newfloat(value)
     elif isinstance(value, unicode):
-        return W_String(value)
+        return newstring(value)
     elif isinstance(value, str):
         u_str = unicode(value)
-        return W_String(u_str)
+        return newstring(u_str)
     elif isinstance(value, list):
         a = object_space.new_array()
         for index, item in enumerate(value):
@@ -30,16 +108,15 @@ def _w(value):
 
 class ObjectSpace(object):
     def __init__(self):
-        from js.jsobj import w_Null
         self.global_context = None
         self.global_object = None
-        self.proto_function = w_Null
-        self.proto_boolean = w_Null
-        self.proto_number = w_Null
-        self.proto_string = w_Null
-        self.proto_array = w_Null
-        self.proto_date = w_Null
-        self.proto_object = w_Null
+        self.proto_function = newnull()
+        self.proto_boolean = newnull()
+        self.proto_number = newnull()
+        self.proto_string = newnull()
+        self.proto_array = newnull()
+        self.proto_date = newnull()
+        self.proto_object = newnull()
         self.interpreter = None
 
     def get_global_environment(self):

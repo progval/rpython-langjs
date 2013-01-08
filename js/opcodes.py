@@ -1,5 +1,3 @@
-from js.jsobj import W_IntNumber, W_FloatNumber, W_String, \
-    w_Undefined, newbool, w_Null
 from js.object_space import _w
 from js.execution import JsTypeError
 from js.baseop import plus, sub, compare, AbstractEC, StrictEC,\
@@ -31,9 +29,13 @@ class BaseBinaryComparison(Opcode):
     _stack_change = 0
 
     def eval(self, ctx):
+        from js.object_space import newbool
         s4 = ctx.stack_pop()
         s2 = ctx.stack_pop()
-        ctx.stack_append(self.decision(ctx, s2, s4))
+        res = self.decision(ctx, s2, s4)
+        # XXX mimik behaviour of old newbool
+        res_true = res is True
+        ctx.stack_append(newbool(res_true))
 
     def decision(self, ctx, op1, op2):
         raise NotImplementedError
@@ -66,14 +68,16 @@ class BaseUnaryOperation(Opcode):
 
 class Undefined(Opcode):
     def eval(self, ctx):
-        ctx.stack_append(w_Undefined)
+        from js.object_space import newundefined
+        ctx.stack_append(newundefined())
 
 
 class LOAD_INTCONSTANT(Opcode):
     _immutable_fields_ = ['w_intvalue']
 
     def __init__(self, value):
-        self.w_intvalue = W_IntNumber(int(value))
+        from js.object_space import newint
+        self.w_intvalue = newint(int(value))
 
     def eval(self, ctx):
         ctx.stack_append(self.w_intvalue)
@@ -84,20 +88,22 @@ class LOAD_INTCONSTANT(Opcode):
 
 class LOAD_BOOLCONSTANT(Opcode):
     def __init__(self, value):
-        self.boolval = value
+        from js.object_space import newbool
+        self.w_boolval = newbool(value)
 
     def eval(self, ctx):
-        ctx.stack_append(newbool(self.boolval))
+        ctx.stack_append(self.w_boolval)
 
     def __str__(self):
-        if self.boolval:
+        if self.w_boolval.to_boolean():
             return 'LOAD_BOOLCONSTANT true'
         return 'LOAD_BOOLCONSTANT false'
 
 
 class LOAD_FLOATCONSTANT(Opcode):
     def __init__(self, value):
-        self.w_floatvalue = W_FloatNumber(float(value))
+        from js.object_space import newfloat
+        self.w_floatvalue = newfloat(float(value))
 
     def eval(self, ctx):
         ctx.stack_append(self.w_floatvalue)
@@ -110,27 +116,27 @@ class LOAD_STRINGCONSTANT(Opcode):
     _immutable_fields_ = ['strval']
 
     def __init__(self, value):
-        #assert isinstance(value, unicode)
-        self.strval = value
+        from js.object_space import newstring
+        self.w_strval = newstring(value)
 
     def eval(self, ctx):
-        strval = self.strval
-        #assert isinstance(strval, unicode)
-        w_string = W_String(strval)
-        ctx.stack_append(w_string)
+        w_strval = self.w_strval
+        ctx.stack_append(w_strval)
 
     def __str__(self):
-        return u'LOAD_STRINGCONSTANT "%s"' % (self.strval)
+        return u'LOAD_STRINGCONSTANT "%s"' % (self.w_strval.to_string())
 
 
 class LOAD_UNDEFINED(Opcode):
     def eval(self, ctx):
-        ctx.stack_append(w_Undefined)
+        from js.object_space import newundefined
+        ctx.stack_append(newundefined())
 
 
 class LOAD_NULL(Opcode):
     def eval(self, ctx):
-        ctx.stack_append(w_Null)
+        from js.object_space import newnull
+        ctx.stack_append(newnull())
 
 
 class LOAD_VARIABLE(Opcode):
@@ -264,6 +270,7 @@ class SUB(BaseBinaryOperation):
 class IN(BaseBinaryOperation):
     def operation(self, ctx, left, right):
         from js.jsobj import W_BasicObject
+        from js.object_space import newbool
         if not isinstance(right, W_BasicObject):
             raise JsTypeError(u"TypeError: fffuuu!")  # + repr(right)
         name = left.to_string()
@@ -292,6 +299,7 @@ class TYPEOF_VARIABLE(Opcode):
         self.name = name
 
     def eval(self, ctx):
+        from js.object_space import newstring
         ref = ctx.get_ref(self.name)
         if ref.is_unresolvable_reference():
             var_type = u'undefined'
@@ -299,7 +307,7 @@ class TYPEOF_VARIABLE(Opcode):
             var = ref.get_value()
             var_type = type_of(var)
 
-        w_string = W_String(var_type)
+        w_string = newstring(var_type)
         ctx.stack_append(w_string)
 
     def __str__(self):
@@ -313,23 +321,27 @@ class ADD(BaseBinaryOperation):
 
 class BITAND(BaseBinaryBitwiseOp):
     def operation(self, ctx, op1, op2):
-        return W_IntNumber(op1 & op2)
+        from js.object_space import newint
+        return newint(op1 & op2)
 
 
 class BITXOR(BaseBinaryBitwiseOp):
     def operation(self, ctx, op1, op2):
-        return W_IntNumber(op1 ^ op2)
+        from js.object_space import newint
+        return newint(op1 ^ op2)
 
 
 class BITOR(BaseBinaryBitwiseOp):
     def operation(self, ctx, op1, op2):
-        return W_IntNumber(op1 | op2)
+        from js.object_space import newint
+        return newint(op1 | op2)
 
 
 class BITNOT(BaseUnaryOperation):
     def eval(self, ctx):
         op = ctx.stack_pop().ToInt32()
-        ctx.stack_append(W_IntNumber(~op))
+        from js.object_space import newint
+        ctx.stack_append(newint(~op))
 
 
 class URSH(BaseBinaryBitwiseOp):
@@ -436,42 +448,42 @@ class DECR(BaseUnaryOperation):
 
 class GT(BaseBinaryComparison):
     def decision(self, ctx, op1, op2):
-        return newbool(compare(ctx, op1, op2))
+        return compare(ctx, op1, op2)
 
 
 class GE(BaseBinaryComparison):
     def decision(self, ctx, op1, op2):
-        return newbool(compare_e(ctx, op1, op2))
+        return compare_e(ctx, op1, op2)
 
 
 class LT(BaseBinaryComparison):
     def decision(self, ctx, op1, op2):
-        return newbool(compare(ctx, op2, op1))
+        return compare(ctx, op2, op1)
 
 
 class LE(BaseBinaryComparison):
     def decision(self, ctx, op1, op2):
-        return newbool(compare_e(ctx, op2, op1))
+        return compare_e(ctx, op2, op1)
 
 
 class EQ(BaseBinaryComparison):
     def decision(self, ctx, op1, op2):
-        return newbool(AbstractEC(ctx, op1, op2))
+        return AbstractEC(ctx, op1, op2)
 
 
 class NE(BaseBinaryComparison):
     def decision(self, ctx, op1, op2):
-        return newbool(not AbstractEC(ctx, op1, op2))
+        return not AbstractEC(ctx, op1, op2)
 
 
 class IS(BaseBinaryComparison):
     def decision(self, ctx, op1, op2):
-        return newbool(StrictEC(op1, op2))
+        return StrictEC(op1, op2)
 
 
 class ISNOT(BaseBinaryComparison):
     def decision(self, ctx, op1, op2):
-        return newbool(not StrictEC(op1, op2))
+        return not StrictEC(op1, op2)
 
 
 class STORE_MEMBER(Opcode):

@@ -1,6 +1,5 @@
-from js.jsobj import isnull_or_undefined, w_Undefined
 from js.builtins import get_arg
-from js.object_space import w_return, _w
+from js.object_space import w_return, _w, isnull_or_undefined, newundefined
 
 
 def setup(global_object):
@@ -73,13 +72,15 @@ def to_string(this, args):
 # 15.4.4.5
 @w_return
 def join(this, args):
+    from js.object_space import isundefined
+
     separator = get_arg(args, 0)
 
     o = this.ToObject()
     len_val = o.get(u'length')
     length = len_val.ToUInt32()
 
-    if separator is w_Undefined:
+    if isundefined(separator):
         sep = u','
     else:
         sep = separator.to_string()
@@ -117,7 +118,7 @@ def pop(this, args):
 
     if l == 0:
         o.put(u'length', _w(0))
-        return w_Undefined
+        return newundefined()
     else:
         indx = l - 1
         indxs = unicode(str(indx))
@@ -188,7 +189,9 @@ def sort(this, args):
     return obj
 
 
-def sort_compare(obj, j, k, comparefn=w_Undefined):
+def sort_compare(obj, j, k, comparefn=newundefined()):
+    from js.object_space import isundefined
+
     j_string = j
     k_string = k
     has_j = obj.has_property(j)
@@ -204,19 +207,19 @@ def sort_compare(obj, j, k, comparefn=w_Undefined):
     x = obj.get(j_string)
     y = obj.get(k_string)
 
-    if x is w_Undefined and y is w_Undefined:
+    if isundefined(x) and isundefined(y):
         return 0
-    if x is w_Undefined:
+    if isundefined(x):
         return 1
-    if y is w_Undefined:
+    if isundefined(y):
         return -1
 
-    if comparefn is not w_Undefined:
+    if not isundefined(comparefn):
         if not comparefn.is_callable():
             from js.execution import JsTypeError
             raise JsTypeError(u'')
 
-        res = comparefn.Call(args=[x, y], this=w_Undefined)
+        res = comparefn.Call(args=[x, y], this=newundefined())
         return res.ToInteger()
 
     x_string = x.to_string()

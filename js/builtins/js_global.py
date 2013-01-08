@@ -10,8 +10,8 @@ def setup(global_object):
     from js.builtins import put_intimate_function, put_native_function, put_property
     from js.builtins.number import w_NAN
     from js.builtins.number import w_POSITIVE_INFINITY
-    from js.jsobj import w_Undefined
     from pypy.rlib.objectmodel import we_are_translated
+    from js.object_space import newundefined
 
     # 15.1.1.1
     put_property(global_object, u'NaN', w_NAN, writable=False, enumerable=False, configurable=False)
@@ -20,7 +20,7 @@ def setup(global_object):
     put_property(global_object, u'Infinity', w_POSITIVE_INFINITY, writable=False, enumerable=False, configurable=False)
 
     # 15.1.1.3
-    put_property(global_object, u'undefined', w_Undefined, writable=False, enumerable=False, configurable=False)
+    put_property(global_object, u'undefined', newundefined(), writable=False, enumerable=False, configurable=False)
 
     # 15.1.2.1
     put_intimate_function(global_object, u'eval', js_eval, params=[u'x'])

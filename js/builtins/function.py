@@ -1,6 +1,4 @@
-from js.jsobj import isnull_or_undefined
 from js.execution import JsTypeError
-from js.jsobj import w_Undefined
 from js.builtins import get_arg
 from js.completion import NormalCompletion
 from js.object_space import w_return, _w
@@ -17,7 +15,8 @@ def to_string(this, args):
 
 @w_return
 def empty(this, args):
-    return w_Undefined
+    from js.object_space import newundefined
+    return newundefined()
 
 
 # 15.3.4.4 Function.prototype.call
@@ -38,6 +37,7 @@ def js_call(ctx):
 
 # 15.3.4.3 Function.prototype.apply (thisArg, argArray)
 def js_apply(ctx):
+    from js.object_space import isnull_or_undefined
     func = ctx.this_binding()
     args = ctx.argv()
 

@@ -1,4 +1,3 @@
-from js.jsobj import w_Undefined
 from js.object_space import _w
 
 #from pypy.rlib import jit
@@ -127,7 +126,10 @@ def setup_builtins(global_object):
     js.builtins.js_global.setup(global_object)
 
 
-def get_arg(args, index, default=w_Undefined):
+from js.object_space import newundefined
+
+
+def get_arg(args, index, default=newundefined()):
     if len(args) > index:
         return args[index]
     return default

@@ -132,12 +132,6 @@ class W_Null(W_Primitive):
     def ToObject(self):
         raise JsTypeError(u'W_Null.ToObject')
 
-w_Undefined = W_Undefined()
-jit.promote(w_Undefined)
-
-w_Null = W_Null()
-jit.promote(w_Null)
-
 
 class PropertyIdenfidier(object):
     def __init__(self, name, descriptor):
@@ -187,10 +181,11 @@ class W_BasicObject(W_Root):
     _immutable_fields_ = ['_type_', '_class_', '_extensible_']
 
     def __init__(self):
+        from js.object_space import newnull
         self._property_map_ = _new_map()
         self._property_slots_ = []
 
-        self._prototype_ = w_Null
+        self._prototype_ = newnull()
         W_BasicObject.define_own_property(self, u'__proto__', proto_desc)
 
     def __str__(self):
@@ -209,17 +204,18 @@ class W_BasicObject(W_Root):
 
     # 8.12.3
     def get(self, p):
+        from js.object_space import newundefined
         assert p is not None and isinstance(p, unicode)
         desc = self.get_property(p)
 
         if desc is None:
-            return w_Undefined
+            return newundefined()
 
         if is_data_descriptor(desc):
             return desc.value
 
         if desc.has_set_getter() is False:
-            return w_Undefined
+            return newundefined()
 
         getter = desc.getter
         res = getter.Call(this=self)
@@ -271,6 +267,7 @@ class W_BasicObject(W_Root):
 
     # 8.12.2
     def get_property(self, p):
+        from js.object_space import isnull
         assert p is not None and isinstance(p, unicode)
 
         prop = self.get_own_property(p)
@@ -278,7 +275,7 @@ class W_BasicObject(W_Root):
             return prop
 
         proto = self.prototype()
-        if proto is w_Null:
+        if isnull(proto):
             return None
 
         assert isinstance(proto, W_BasicObject)
@@ -311,10 +308,11 @@ class W_BasicObject(W_Root):
 
     # 8.12.4
     def can_put(self, p):
+        from js.object_space import isundefined, isnull_or_undefined
         desc = self.get_own_property(p)
         if desc is not None:
             if is_accessor_descriptor(desc) is True:
-                if desc.setter is w_Undefined:
+                if isundefined(desc.setter):
                     return False
                 else:
                     return True
@@ -322,7 +320,7 @@ class W_BasicObject(W_Root):
 
         proto = self.prototype()
 
-        if proto is w_Null or proto is w_Undefined:
+        if isnull_or_undefined(proto):
             return self.extensible()
 
         assert isinstance(proto, W_BasicObject)
@@ -331,7 +329,7 @@ class W_BasicObject(W_Root):
             return self.extensible()
 
         if is_accessor_descriptor(inherited) is True:
-            if inherited.setter is w_Undefined:
+            if isundefined(inherited.setter):
                 return False
             else:
                 return True
@@ -511,6 +509,7 @@ class W_BasicObject(W_Root):
     ###
 
     def _named_properties_dict(self):
+        from js.object_space import isnull_or_undefined
         my_d = {}
         for i in self._property_map_.keys():
             my_d[i] = None
@@ -637,6 +636,7 @@ class W_BasicFunction(W_BasicObject):
 
     # 15.3.5.3
     def has_instance(self, v):
+        from js.object_space import isnull_or_undefined
         if not isinstance(v, W_BasicObject):
             return False
 
@@ -656,6 +656,7 @@ class W_BasicFunction(W_BasicObject):
 
 class W_ObjectConstructor(W_BasicFunction):
     def Call(self, args=[], this=None, calling_context=None):
+        from js.object_space import isnull_or_undefined
         from js.builtins import get_arg
         value = get_arg(args, 0)
 
@@ -732,10 +733,11 @@ class W_FunctionConstructor(W_BasicFunction):
 class W_NumberConstructor(W_BasicFunction):
     # 15.7.1.1
     def Call(self, args=[], this=None, calling_context=None):
-        from js.object_space import _w
+        from js.object_space import _w, isnull_or_undefined, isundefined
+
         if len(args) >= 1 and not isnull_or_undefined(args[0]):
             return _w(args[0].ToNumber())
-        elif len(args) >= 1 and args[0] is w_Undefined:
+        elif len(args) >= 1 and isundefined(args[0]):
             return _w(NAN)
         else:
             return _w(0.0)
@@ -767,7 +769,7 @@ class W_StringConstructor(W_BasicFunction):
 # 15.6.2
 class W_BooleanConstructor(W_BasicFunction):
     def Call(self, args=[], this=None, calling_context=None):
-        from js.object_space import _w
+        from js.object_space import _w, isnull_or_undefined
         if len(args) >= 1 and not isnull_or_undefined(args[0]):
             boolval = args[0].to_boolean()
             return _w(boolval)
@@ -833,8 +835,7 @@ class W__Function(W_BasicFunction):
 
     def __init__(self, function_body, formal_parameter_list=[], scope=None, strict=False):
         W_BasicFunction.__init__(self)
-        from js.object_space import object_space
-        from js.object_space import _w
+        from js.object_space import _w, newnull, object_space
         self._function_ = function_body
         self._scope_ = scope
         self._params_ = formal_parameter_list
@@ -855,8 +856,8 @@ class W__Function(W_BasicFunction):
         if strict is True:
             raise NotImplementedError()
         else:
-            put_property(self, u'caller', w_Null, writable=True, enumerable=False, configurable=False)
-            put_property(self, u'arguments', w_Null, writable=True, enumerable=False, configurable=False)
+            put_property(self, u'caller', newnull(), writable=True, enumerable=False, configurable=False)
+            put_property(self, u'arguments', newnull(), writable=True, enumerable=False, configurable=False)
 
     def _to_string(self):
         return self._function_.to_string()
@@ -1218,24 +1219,6 @@ class W_FloatNumber(W_Number):
             return int(self._floatval_)
 
         return intmask(int(self._floatval_))
-
-
-def isnull_or_undefined(obj):
-    if obj is w_Null or obj is w_Undefined:
-        return True
-    return False
-
-w_True = W_Boolean(True)
-jit.promote(w_True)
-
-w_False = W_Boolean(False)
-jit.promote(w_False)
-
-
-def newbool(val):
-    if val:
-        return w_True
-    return w_False
 
 
 class W_List(W_Root):

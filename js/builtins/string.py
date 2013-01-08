@@ -1,4 +1,4 @@
-from js.jsobj import w_Undefined, W_String, W_StringObject
+from js.jsobj import W_String, W_StringObject
 from pypy.rlib.rfloat import NAN
 from js.execution import JsTypeError
 from js.builtins import get_arg
@@ -111,10 +111,7 @@ def value_of(this, args):
 # 15.5.4.4
 @w_return
 def char_at(this, args):
-    pos = w_Undefined
-
-    if len(args) > 0:
-        pos = args[0]
+    pos = get_arg(args, 0)
 
     position = pos.ToInt32()
 
@@ -230,6 +227,8 @@ def _rsplit(value, by, maxsplit=-1):
 # 15.5.4.14
 @w_return
 def split(this, args):
+    from js.object_space import isundefined
+
     this.check_object_coercible()
 
     separator = get_arg(args, 0, None)
@@ -237,7 +236,7 @@ def split(this, args):
 
     string = this.to_string()
 
-    if limit is w_Undefined:
+    if isundefined(limit):
         import math
         lim = int(math.pow(2, 32) - 1)
     else:

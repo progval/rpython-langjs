@@ -1,5 +1,5 @@
 from js.lexical_environment import DeclarativeEnvironment, ObjectEnvironment
-from js.jsobj import w_Undefined, W_BasicObject
+from js.jsobj import W_BasicObject
 
 
 class TestDeclarativeEnvironment(object):

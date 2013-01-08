@@ -1,5 +1,5 @@
-from js.jsobj import w_Undefined
 from js.utils import StackMixin
+from js.object_space import newundefined
 
 
 class ExecutionContext(StackMixin):
@@ -52,6 +52,8 @@ class ExecutionContext(StackMixin):
 
     # 10.5
     def declaration_binding_initialization(self):
+        from js.object_space import newundefined
+
         env = self._variable_environment_.environment_record
         strict = self._strict_
         code = self._code_
@@ -71,7 +73,7 @@ class ExecutionContext(StackMixin):
             for arg_name in names:
                 n += 1
                 if n > arg_count:
-                    v = w_Undefined
+                    v = newundefined()
                 else:
                     v = args[n - 1]
                 arg_already_declared = env.has_binding(arg_name)
@@ -113,7 +115,7 @@ class ExecutionContext(StackMixin):
             var_already_declared = env.has_binding(dn)
             if var_already_declared is False:
                 env.create_mutuable_binding(dn, configurable_bindings)
-                env.set_mutable_binding(dn, w_Undefined, False)
+                env.set_mutable_binding(dn, newundefined(), False)
 
     def _get_refs(self, index):
         assert index <= len(self._refs_)
@@ -191,9 +193,9 @@ class FunctionExecutionContext(ExecutionContext):
     _immutable_fields_ = ['_scope_', '_calling_context_']
     _refs_resizable_ = False
 
-    def __init__(self, code, formal_parameters=[], argv=[], this=w_Undefined, strict=False, scope=None, w_func=None):
-        from js.jsobj import isnull_or_undefined, W_BasicObject
-        from js.object_space import object_space
+    def __init__(self, code, formal_parameters=[], argv=[], this=newundefined(), strict=False, scope=None, w_func=None):
+        from js.jsobj import W_BasicObject
+        from js.object_space import object_space, isnull_or_undefined
 
         stack_size = code.estimated_stack_size()
         env_size = code.env_size() + 1  # neet do add one for the arguments object
