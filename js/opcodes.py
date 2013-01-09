@@ -8,6 +8,8 @@ from js.jsobj import put_property
 
 
 class Opcode(object):
+    _settled_ = True
+    _immutable_fields_ = ['_stack_change']
     _stack_change = 1
 
     def __init__(self):
@@ -81,6 +83,8 @@ class LOAD_INTCONSTANT(Opcode):
 
 
 class LOAD_BOOLCONSTANT(Opcode):
+    _immutable_fields_ = ['w_boolval']
+
     def __init__(self, value):
         from js.object_space import newbool
         self.w_boolval = newbool(value)
@@ -95,6 +99,8 @@ class LOAD_BOOLCONSTANT(Opcode):
 
 
 class LOAD_FLOATCONSTANT(Opcode):
+    _immutable_fields_ = ['w_floatvalue']
+
     def __init__(self, value):
         from js.object_space import newfloat
         self.w_floatvalue = newfloat(float(value))
@@ -107,7 +113,7 @@ class LOAD_FLOATCONSTANT(Opcode):
 
 
 class LOAD_STRINGCONSTANT(Opcode):
-    _immutable_fields_ = ['strval']
+    _immutable_fields_ = ['w_strval']
 
     def __init__(self, value):
         from js.object_space import newstring
@@ -160,6 +166,8 @@ class LOAD_THIS(Opcode):
 
 
 class LOAD_ARRAY(Opcode):
+    _immutable_fields_ = ['counter']
+
     def __init__(self, counter):
         self.counter = counter
 
@@ -180,7 +188,8 @@ class LOAD_ARRAY(Opcode):
 
 
 class LOAD_LIST(Opcode):
-    #_immutable_fields_ = ['counter']
+    _immutable_fields_ = ['counter']
+
     def __init__(self, counter):
         self.counter = counter
 
@@ -197,6 +206,8 @@ class LOAD_LIST(Opcode):
 
 
 class LOAD_FUNCTION(Opcode):
+    #_immutable_fields_ = ['funcobj']
+
     def __init__(self, funcobj):
         self.funcobj = funcobj
 
@@ -288,6 +299,8 @@ class TYPEOF(BaseUnaryOperation):
 
 
 class TYPEOF_VARIABLE(Opcode):
+    _immutable_fields_ = ['index', 'name']
+
     def __init__(self, index, name):
         self.index = index
         self.name = name
@@ -517,6 +530,7 @@ class STORE(Opcode):
 
 class LABEL(Opcode):
     _stack_change = 0
+    _immutable_fields_ = ['num']
 
     def __init__(self, num):
         self.num = num
@@ -676,6 +690,8 @@ class THROW(Opcode):
 
 
 class TRYCATCHBLOCK(Opcode):
+    _immutable_fields_ = ['tryexec', 'catchexec', 'catchparam', 'finallyexec']
+
     def __init__(self, tryfunc, catchparam, catchfunc, finallyfunc):
         self.tryexec = tryfunc
         self.catchexec = catchfunc
@@ -843,6 +859,8 @@ class NEXT_ITERATOR(Opcode):
 
 
 class WITH(Opcode):
+    _immutable_fields_ = ['body']
+
     def __init__(self, body):
         self.body = body
 
@@ -865,6 +883,8 @@ class WITH(Opcode):
 
 
 class DELETE(Opcode):
+    _immutable_fields_ = ['name', 'index']
+
     def __init__(self, name, index):
         self.name = name
         self.index = index
