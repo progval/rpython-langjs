@@ -66,12 +66,6 @@ class BaseUnaryOperation(Opcode):
     _stack_change = 0
 
 
-class Undefined(Opcode):
-    def eval(self, ctx):
-        from js.object_space import newundefined
-        ctx.stack_append(newundefined())
-
-
 class LOAD_INTCONSTANT(Opcode):
     _immutable_fields_ = ['w_intvalue']
 
@@ -614,65 +608,6 @@ class JUMP_IF_TRUE_NOPOP(BaseIfNopopJump):
         return 'JUMP_IF_TRUE_NOPOP %d' % (self.where)
 
 
-class DECLARE_FUNCTION(Opcode):
-    _stack_change = 0
-
-    def __init__(self, funcobj):
-        self.funcobj = funcobj
-
-    def eval(self, ctx):
-        pass
-        #from js.jsobj import DONT_ENUM, READ_ONLY
-        ## 13.2 Creating Function Objects
-        ## TODO move this to W__Function.__init__ ?
-
-        #func = W__Function(ctx, self.funcobj)
-
-        #func.Put('length', W_IntNumber(len(self.funcobj.params())), flags = DONT_ENUM | READ_ONLY)
-
-        #proto = W__Object()
-        #proto.Put('constructor', func, flags = DONT_ENUM)
-
-        #func.Put('prototype', proto, flags = DONT_ENUM)
-
-        #ctx.stack_append(funcobj)
-
-        #if self.funcobj.name is not None:
-            #ctx.set_value(self.funcobj.name, func)
-
-    def __str__(self):
-        funcobj = self.funcobj
-        if funcobj.name is None:
-            name = ""
-        else:
-            name = funcobj.name + " "
-        return 'DECLARE_FUNCTION %s%r' % (name, funcobj.params)
-
-    ##def __repr__(self):
-    ##    funcobj = self.funcobj
-    ##    if funcobj.name is None:
-    ##        name = ""
-    ##    else:
-    ##        name = funcobj.name + " "
-    ##    codestr = '\n'.join(['  %r' % (op,) for op in funcobj.opcodes])
-    ##    ##return 'DECLARE_FUNCTION %s%r [\n%s\n]' % (name, funcobj.params, codestr)
-    ##    return 'DECLARE_FUNCTION %s%r' % (name, funcobj.params)
-
-
-class DECLARE_VAR(Opcode):
-    _stack_change = 0
-
-    def __init__(self, name):
-        self.name = name
-
-    def eval(self, ctx):
-        pass
-        #ctx.declare_variable(self.name)
-
-    #def __repr__(self):
-        #return 'DECLARE_VAR "%s"' % (self.name,)
-
-
 class RETURN(Opcode):
     _stack_change = 0
 
@@ -968,34 +903,6 @@ class DELETE_MEMBER(Opcode):
         obj = ctx.stack_pop().ToObject()
         res = obj.delete(what, False)
         ctx.stack_append(_w(res))
-
-
-class LOAD_LOCAL(Opcode):
-    _immutable_fields_ = ['local']
-
-    def __init__(self, local):
-        self.local = local
-
-    def eval(self, ctx):
-        ctx.stack_append(ctx.get_local_value(self.local))
-
-    #def __repr__(self):
-        #return 'LOAD_LOCAL %d' % (self.local,)
-
-
-class STORE_LOCAL(Opcode):
-    _stack_change = 0
-    _immutable_fields_ = ['local']
-
-    def __init__(self, local):
-        self.local = local
-
-    def eval(self, ctx):
-        value = ctx.stack_top()
-        ctx.assign_local(self.local, value)
-
-    #def __repr__(self):
-        #return 'STORE_LOCAL %d' % (self.local,)
 
 
 class INSTANCEOF(Opcode):

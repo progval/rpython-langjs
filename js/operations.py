@@ -359,7 +359,6 @@ class FunctionStatement(Statement):
 
         index = self.index
 
-        #bytecode.emit('DECLARE_FUNCTION', jsfunc)
         bytecode.emit('LOAD_FUNCTION', jsfunc)
         if index is not None:
             bytecode.emit('STORE', index, name)
