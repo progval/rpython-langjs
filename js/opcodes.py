@@ -638,16 +638,17 @@ class POP(Opcode):
         ctx.stack_pop()
 
 
-def common_call(ctx, r1, args, this, name):
-    from js.jsobj import W_BasicFunction, W_List
-    assert isinstance(args, W_List)
-    # TODO
-    if not (isinstance(r1, W_BasicFunction)):
-        #err = (u"%s is not a callable (%s)"%(r1.to_string(), name.to_string()))
-        err = u"is not a callable (%s)" % (r1.to_string())
+def common_call(ctx, funcobj, args, this, identifyer):
+    if not funcobj.is_callable():
+        err = u"%s is not a callable (%s)" % (funcobj.to_string(), identifyer.to_string())
         raise JsTypeError(err)
+
+    from js.jsobj import W_List, W_BasicFunction
+    assert isinstance(args, W_List)
+    assert isinstance(funcobj, W_BasicFunction)
+
     argv = args.to_list()
-    res = r1.Call(args=argv, this=this, calling_context=ctx)
+    res = funcobj.Call(args=argv, this=this, calling_context=ctx)
     return res
 
 
@@ -758,10 +759,12 @@ class TRYCATCHBLOCK(Opcode):
 
 
 def commonnew(ctx, obj, args):
-    from js.jsobj import W_BasicFunction
+    if not obj.is_callable():
+        msg = u'%s is not a constructor' % (obj.to_string())
+        raise JsTypeError(msg)
 
-    if not isinstance(obj, W_BasicFunction):
-        raise JsTypeError(u'not a constructor')
+    from js.jsobj import W_BasicFunction
+    assert isinstance(obj, W_BasicFunction)
     res = obj.Construct(args=args)
     return res
 
