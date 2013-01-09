@@ -33,6 +33,7 @@ def sign(i):
 
 
 class W_Root(object):
+    _settled_ = True
     _immutable_fields_ = ['_type_']
     _type_ = ''
 

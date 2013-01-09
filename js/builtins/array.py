@@ -64,6 +64,8 @@ def to_string(this, args):
     array = this.ToObject()
     func = array.get(u'join')
     if func.is_callable():
+        from js.jsobj import W_BasicFunction
+        assert isinstance(func, W_BasicFunction)
         return func.Call(this=this).to_string()
     else:
         return this.to_string()
@@ -219,6 +221,8 @@ def sort_compare(obj, j, k, comparefn=newundefined()):
             from js.execution import JsTypeError
             raise JsTypeError(u'')
 
+        from js.jsobj import W_BasicFunction
+        assert isinstance(comparefn, W_BasicFunction)
         res = comparefn.Call(args=[x, y], this=newundefined())
         return res.ToInteger()
 
