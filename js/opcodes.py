@@ -893,7 +893,7 @@ class DELETE(Opcode):
         self.index = index
 
     def eval(self, ctx):
-        from js.lexical_environment import Reference
+        from js.reference import Reference
         from js.execution import JsSyntaxError
 
         # 11.4.1
