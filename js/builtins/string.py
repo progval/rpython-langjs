@@ -1,6 +1,6 @@
 from js.jsobj import W_String, W_StringObject
 from pypy.rlib.rfloat import NAN
-from js.execution import JsTypeError
+from js.exception import JsTypeError
 from js.builtins import get_arg
 from js.object_space import w_return, _w
 from pypy.rlib.rstring import UnicodeBuilder

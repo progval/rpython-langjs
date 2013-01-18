@@ -1,4 +1,4 @@
-from js.execution import JsReferenceError
+from js.exception import JsReferenceError
 #from pypy.rlib import jit
 
 

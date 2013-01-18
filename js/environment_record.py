@@ -101,7 +101,7 @@ class DeclarativeEnvironmentRecord(EnvironmentRecord):
         assert identifier is not None and isinstance(identifier, unicode)
         assert self.has_binding(identifier)
         if not self._is_mutable_binding(identifier):
-            from js.execution import JsTypeError
+            from js.exception import JsTypeError
             raise JsTypeError(u'immutable binding')
         self._set_binding(identifier, value)
 
@@ -111,7 +111,7 @@ class DeclarativeEnvironmentRecord(EnvironmentRecord):
         assert identifier is not None and isinstance(identifier, unicode)
         if not self.has_binding(identifier):
             if strict:
-                from js.execution import JsReferenceError
+                from js.exception import JsReferenceError
                 raise JsReferenceError(identifier)
             else:
                 return newundefined()
@@ -191,7 +191,7 @@ class ObjectEnvironmentRecord(EnvironmentRecord):
             if s is False:
                 return newundefined()
             else:
-                from execution import JsReferenceError
+                from js.exception import JsReferenceError
                 raise JsReferenceError(self.__class__)
 
         return bindings.get(n)

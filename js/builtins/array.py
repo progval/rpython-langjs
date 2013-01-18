@@ -218,7 +218,7 @@ def sort_compare(obj, j, k, comparefn=newundefined()):
 
     if not isundefined(comparefn):
         if not comparefn.is_callable():
-            from js.execution import JsTypeError
+            from js.exception import JsTypeError
             raise JsTypeError(u'')
 
         from js.jsobj import W_BasicFunction

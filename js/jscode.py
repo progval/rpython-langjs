@@ -3,7 +3,7 @@
 from pypy.rlib.jit import JitDriver
 from pypy.rlib import jit
 
-from js.execution import JsThrowException
+from js.exception import JsThrowException
 from js.opcodes import opcodes, LABEL, BaseJump
 from js.jsobj import W_String
 from js.astbuilder import empty_symbols

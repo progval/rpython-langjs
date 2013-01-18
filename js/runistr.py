@@ -56,7 +56,7 @@ def unicode_unescape(string):
         pos += 1
         if pos >= size:
             message = u"\\ at end of string"
-            from js.execution import JsSyntaxError
+            from js.exception import JsSyntaxError
             raise JsSyntaxError(message)
 
         ch = s[pos]

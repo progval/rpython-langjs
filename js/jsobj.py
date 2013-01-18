@@ -1,7 +1,7 @@
 # encoding: utf-8
 from pypy.rlib.rarithmetic import intmask
 from pypy.rlib.rfloat import isnan, isinf, NAN, formatd, INFINITY
-from js.execution import JsTypeError, JsRangeError
+from js.exception import JsTypeError, JsRangeError
 
 from pypy.rlib.objectmodel import enforceargs
 from pypy.rlib import jit

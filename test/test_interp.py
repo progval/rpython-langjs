@@ -236,7 +236,7 @@ def test_array_initializer(capsys):
 
 
 def test_throw(capsys):
-    from js.execution import JsThrowException
+    from js.exception import JsThrowException
     asserte("throw(3);", JsThrowException)
 
 
@@ -413,7 +413,7 @@ def test_eval(capsys):
 
 
 def test_eval_syntax_error():
-    from js.execution import JsSyntaxError
+    from js.exception import JsSyntaxError
     asserte("eval('var do =true;');", JsSyntaxError)
 
 

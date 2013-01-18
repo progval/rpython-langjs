@@ -4,7 +4,7 @@ operations.py
 Implements the javascript operations nodes for the interpretation tree
 """
 
-from js.execution import JsTypeError, JsException
+from js.exception import JsTypeError, JsException
 from pypy.rlib.unroll import unrolling_iterable
 from pypy.rlib.objectmodel import enforceargs
 

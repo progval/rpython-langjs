@@ -1,5 +1,5 @@
 from js.jsobj import W_Boolean, W_BooleanObject
-from js.execution import JsTypeError
+from js.exception import JsTypeError
 from js.object_space import w_return, _w
 
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import os
-from js.execution import JsException
+from js.exception import JsException
 from pypy.rlib.objectmodel import enforceargs
 from pypy.rlib.parsing.parsing import ParseError
 from pypy.rlib.parsing.deterministic import LexerError

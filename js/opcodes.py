@@ -1,5 +1,5 @@
 from js.object_space import _w
-from js.execution import JsTypeError
+from js.exception import JsTypeError
 from js.baseop import plus, sub, compare, AbstractEC, StrictEC,\
     compare_e, increment, decrement, mult, division, uminus, mod
 from pypy.rlib.rarithmetic import intmask
@@ -686,7 +686,7 @@ class THROW(Opcode):
 
     def eval(self, ctx):
         val = ctx.stack_pop()
-        from js.execution import JsThrowException
+        from js.exception import JsThrowException
         raise JsThrowException(val)
 
 
@@ -715,7 +715,7 @@ class TRYCATCHBLOCK(Opcode):
 
     def eval(self, ctx):
         from js.completion import is_return_completion, is_completion, NormalCompletion
-        from js.execution import JsException
+        from js.exception import JsException
 
         tryexec = self.tryexec
         catchexec = self.catchexec
@@ -894,7 +894,7 @@ class DELETE(Opcode):
 
     def eval(self, ctx):
         from js.reference import Reference
-        from js.execution import JsSyntaxError
+        from js.exception import JsSyntaxError
 
         # 11.4.1
         ref = ctx.get_ref(self.name, self.index)

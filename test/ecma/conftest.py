@@ -4,7 +4,7 @@ import py
 from js.interpreter import Interpreter, load_file
 from _pytest.runner import Failed
 from js.object_space import _w
-from js.execution import JsException
+from js.exception import JsException
 from pypy.rlib.parsing.parsing import ParseError
 
 EXCLUSIONLIST = ['shell.js', 'browser.js']

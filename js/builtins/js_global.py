@@ -344,7 +344,7 @@ def js_eval(ctx):
     from pypy.rlib.parsing.parsing import ParseError
     from pypy.rlib.parsing.deterministic import LexerError
     from js.astbuilder import FakeParseError
-    from js.execution import JsSyntaxError
+    from js.exception import JsSyntaxError
 
     args = ctx.argv()
     x = get_arg(args, 0)

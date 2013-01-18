@@ -1,4 +1,4 @@
-from js.execution import JsTypeError
+from js.exception import JsTypeError
 from js.builtins import get_arg
 from js.completion import NormalCompletion
 from js.object_space import w_return, _w
