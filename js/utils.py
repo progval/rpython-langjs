@@ -9,10 +9,9 @@ class StackMixin(object):
     def __init__(self):
         self._init_stack_()
 
-    def _init_stack_(self, size=1, resize=True):
+    def _init_stack_(self, size=1):
         self._stack_ = [None] * size
         self._stack_pointer_ = 0
-        self._stack_resize_ = resize
 
     def _stack_pointer(self):
         return jit.promote(self._stack_pointer_)
@@ -35,11 +34,7 @@ class StackMixin(object):
         i = self._stack_pointer()
         len_stack = len(self._stack_)
 
-        assert i >= 0
-        if len_stack <= i and self._stack_resize_ is True:
-            self._stack_ += [None]
-        else:
-            assert len_stack > i
+        assert i >= 0 and len_stack > i
 
         self._stack_[i] = element
         self._stack_pointer_ = i + 1

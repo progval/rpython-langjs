@@ -11,7 +11,7 @@ class ExecutionContext(StackMixin):
         self._variable_environment_ = None
         self._this_binding_ = None
         self._refs_ = [None] * refs_size
-        self._init_stack_(size=stack_size, resize=False)
+        self._init_stack_(stack_size)
 
     def stack_append(self, value):
         self._stack_append(value)
