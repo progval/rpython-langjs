@@ -270,9 +270,19 @@ def get_timezone_offset(this, args):
     return offset
 
 
+def _assert_date(obj):
+    if obj.klass() != 'date':
+        from js.exception import JsTypeError
+        msg = '%s is not an instnace of Date'
+        raise JsTypeError(unicode(msg))
+
+
 # 15.9.5.27
 @w_return
 def set_time(this, args):
+    _assert_date(this)
+    from js.jsobj import W_DateObject
+    assert isinstance(this, W_DateObject)
     arg0 = get_arg(args, 0)
     this._primitive_value_ = arg0
     return arg0
