@@ -41,11 +41,3 @@ class StackMixin(object):
 
     def _set_stack_pointer(self, p):
         self._stack_pointer_ = p
-
-    #@jit.unroll_safe
-    def _stack_pop_n(self, n):
-        l = [None] * n
-        for i in range(n - 1, -1, -1):
-            l[i] = self._stack_pop()
-        #debug.make_sure_not_resized(l)
-        return l

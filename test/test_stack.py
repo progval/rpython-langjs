@@ -67,17 +67,6 @@ class TestStack(object):
         s.append(3)
         assert s.top() == 3
 
-    def test_stack_popn(self):
-        s = Stack(99)
-        s.append(1)
-        s.append(2)
-        s.append(3)
-        x = s.pop_n(2)
-        assert x == [2, 3]
-        assert s._stack_pointer_ == 1
-        assert s._stack_[1] is None
-        assert s._stack_[2] is None
-
     def test_stack_no_resize(self):
         s = Stack(2)
         s.append(1)

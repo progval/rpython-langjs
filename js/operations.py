@@ -907,7 +907,6 @@ class Void(Expression):
 
 class EmptyExpression(Expression):
     def emit(self, bytecode):
-        #bytecode.unpop_or_undefined()
         bytecode.emit('LOAD_UNDEFINED')
 
 
