@@ -16,8 +16,7 @@ def get_printable_location(pc, debug, jscode):
     else:
         return '%d: %s' % (pc, 'end of opcodes')
 
-#jitdriver = JitDriver(greens=['pc', 'self'], reds=['ctx'], get_printable_location = get_printable_location, virtualizables=['ctx'])
-jitdriver = JitDriver(greens=['pc', 'debug', 'self'], reds=['result', 'ctx'], get_printable_location=get_printable_location)
+jitdriver = JitDriver(greens=['pc', 'debug', 'self'], reds=['result', 'ctx'], get_printable_location=get_printable_location, virtualizables=['ctx'])
 
 
 def ast_to_bytecode(ast, symbol_map):
@@ -32,7 +31,7 @@ class AlreadyRun(Exception):
 
 
 class JsCode(object):
-    _immutable_fields_ = ['_oppcodes_', '_symbols_']
+    _immutable_fields_ = ['compiled_opcodes[*]', '_symbols', 'parameters[*]']
 
     """ That object stands for code of a single javascript function
     """
@@ -46,6 +45,7 @@ class JsCode(object):
         self.updatelooplabel = []
         self._estimated_stack_size = -1
         self._symbols = symbol_map
+        self.parameters = symbol_map.parameters[:]
 
     def variables(self):
         return self._symbols.variables
@@ -62,8 +62,9 @@ class JsCode(object):
     def symbol_for_index(self, index):
         return self._symbols.get_symbol(index)
 
+    @jit.unroll_safe
     def params(self):
-        return self._symbols.parameters
+        return [p for p in self.parameters]
 
     #@jit.elidable
     def estimated_stack_size(self):
@@ -71,7 +72,7 @@ class JsCode(object):
         if self._estimated_stack_size == -1:
             max_size = 0
             moving_size = 0
-            for opcode in self.opcodes:
+            for opcode in self.compiled_opcodes:
                 moving_size += opcode.stack_change()
                 max_size = max(moving_size, max_size)
             assert max_size >= 0
@@ -167,7 +168,9 @@ class JsCode(object):
         if self.has_labels:
             self.remove_labels()
 
+    def compile(self):
         self.unlabel()
+        self.compiled_opcodes = [o for o in self.opcodes]
 
     def remove_labels(self):
         """ Basic optimization to remove all labels and change
@@ -192,18 +195,17 @@ class JsCode(object):
     @jit.elidable
     def _get_opcode(self, pc):
         assert pc >= 0
-        return self.opcodes[pc]
+        return self.compiled_opcodes[pc]
 
+    @jit.elidable
     def _opcode_count(self):
-        return len(self.opcodes)
+        return len(self.compiled_opcodes)
 
     def run(self, ctx):
         from js.object_space import object_space
         debug = object_space.interpreter.config.debug
         from js.completion import NormalCompletion, is_completion, is_return_completion, is_empty_completion
         from js.opcodes import BaseJump
-
-        self.unlabel()
 
         if self._opcode_count() == 0:
             return NormalCompletion()

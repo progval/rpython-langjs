@@ -2,6 +2,8 @@
 
 # 8.9
 class Completion(object):
+    _immutable_fields_ = ['value', 'target']
+
     def __init__(self, value=None, target=None):
         self.value = value
         self.target = target

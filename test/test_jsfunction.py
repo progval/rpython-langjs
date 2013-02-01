@@ -50,11 +50,12 @@ class TestJsFunctionAndStuff(object):
         var_idx = symbol_map.add_variable(u'a')
 
         code = JsCode(symbol_map)
+        code.parameters = [u'a']
         code.emit('LOAD_VARIABLE', var_idx, u'a')
         code.emit('RETURN')
 
         f = JsFunction(u'foo', code)
-        ctx = FunctionExecutionContext(f, argv=[_w(42)], formal_parameters=[u'a'])
+        ctx = FunctionExecutionContext(f, argv=[_w(42)])
 
         res = f.run(ctx)
         assert res.value == _w(42)

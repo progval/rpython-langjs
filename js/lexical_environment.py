@@ -11,7 +11,6 @@ def get_identifier_reference(lex, identifier, strict=False):
     exists = envRec.has_binding(identifier)
     if exists:
         ref = Reference(base_env=envRec, referenced=identifier, strict=strict)
-        jit.promote(ref)
         return ref
     else:
         outer = lex.outer_environment

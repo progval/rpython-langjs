@@ -1,12 +1,15 @@
 from js.utils import StackMixin
 from js.object_space import newundefined
+from pypy.rlib import jit
 
 
 class ExecutionContext(StackMixin):
-    _immutable_fields_ = ['_stack_', '_stack_resize_', '_this_binding_', '_lexical_environment_', '_variable_environment_']
-    _refs_resizable_ = True
+    _immutable_fields_ = ['_stack_', '_this_binding_', '_lexical_environment_', '_variable_environment_', '_refs_', '_code_', '_formal_parameters_', '_argument_values_', '_w_func_']  # TODO why are _formal_parameters_, _w_func_ etc. required here?
+    _virtualizable2_ = ['_stack_[*]', '_stack_pointer_', '_refs_[*]']
+    _settled_ = True
 
     def __init__(self, stack_size=1, refs_size=1):
+        self = jit.hint(self, access_directly=True, fresh_virtualizable=True)
         self._lexical_environment_ = None
         self._variable_environment_ = None
         self._this_binding_ = None
@@ -22,6 +25,7 @@ class ExecutionContext(StackMixin):
     def stack_top(self):
         return self._stack_top()
 
+    @jit.unroll_safe
     def stack_pop_n(self, n):
         if n < 1:
             return []
@@ -51,12 +55,13 @@ class ExecutionContext(StackMixin):
         self._lexical_environment_ = lex_env
 
     # 10.5
+    @jit.unroll_safe
     def declaration_binding_initialization(self):
         from js.object_space import newundefined
 
         env = self._variable_environment_.environment_record
         strict = self._strict_
-        code = self._code_
+        code = jit.promote(self._code_)
 
         if code.is_eval_code():
             configurable_bindings = True
@@ -65,7 +70,7 @@ class ExecutionContext(StackMixin):
 
         # 4.
         if code.is_function_code():
-            names = self._formal_parameters_
+            names = code.params() #_formal_parameters_
             n = 0
             args = self._argument_values_
 
@@ -99,7 +104,7 @@ class ExecutionContext(StackMixin):
             # TODO get calling W_Function
             func = self._w_func_
             arguments = self._argument_values_
-            names = self._formal_parameters_
+            names = code.params() #_formal_parameters_
             args_obj = W_Arguments(func, names, arguments, env, strict)
 
             if strict is True:
@@ -118,41 +123,60 @@ class ExecutionContext(StackMixin):
                 env.set_mutable_binding(dn, newundefined(), False)
 
     def _get_refs(self, index):
-        assert index <= len(self._refs_)
+        assert index < len(self._refs_)
+        assert index >= 0
         return self._refs_[index]
 
     def _set_refs(self, index, value):
-        assert index <= len(self._refs_)
+        assert index < len(self._refs_)
+        assert index >= 0
         self._refs_[index] = value
 
     def get_ref(self, symbol, index=-1):
         ## TODO pre-bind symbols, work with idndex, does not work, see test_foo19
-        if index == -1:
+        if index < 0:
             lex_env = self.lexical_environment()
             ref = lex_env.get_identifier_reference(symbol)
             return ref
 
-        if self._refs_resizable_ is True and index >= len(self._refs_):
-            self._refs_ += ([None] * (1 + index - len(self._refs_)))
+        ref = self._get_refs(index)
 
-        if self._get_refs(index) is None:
+        if ref is None:
             lex_env = self.lexical_environment()
             ref = lex_env.get_identifier_reference(symbol)
             if ref.is_unresolvable_reference() is True:
                 return ref
             self._set_refs(index, ref)
 
-        return self._get_refs(index)
+        return ref
 
     def forget_ref(self, symbol, index):
         self._set_refs(index, None)
 
 
-class GlobalExecutionContext(ExecutionContext):
+class _DynamicExecutionContext(ExecutionContext):
+    def __init__(self, stack_size):
+        ExecutionContext.__init__(self, stack_size)
+        self._dyn_refs_ = [None]
+
+    def _get_refs(self, index):
+        self._resize_refs(index)
+        return self._dyn_refs_[index]
+
+    def _set_refs(self, index, value):
+        self._resize_refs(index)
+        self._dyn_refs_[index] = value
+
+    def _resize_refs(self, index):
+        if index >= len(self._dyn_refs_):
+            self._dyn_refs_ += ([None] * (1 + index - len(self._dyn_refs_)))
+
+
+class GlobalExecutionContext(_DynamicExecutionContext):
     def __init__(self, code, global_object, strict=False):
         stack_size = code.estimated_stack_size()
 
-        ExecutionContext.__init__(self, stack_size)
+        _DynamicExecutionContext.__init__(self, stack_size)
 
         self._code_ = code
         self._strict_ = strict
@@ -166,11 +190,11 @@ class GlobalExecutionContext(ExecutionContext):
         self.declaration_binding_initialization()
 
 
-class EvalExecutionContext(ExecutionContext):
+class EvalExecutionContext(_DynamicExecutionContext):
     def __init__(self, code, calling_context=None):
         stack_size = code.estimated_stack_size()
 
-        ExecutionContext.__init__(self, stack_size)
+        _DynamicExecutionContext.__init__(self, stack_size)
         self._code_ = code
         self._strict_ = code.strict
 
@@ -191,7 +215,6 @@ class EvalExecutionContext(ExecutionContext):
 
 class FunctionExecutionContext(ExecutionContext):
     _immutable_fields_ = ['_scope_', '_calling_context_']
-    _refs_resizable_ = False
 
     def __init__(self, code, formal_parameters=[], argv=[], this=newundefined(), strict=False, scope=None, w_func=None):
         from js.jsobj import W_BasicObject
@@ -203,7 +226,6 @@ class FunctionExecutionContext(ExecutionContext):
         ExecutionContext.__init__(self, stack_size, env_size)
 
         self._code_ = code
-        self._formal_parameters_ = formal_parameters
         self._argument_values_ = argv
         self._strict_ = strict
         self._scope_ = scope
@@ -234,9 +256,9 @@ class FunctionExecutionContext(ExecutionContext):
         return self._argument_values_
 
 
-class SubExecutionContext(ExecutionContext):
+class SubExecutionContext(_DynamicExecutionContext):
     def __init__(self, parent):
-        ExecutionContext.__init__(self)
+        _DynamicExecutionContext.__init__(self, 0)
         self._parent_context_ = parent
 
     def stack_append(self, value):
@@ -261,6 +283,7 @@ class WithExecutionContext(SubExecutionContext):
         self._code_ = code
         self._strict_ = code.strict
         self._expr_obj_ = expr_obj
+        self._dynamic_refs = []
 
         from js.lexical_environment import ObjectEnvironment
         parent_environment = parent_context.lexical_environment()
@@ -273,16 +296,16 @@ class WithExecutionContext(SubExecutionContext):
         self.declaration_binding_initialization()
 
 
-class CatchExecutionContext(ExecutionContext):
+class CatchExecutionContext(_DynamicExecutionContext):
     def __init__(self, code, catchparam, exception_value, parent_context):
         self._code_ = code
         self._strict_ = code.strict
         self._parent_context_ = parent_context
 
         stack_size = code.estimated_stack_size()
-        env_size = code.env_size() + 1  # neet do add one for the arguments object
+        #env_size = code.env_size() + 1  # neet do add one for the arguments object
 
-        ExecutionContext.__init__(self, stack_size, env_size)
+        _DynamicExecutionContext.__init__(self, stack_size)
 
         parent_env = parent_context.lexical_environment()
 

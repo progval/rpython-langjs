@@ -83,7 +83,11 @@ class DeclarativeEnvironmentRecord(EnvironmentRecord):
         if self._binding_map_.not_found(idx):
             return
 
-        del(self._binding_slots_[idx])
+        assert idx >= 0
+        i = (idx + 1)
+        assert i >= 0
+
+        self._binding_slots_ = self._binding_slots_[:idx] + self._binding_slots_[i:] #len(self._binding_slots_)]
         self._binding_map_ = self._binding_map_.delete(name)
 
     # 10.2.1.1.2
@@ -126,7 +130,7 @@ class DeclarativeEnvironmentRecord(EnvironmentRecord):
             return False
         if self._is_deletable_binding(identifier) is False:
             return False
-        self._deletable_bindings_map__ = self._deletable_bindings_map_.delete(identifier)
+        self._deletable_bindings_map_ = self._deletable_bindings_map_.delete(identifier)
         self._mutable_bindings_map_ = self._mutable_bindings_map_.delete(identifier)
         self._del_binding(identifier)
         return False

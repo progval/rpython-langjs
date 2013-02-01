@@ -179,7 +179,7 @@ class W_BasicObject(W_Root):
     _type_ = 'object'
     _class_ = 'Object'
     _extensible_ = True
-    _immutable_fields_ = ['_type_', '_class_', '_extensible_']
+    _immutable_fields_ = ['_type_', '_class_']  # TODO why need _primitive_value_ here???
 
     def __init__(self):
         from js.object_space import newnull
@@ -532,6 +532,8 @@ class W_BasicObject(W_Root):
 
 
 class W__PrimitiveObject(W_BasicObject):
+    _immutable_fields_ = ['_primitive_value_']
+
     def __init__(self, primitive_value):
         W_BasicObject.__init__(self)
         self.set_primitive_value(primitive_value)
@@ -832,7 +834,7 @@ class W_DateConstructor(W_BasicFunction):
 
 
 class W__Function(W_BasicFunction):
-    _immutable_fields_ = ['_type_', '_class_', '_extensible_', '_scope_', '_params_', '_strict_', '_function_']
+    _immutable_fields_ = ['_type_', '_class_', '_extensible_', '_scope_', '_params_[*]', '_strict_', '_function_']
 
     def __init__(self, function_body, formal_parameter_list=[], scope=None, strict=False):
         W_BasicFunction.__init__(self)
@@ -874,12 +876,11 @@ class W__Function(W_BasicFunction):
         from js.completion import Completion
 
         code = self.code()
-        argn = self.formal_parameters()
+        jit.promote(code)
         strict = self._strict_
         scope = self.scope()
 
         ctx = FunctionExecutionContext(code,
-                                       formal_parameters=argn,
                                        argv=args,
                                        this=this,
                                        strict=strict,
@@ -910,6 +911,7 @@ class W__Function(W_BasicFunction):
 class W_Arguments(W__Object):
     _class_ = 'Arguments'
 
+    @jit.unroll_safe
     def __init__(self, func, names, args, env, strict=False):
         from js.object_space import _w
         W__Object.__init__(self)
@@ -919,22 +921,22 @@ class W_Arguments(W__Object):
 
         from js.object_space import object_space
         _map = object_space.new_obj()
-        mapped_names = []
+        mapped_names = _new_map()
         indx = _len - 1
         while indx >= 0:
             val = args[indx]
             put_property(self, unicode(str(indx)), val, writable=True, enumerable=True, configurable=True)
             if indx < len(names):
                 name = names[indx]
-                if strict is False and name not in mapped_names:
-                    mapped_names.append(name)
+                if strict is False and not mapped_names.contains(name):
+                    mapped_names = mapped_names.add(name)
                     g = make_arg_getter(name, env)
                     p = make_arg_setter(name, env)
                     desc = PropertyDescriptor(setter=p, getter=g, configurable=True)
                     _map.define_own_property(unicode(str(indx)), desc, False)
             indx = indx - 1
 
-        if len(mapped_names) > 0:
+        if not mapped_names.empty():
             self._paramenter_map_ = _map
 
         if strict is False:

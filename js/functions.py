@@ -2,6 +2,7 @@ from js.object_space import _w
 
 
 class JsBaseFunction(object):
+    _settled_ = True
     eval_code = False
     function_code = False
     configurable_bindings = False
@@ -63,6 +64,7 @@ class JsNativeFunction(JsBaseFunction):
 
         args = ctx.argv()
         this = ctx.this_binding()
+        assert isinstance(self, JsNativeFunction)
         res = self._function_(this, args)
         w_res = _w(res)
         compl = ReturnCompletion(value=w_res)
@@ -98,6 +100,7 @@ class JsExecutableCode(JsBaseFunction):
         from js.jscode import JsCode
         assert isinstance(js_code, JsCode)
         self._js_code_ = js_code
+        self._js_code_.compile()
         self._stack_size_ = js_code.estimated_stack_size()
         self._symbol_size_ = js_code.symbol_size()
 
@@ -122,8 +125,10 @@ class JsExecutableCode(JsBaseFunction):
         return code.variables()
 
     def functions(self):
+        # XXX tuning
         code = self.get_js_code()
-        return code.functions()
+        functions = code.functions()
+        return functions
 
     def params(self):
         code = self.get_js_code()

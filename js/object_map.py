@@ -3,7 +3,7 @@ from pypy.rlib import jit
 
 class Map(object):
     NOT_FOUND = -1
-    _immutable_fields_ = ['index', 'back', 'name', 'forward_pointers']
+    _immutable_fields_ = ['index', 'back', 'name']
 
     def __init__(self):
         self.index = self.NOT_FOUND
@@ -39,6 +39,12 @@ class Map(object):
 
     def _key(self):
         return (self.name)
+
+    def empty(self):
+        return True
+
+    def len(self):
+        return self.index
 
     @jit.elidable
     def add(self, name):
@@ -83,6 +89,9 @@ class MapNode(Map):
         else:
             n = self.back.delete(name)
             return n.add(self.name)
+
+    def empty(self):
+        return False
 
 
 ROOT_MAP = MapRoot()

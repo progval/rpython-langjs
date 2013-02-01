@@ -5,11 +5,12 @@ from js.baseop import plus, sub, compare, AbstractEC, StrictEC,\
 from pypy.rlib.rarithmetic import intmask
 
 from js.jsobj import put_property
+from pypy.rlib import jit
 
 
 class Opcode(object):
     _settled_ = True
-    _immutable_fields_ = ['_stack_change']
+    _immutable_fields_ = ['_stack_change', 'funcobj']
     _stack_change = 1
 
     def __init__(self):
@@ -171,6 +172,7 @@ class LOAD_ARRAY(Opcode):
     def __init__(self, counter):
         self.counter = counter
 
+    @jit.unroll_safe
     def eval(self, ctx):
         from js.object_space import object_space
         array = object_space.new_array()
@@ -206,7 +208,7 @@ class LOAD_LIST(Opcode):
 
 
 class LOAD_FUNCTION(Opcode):
-    #_immutable_fields_ = ['funcobj']
+    _immutable_fields_ = ['funcobj']
 
     def __init__(self, funcobj):
         self.funcobj = funcobj
@@ -233,11 +235,13 @@ class LOAD_OBJECT(Opcode):
     def __init__(self, counter):
         self.counter = counter
 
+    @jit.unroll_safe
     def eval(self, ctx):
         from js.object_space import object_space
         w_obj = object_space.new_obj()
         for _ in range(self.counter):
-            name = ctx.stack_pop().to_string()
+            top = ctx.stack_pop()
+            name = top.to_string()
             w_elem = ctx.stack_pop()
             put_property(w_obj, name, w_elem, writable=True, configurable=True, enumerable=True)
         ctx.stack_append(w_obj)
@@ -307,7 +311,7 @@ class TYPEOF_VARIABLE(Opcode):
 
     def eval(self, ctx):
         from js.object_space import newstring
-        ref = ctx.get_ref(self.name)
+        ref = ctx.get_ref(self.name, self.index)
         if ref.is_unresolvable_reference():
             var_type = u'undefined'
         else:
@@ -800,14 +804,9 @@ TimSort = make_timsort_class()
 class LOAD_ITERATOR(Opcode):
     _stack_change = 0
 
-    def eval(self, ctx):
-        exper_value = ctx.stack_pop()
-        obj = exper_value.ToObject()
+    # separate function because jit should trace eval but not iterator creation.
+    def _make_iterator(self, obj):
         props = []
-
-        from js.jsobj import W_BasicObject
-        assert isinstance(obj, W_BasicObject)
-
         properties = obj.named_properties()
         TimSort(properties).sort()
 
@@ -817,8 +816,19 @@ class LOAD_ITERATOR(Opcode):
                 props.append(_w(key))
 
         props.reverse()
+
         from js.jsobj import W_Iterator
         iterator = W_Iterator(props)
+        return iterator
+
+    def eval(self, ctx):
+        exper_value = ctx.stack_pop()
+        obj = exper_value.ToObject()
+
+        from js.jsobj import W_BasicObject
+        assert isinstance(obj, W_BasicObject)
+
+        iterator = self._make_iterator(obj)
 
         ctx.stack_append(iterator)
 
