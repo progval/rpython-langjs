@@ -7,11 +7,22 @@ class o:
 conftest.option = o
 
 from pypy.jit.metainterp.test.support import LLJitMixin
+from pypy.rlib import jit
 
 from js import interpreter
 
 
 class TestJtTrace(LLJitMixin):
+    def run(self, code, expected):
+        jsint = interpreter.Interpreter()
+
+        def interp_w():
+            jit.set_param(None, "inlining", True)
+            code_val = jsint.run_src(code)
+            return code_val.ToNumber()
+
+        assert self.meta_interp(interp_w, [], listcomp=True, backendopt=True, listops=True) == expected
+
     def test_simple_loop(self):
         code = """
         var i = 0;
@@ -20,12 +31,8 @@ class TestJtTrace(LLJitMixin):
         }
         return i;
         """
-        jsint = interpreter.Interpreter()
 
-        def interp_w():
-            code_val = jsint.run_src(code)
-            return code_val.ToNumber()
-        assert self.meta_interp(interp_w, [], listcomp=True, backendopt=True, listops=True) == 100
+        self.run(code, 100)
 
     def test_loop_in_func(self):
         code = """
@@ -38,12 +45,8 @@ class TestJtTrace(LLJitMixin):
         }
         return f();
         """
-        jsint = interpreter.Interpreter()
 
-        def interp_w():
-            code_val = jsint.run_src(code)
-            return code_val.ToNumber()
-        assert self.meta_interp(interp_w, [], listcomp=True, backendopt=True, listops=True) == 100
+        self.run(code, 100)
 
     def test_prop_loop_in_func(self):
         code = """
@@ -56,12 +59,8 @@ class TestJtTrace(LLJitMixin):
         }
         return f();
         """
-        jsint = interpreter.Interpreter()
 
-        def interp_w():
-            code_val = jsint.run_src(code)
-            return code_val.ToNumber()
-        assert self.meta_interp(interp_w, [], listcomp=True, backendopt=True, listops=True) == 100
+        self.run(code, 100)
 
     def test_object_alloc_loop_in_func_loop(self):
         code = """
@@ -74,12 +73,8 @@ class TestJtTrace(LLJitMixin):
         }
         return f();
         """
-        jsint = interpreter.Interpreter()
 
-        def interp_w():
-            code_val = jsint.run_src(code)
-            return code_val.ToNumber()
-        assert self.meta_interp(interp_w, [], listcomp=True, backendopt=True, listops=True) == 100
+        self.run(code, 100)
 
     def test_func_call_in_loop(self):
         code = """
@@ -92,12 +87,98 @@ class TestJtTrace(LLJitMixin):
         }
         return i;
         """
-        jsint = interpreter.Interpreter()
 
-        def interp_w():
-            code_val = jsint.run_src(code)
-            return code_val.ToNumber()
-        assert self.meta_interp(interp_w, [], listcomp=True, backendopt=True, listops=True) == 100
+        self.run(code, 100)
+
+    def test_local_func_call_in_loop(self):
+        code = """
+        (function () {
+            var i = 0;
+            function f(a) {
+                return a + 1;
+            }
+            while(i < 100) {
+                i = f(i);
+            }
+            return i;
+        })();
+        """
+
+        self.run(code, 100)
+
+    def test_double_func_call_in_loop(self):
+        code = """
+        (function () {
+            var i = 0;
+            function f(a) {
+                function g(b) {
+                    return b + 1;
+                }
+                return g(a);
+            }
+            while(i < 100) {
+                i = f(i);
+            }
+            return i;
+        })();
+        """
+
+        self.run(code, 100)
+
+    def test_double_func_call_in_loop_no_arg(self):
+        code = """
+        (function () {
+            var i = 0;
+            function f() {
+                function g() {
+                    return i + 1;
+                }
+                return g();
+            }
+            while(i < 100) {
+                i = f();
+            }
+            return i;
+        })();
+        """
+
+        self.run(code, 100)
+
+    def test_recursive_func_call(self):
+        code = """
+        (function () {
+            var i = 0;
+            function f(a) {
+                if (a < 100) {
+                    return f(a+1);
+                }
+                return a;
+            }
+            return f(0);
+        })();
+        """
+
+        self.run(code, 100)
+
+    def test_loop_recursive_func_call(self):
+        code = """
+        (function () {
+            function f(a) {
+                if (a < 10) {
+                    return f(a+1);
+                }
+                return a;
+            }
+
+            var i = 0;
+            while(i < 100) {
+                i = i + f(i);
+            }
+            return i;
+        })();
+        """
+
+        self.run(code, 100)
 
     def test_loop_not_escapeing(self):
         code = """
@@ -109,13 +190,10 @@ class TestJtTrace(LLJitMixin):
             return a;
         }
         f();
+        1;
         """
-        jsint = interpreter.Interpreter()
 
-        def interp_w():
-            code_val = jsint.run_src(code)
-            return code_val.ToNumber()
-        assert self.meta_interp(interp_w, [], listcomp=True, backendopt=True, listops=True) == 100
+        self.run(code, 1)
 
     def test_loop_little_escapeing(self):
         code = """
@@ -128,17 +206,13 @@ class TestJtTrace(LLJitMixin):
         }
         f();
         """
-        jsint = interpreter.Interpreter()
 
-        def interp_w():
-            code_val = jsint.run_src(code)
-            return code_val.ToNumber()
-        assert self.meta_interp(interp_w, [], listcomp=True, backendopt=True, listops=True) == 100
+        self.run(code, 100)
 
     def test_bitwise_and(self):
         code = """
         function f() {
-            bitwiseAndValue = 4294967296;
+            var bitwiseAndValue = 4294967296;
             for (var i = 0; i < 600000; i++) {
                     bitwiseAndValue = bitwiseAndValue & i;
             }
@@ -146,9 +220,5 @@ class TestJtTrace(LLJitMixin):
         f();
         1;
         """
-        jsint = interpreter.Interpreter()
 
-        def interp_w():
-            code_val = jsint.run_src(code)
-            return code_val.ToNumber()
-        assert self.meta_interp(interp_w, [], listcomp=True, backendopt=True, listops=True) == 1
+        self.run(code, 1)
