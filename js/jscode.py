@@ -1,6 +1,5 @@
 #from pypy.rlib.jit import hint
 #from pypy.rlib.objectmodel import we_are_translated
-from pypy.rlib.jit import JitDriver
 from pypy.rlib import jit
 
 from js.exception import JsThrowException
@@ -16,7 +15,7 @@ def get_printable_location(pc, debug, jscode):
     else:
         return '%d: %s' % (pc, 'end of opcodes')
 
-jitdriver = JitDriver(greens=['pc', 'debug', 'self'], reds=['result', 'ctx'], get_printable_location=get_printable_location, virtualizables=['ctx'])
+jitdriver = jit.JitDriver(greens=['pc', 'debug', 'self'], reds=['result', 'ctx'], get_printable_location=get_printable_location, virtualizables=['ctx'])
 
 
 def ast_to_bytecode(ast, symbol_map):
@@ -66,9 +65,8 @@ class JsCode(object):
     def params(self):
         return [p for p in self.parameters]
 
-    #@jit.elidable
+    @jit.elidable
     def estimated_stack_size(self):
-        # TODO: compute only once
         if self._estimated_stack_size == -1:
             max_size = 0
             moving_size = 0
@@ -78,7 +76,7 @@ class JsCode(object):
             assert max_size >= 0
             self._estimated_stack_size = max_size
 
-        return self._estimated_stack_size
+        return jit.promote(self._estimated_stack_size)
 
     def symbol_size(self):
         return self._symbols.len()
@@ -171,6 +169,7 @@ class JsCode(object):
     def compile(self):
         self.unlabel()
         self.compiled_opcodes = [o for o in self.opcodes]
+        self.estimated_stack_size()
 
     def remove_labels(self):
         """ Basic optimization to remove all labels and change
