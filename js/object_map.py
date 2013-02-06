@@ -97,5 +97,5 @@ class MapNode(Map):
 ROOT_MAP = MapRoot()
 
 
-def root_map():
+def new_map():
     return ROOT_MAP

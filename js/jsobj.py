@@ -8,11 +8,7 @@ from pypy.rlib import jit
 
 from js.property_descriptor import PropertyDescriptor, DataPropertyDescriptor, AccessorPropertyDescriptor, is_data_descriptor, is_generic_descriptor, is_accessor_descriptor
 from js.property import DataProperty, AccessorProperty
-from js.object_map import ROOT_MAP
-
-
-def _new_map():
-    return ROOT_MAP
+from js.object_map import new_map
 
 
 @jit.elidable
@@ -183,7 +179,7 @@ class W_BasicObject(W_Root):
 
     def __init__(self):
         from js.object_space import newnull
-        self._property_map_ = _new_map()
+        self._property_map_ = new_map()
         self._property_slots_ = []
 
         self._prototype_ = newnull()
@@ -921,7 +917,7 @@ class W_Arguments(W__Object):
 
         from js.object_space import object_space
         _map = object_space.new_obj()
-        mapped_names = _new_map()
+        mapped_names = new_map()
         indx = _len - 1
         while indx >= 0:
             val = args[indx]

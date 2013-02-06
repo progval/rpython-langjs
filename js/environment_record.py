@@ -1,8 +1,4 @@
-from js.object_map import ROOT_MAP
-
-
-def _new_map():
-    return ROOT_MAP
+from js.object_map import new_map
 
 
 class EnvironmentRecord(object):
@@ -33,11 +29,11 @@ class DeclarativeEnvironmentRecord(EnvironmentRecord):
 
     def __init__(self, size=0, resize=True):
         EnvironmentRecord.__init__(self)
-        self._binding_map_ = _new_map()
+        self._binding_map_ = new_map()
         self._binding_slots_ = [None] * size
         self._binding_resize_ = resize
-        self._mutable_bindings_map_ = _new_map()
-        self._deletable_bindings_map_ = _new_map()
+        self._mutable_bindings_map_ = new_map()
+        self._deletable_bindings_map_ = new_map()
 
     def _is_mutable_binding(self, identifier):
         return self._mutable_bindings_map_.contains(identifier)
