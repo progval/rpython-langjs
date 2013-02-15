@@ -43,8 +43,9 @@ class Map(object):
     def empty(self):
         return True
 
+    @jit.elidable
     def len(self):
-        return self.index
+        return self.index + 1
 
     @jit.elidable
     def add(self, name):

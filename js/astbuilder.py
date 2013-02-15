@@ -4,59 +4,7 @@ from pypy.rlib.objectmodel import enforceargs
 
 from js import operations
 
-
-class SymbolMap(object):
-    def __init__(self):
-        self.symbols = {}
-        self.functions = []
-        self.variables = []
-        self.parameters = []
-        self.next_index = 0
-
-    def add_symbol(self, identifyer):
-        #assert isinstance(identifyer, unicode)
-        if identifyer not in self.symbols:
-            self.symbols[identifyer] = self.next_index
-            self.next_index += 1
-        idx = self.symbols[identifyer]
-        assert isinstance(idx, int)
-        return idx
-
-    def add_variable(self, identifyer):
-        idx = self.add_symbol(identifyer)
-
-        self.variables.append(identifyer)
-        return idx
-
-    def add_function(self, identifyer):
-        idx = self.add_symbol(identifyer)
-
-        self.functions.append(identifyer)
-        return idx
-
-    def add_parameter(self, identifyer):
-        #assert isinstance(identifyer, unicode)
-        f = unicode(identifyer)
-        #assert isinstance(f, unicode)
-        idx = self.add_symbol(f)
-        self.parameters.append(f)
-        return idx
-
-    def get_index(self, identifyer):
-        return self.symbols[identifyer]
-
-    def get_symbols(self):
-        return self.symbols.keys()
-
-    def get_symbol(self, index):
-        for symbol, idx in self.symbols.items():
-            if idx == index:
-                return symbol
-
-    def len(self):
-        return self.next_index
-
-empty_symbols = SymbolMap()
+from js.symbol_map import SymbolMap
 
 
 class FakeParseError(Exception):
