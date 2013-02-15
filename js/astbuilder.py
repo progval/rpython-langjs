@@ -356,12 +356,6 @@ class ASTBuilder(RPythonVisitor):
         parameters, i = self.get_next_expr(node, i)
         functionbody, i = self.get_next_expr(node, i)
 
-        #params = []
-        #if parameters is not None:
-        #    params = [pident.get_literal() for pident in parameters.nodes]
-
-        #params = self.current_scope_parameters()
-
         if identifier is not None:
             funcname = identifier.get_literal()
         else:

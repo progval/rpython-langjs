@@ -83,7 +83,7 @@ class DeclarativeEnvironmentRecord(EnvironmentRecord):
         i = (idx + 1)
         assert i >= 0
 
-        self._binding_slots_ = self._binding_slots_[:idx] + self._binding_slots_[i:] #len(self._binding_slots_)]
+        self._binding_slots_ = self._binding_slots_[:idx] + self._binding_slots_[i:]  # len(self._binding_slots_)]
         self._binding_map_ = self._binding_map_.delete(name)
 
     # 10.2.1.1.2

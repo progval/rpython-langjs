@@ -70,7 +70,7 @@ class ExecutionContext(StackMixin):
 
         # 4.
         if code.is_function_code():
-            names = code.params() #_formal_parameters_
+            names = code.params()
             n = 0
             args = self._argument_values_
 
@@ -104,7 +104,7 @@ class ExecutionContext(StackMixin):
             # TODO get calling W_Function
             func = self._w_func_
             arguments = self._argument_values_
-            names = code.params() #_formal_parameters_
+            names = code.params()
             args_obj = W_Arguments(func, names, arguments, env, strict)
 
             if strict is True:

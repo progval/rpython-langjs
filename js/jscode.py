@@ -60,9 +60,6 @@ class JsCode(object):
     def symbols(self):
         return self._symbols.get_symbols()
 
-    def symbol_for_index(self, index):
-        return self._symbols.get_symbol(index)
-
     @jit.unroll_safe
     def params(self):
         return [p for p in self.parameters]
