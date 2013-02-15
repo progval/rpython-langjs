@@ -106,6 +106,22 @@ class TestJtTrace(LLJitMixin):
 
         self.run(code, 100)
 
+    def test_func_call_multiple_args(self):
+        code = """
+        (function () {
+            var i = 0;
+            function f(a, b) {
+                return a + b;
+            }
+            while(i < 100) {
+                i = f(i, 1);
+            }
+            return i;
+        })();
+        """
+
+        self.run(code, 100)
+
     def test_double_func_call_in_loop(self):
         code = """
         (function () {
@@ -222,3 +238,18 @@ class TestJtTrace(LLJitMixin):
         """
 
         self.run(code, 1)
+
+    def test_str_concat(self):
+        code = """
+        (function () {
+            var i = 0;
+            var j = '';
+            while(i < 10) {
+                i += 1;
+                j += 'a';
+            }
+            return j;
+        })();
+        """
+
+        self.run(code, 'aaaaaaaaaa')
