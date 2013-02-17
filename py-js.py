@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
 import os
+
+from rpython.rlib.objectmodel import enforceargs
+from rpython.rlib.parsing.parsing import ParseError
+from rpython.rlib.parsing.deterministic import LexerError
+
 from js.exception import JsException
-from pypy.rlib.objectmodel import enforceargs
-from pypy.rlib.parsing.parsing import ParseError
-from pypy.rlib.parsing.deterministic import LexerError
 
 
 def main(argv):
@@ -144,7 +146,7 @@ def target(driver, args):
 
 
 def jitpolicy(driver):
-    from pypy.jit.codewriter.policy import JitPolicy
+    from rpython.jit.codewriter.policy import JitPolicy
     return JitPolicy()
 
 

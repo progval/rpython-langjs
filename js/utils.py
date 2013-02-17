@@ -1,6 +1,6 @@
 # encoding: utf-8
 #from pypy.rlib.jit import hint
-from pypy.rlib import jit  # , debug
+from rpython.rlib import jit  # , debug
 
 
 class StackMixin(object):

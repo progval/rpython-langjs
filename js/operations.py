@@ -3,10 +3,10 @@
 operations.py
 Implements the javascript operations nodes for the interpretation tree
 """
+from rpython.rlib.unroll import unrolling_iterable
+from rpython.rlib.objectmodel import enforceargs
 
 from js.exception import JsTypeError, JsException
-from pypy.rlib.unroll import unrolling_iterable
-from pypy.rlib.objectmodel import enforceargs
 
 
 class Position(object):

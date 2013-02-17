@@ -6,8 +6,8 @@ class o:
     viewloops = True
 conftest.option = o
 
-from pypy.jit.metainterp.test.support import LLJitMixin
-from pypy.rlib import jit
+from rpython.jit.metainterp.test.support import LLJitMixin
+from rpython.rlib import jit
 
 from js import interpreter
 

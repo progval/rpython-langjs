@@ -1,6 +1,6 @@
 from js.utils import StackMixin
 from js.object_space import newundefined
-from pypy.rlib import jit
+from rpython.rlib import jit
 
 
 class ExecutionContext(StackMixin):

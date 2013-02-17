@@ -1,6 +1,6 @@
-from pypy.rlib.rarithmetic import ovfcheck_float_to_int
-from pypy.rlib.parsing.tree import RPythonVisitor, Symbol
-from pypy.rlib.objectmodel import enforceargs
+from rpython.rlib.rarithmetic import ovfcheck_float_to_int
+from rpython.rlib.parsing.tree import RPythonVisitor, Symbol
+from rpython.rlib.objectmodel import enforceargs
 
 from js import operations
 

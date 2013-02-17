@@ -1,4 +1,4 @@
-from pypy.rlib.streamio import open_file_as_stream
+from rpython.rlib.streamio import open_file_as_stream
 
 
 def load_file(filename):

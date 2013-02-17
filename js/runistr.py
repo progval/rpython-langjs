@@ -1,5 +1,5 @@
-from pypy.rlib.objectmodel import enforceargs
-from pypy.rlib import runicode
+from rpython.rlib.objectmodel import enforceargs
+from rpython.rlib import runicode
 
 
 @enforceargs(str)
@@ -36,7 +36,7 @@ def unicode_unescape(string):
     errorhandler = unescape_errorhandler
     errors = 'strict'
 
-    from pypy.rlib.rstring import UnicodeBuilder
+    from rpython.rlib.rstring import UnicodeBuilder
 
     if size == 0:
         return u''
@@ -120,8 +120,8 @@ hexdigits = "0123456789ABCDEFabcdef"
 
 
 def hexescape(builder, s, pos, digits, encoding, errorhandler, message, errors):
-    from pypy.rlib.rarithmetic import r_uint
-    from pypy.rlib.runicode import MAXUNICODE, UNICHR
+    from rpython.rlib.rarithmetic import r_uint
+    from rpython.rlib.runicode import MAXUNICODE, UNICHR
 
     chr = 0
     if pos + digits > len(s):

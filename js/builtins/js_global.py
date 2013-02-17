@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 
-from pypy.rlib.rfloat import NAN, INFINITY, isnan, isinf
+from rpython.rlib.rfloat import NAN, INFINITY, isnan, isinf
 from js.builtins import get_arg
 from js.object_space import w_return
 from pypy.module.unicodedata import unicodedb
 
 
 def setup(global_object):
+    from rpython.rlib.objectmodel import we_are_translated
     from js.builtins import put_intimate_function, put_native_function, put_property
     from js.builtins.number import w_NAN
     from js.builtins.number import w_POSITIVE_INFINITY
-    from pypy.rlib.objectmodel import we_are_translated
     from js.object_space import newundefined
 
     # 15.1.1.1
@@ -167,7 +167,7 @@ def _parse_int(string, radix):
     try:
         number = int(num_str, r)
         try:
-            from pypy.rlib.rarithmetic import ovfcheck_float_to_int
+            from rpython.rlib.rarithmetic import ovfcheck_float_to_int
             ovfcheck_float_to_int(number)
         except OverflowError:
             number = float(number)
@@ -221,7 +221,7 @@ def printjs(this, args):
     if len(args) == 0:
         return
 
-    from pypy.rlib.rstring import UnicodeBuilder
+    from rpython.rlib.rstring import UnicodeBuilder
     from js.runistr import encode_unicode_utf8
 
     builder = UnicodeBuilder()
@@ -336,13 +336,14 @@ def version(this, args):
 
 # 15.1.2.1
 def js_eval(ctx):
+    from rpython.rlib.parsing.parsing import ParseError
+    from rpython.rlib.parsing.deterministic import LexerError
+
     from js.astbuilder import parse_to_ast
     from js.jscode import ast_to_bytecode
     from js.jsobj import W_String
     from js.functions import JsEvalCode
     from js.execution_context import EvalExecutionContext
-    from pypy.rlib.parsing.parsing import ParseError
-    from pypy.rlib.parsing.deterministic import LexerError
     from js.astbuilder import FakeParseError
     from js.exception import JsSyntaxError
 

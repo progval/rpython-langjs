@@ -1,9 +1,10 @@
+from rpython.rlib.rfloat import NAN
+from rpython.rlib.rstring import UnicodeBuilder
+
 from js.jsobj import W_String, W_StringObject
-from pypy.rlib.rfloat import NAN
 from js.exception import JsTypeError
 from js.builtins import get_arg
 from js.object_space import w_return, _w
-from pypy.rlib.rstring import UnicodeBuilder
 
 
 def setup(global_object):
@@ -181,7 +182,7 @@ def last_index_of(this, args):
     search_str = search_string.to_string()
     num_pos = position.ToNumber()
 
-    from pypy.rlib.rfloat import INFINITY, isnan, isinf
+    from rpython.rlib.rfloat import INFINITY, isnan, isinf
 
     if isnan(num_pos):
         pos = INFINITY

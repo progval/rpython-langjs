@@ -1,9 +1,9 @@
-from pypy.rlib.rfloat import NAN, isnan
+from rpython.rlib.rfloat import NAN, isnan
+from rpython.rlib.objectmodel import we_are_translated
 
 import datetime
 from js.builtins import get_arg
 from js.object_space import w_return, hide_on_translate, _w
-from pypy.rlib.objectmodel import we_are_translated
 
 
 def setup(global_object):

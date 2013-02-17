@@ -1,5 +1,5 @@
-from pypy.rlib.objectmodel import specialize, enforceargs
-from pypy.rlib import jit
+from rpython.rlib.objectmodel import specialize, enforceargs
+from rpython.rlib import jit
 
 
 @enforceargs(int)
@@ -201,7 +201,7 @@ def hide_on_translate(*args):
 
     def _wrap(f):
         def _wrapped_f(*args):
-            from pypy.rlib.objectmodel import we_are_translated
+            from rpython.rlib.objectmodel import we_are_translated
             if not we_are_translated():
                 return f(*args)
 

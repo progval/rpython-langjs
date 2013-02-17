@@ -1,6 +1,6 @@
 import math
 
-from pypy.rlib.rfloat import NAN, INFINITY, isnan, isinf
+from rpython.rlib.rfloat import NAN, INFINITY, isnan, isinf
 from js.builtins import get_arg
 from js.object_space import w_return, _w
 
@@ -429,7 +429,7 @@ def js_exp(this, args):
     return math.exp(x)
 
 import time
-from pypy.rlib import rrandom
+from rpython.rlib import rrandom
 random = rrandom.Random(int(time.time()))
 
 

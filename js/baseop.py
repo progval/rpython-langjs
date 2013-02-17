@@ -5,8 +5,8 @@
 from js.jsobj import W_String, W_IntNumber, W_FloatNumber
 from js.object_space import _w
 
-from pypy.rlib.rarithmetic import ovfcheck
-from pypy.rlib.rfloat import isnan, isinf
+from rpython.rlib.rarithmetic import ovfcheck
+from rpython.rlib.rfloat import isnan, isinf
 from js.builtins.number import w_NAN, w_POSITIVE_INFINITY, w_NEGATIVE_INFINITY
 
 import math

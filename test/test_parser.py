@@ -1,15 +1,14 @@
 from __future__ import division
 
 import py
-from pypy.rlib.parsing.ebnfparse import parse_ebnf, make_parse_function
-from pypy.rlib.parsing.parsing import Rule
-from pypy.rlib.parsing.tree import RPythonVisitor
+from rpython.rlib.parsing.ebnfparse import parse_ebnf, make_parse_function
+from rpython.rlib.parsing.parsing import Rule, ParseError
+from rpython.rlib.parsing.tree import RPythonVisitor
 from pypy import conftest
 
 from js.astbuilder import FakeParseError
 from js.astbuilder import ASTBuilder
 from js.jscode import JsCode
-from pypy.rlib.parsing.parsing import ParseError
 
 
 xfail = py.test.mark.xfail
@@ -311,7 +310,7 @@ class TestToASTExpr(BaseTestToAST):
 
     def test_get_pos(self):
         from js import operations
-        from pypy.rlib.parsing.tree import Symbol
+        from rpython.rlib.parsing.tree import Symbol
         astb = ASTBuilder()
         t = self.parse('6')
         assert isinstance(t, Symbol)

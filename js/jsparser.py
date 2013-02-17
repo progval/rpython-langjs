@@ -1,5 +1,5 @@
-from pypy.rlib.parsing.ebnfparse import parse_ebnf, make_parse_function
-from pypy.rlib.parsing.parsing import ParseError
+from rpython.rlib.parsing.ebnfparse import parse_ebnf, make_parse_function
+from rpython.rlib.parsing.parsing import ParseError
 import py
 import sys
 

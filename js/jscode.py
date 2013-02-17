@@ -1,6 +1,6 @@
 #from pypy.rlib.jit import hint
 #from pypy.rlib.objectmodel import we_are_translated
-from pypy.rlib import jit
+from rpython.rlib import jit
 
 from js.exception import JsThrowException
 from js.opcodes import opcodes, LABEL, BaseJump

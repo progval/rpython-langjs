@@ -1,11 +1,11 @@
 import pytest
 import py
+from _pytest.runner import Failed
+from rpython.rlib.parsing.parsing import ParseError
 
 from js.interpreter import Interpreter, load_file
-from _pytest.runner import Failed
 from js.object_space import _w
 from js.exception import JsException
-from pypy.rlib.parsing.parsing import ParseError
 
 EXCLUSIONLIST = ['shell.js', 'browser.js']
 SKIP = [
@@ -247,7 +247,7 @@ class InterpreterResults(object):
 
         if self.do_compile:
             if self.compiled_interpreter is None:
-                from pypy.translator.c.test.test_genc import compile
+                from rpython.translator.c.test.test_genc import compile
                 self.compiled_interpreter = compile(f, [str])
             return self.compiled_interpreter
         else:

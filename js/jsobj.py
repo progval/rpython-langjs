@@ -1,14 +1,13 @@
 # encoding: utf-8
-from pypy.rlib.rarithmetic import intmask
-from pypy.rlib.rfloat import isnan, isinf, NAN, formatd, INFINITY
-from js.exception import JsTypeError, JsRangeError
-
-from pypy.rlib.objectmodel import enforceargs
-from pypy.rlib import jit
+from rpython.rlib.rarithmetic import intmask
+from rpython.rlib.rfloat import isnan, isinf, NAN, formatd, INFINITY
+from rpython.rlib.objectmodel import enforceargs
+from rpython.rlib import jit
 
 from js.property_descriptor import PropertyDescriptor, DataPropertyDescriptor, AccessorPropertyDescriptor, is_data_descriptor, is_generic_descriptor, is_accessor_descriptor
 from js.property import DataProperty, AccessorProperty
 from js.object_map import new_map
+from js.exception import JsTypeError, JsRangeError
 
 
 @jit.elidable
