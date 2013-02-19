@@ -3,7 +3,7 @@
 from rpython.rlib.rfloat import NAN, INFINITY, isnan, isinf
 from js.builtins import get_arg
 from js.object_space import w_return
-from pypy.module.unicodedata import unicodedb
+from rpython.rlib.unicodedata import unicodedb
 
 
 def setup(global_object):

@@ -291,7 +291,7 @@ def substring(this, args):
 # 15.5.4.16
 @w_return
 def to_lower_case(this, args):
-    from pypy.module.unicodedata import unicodedb
+    from rpython.rlib.unicodedata import unicodedb
 
     string = this.to_string()
     builder = UnicodeBuilder(len(string))
@@ -305,7 +305,7 @@ def to_lower_case(this, args):
 # 15.5.4.18
 @w_return
 def to_upper_case(this, args):
-    from pypy.module.unicodedata import unicodedb
+    from rpython.rlib.unicodedata import unicodedb
 
     string = this.to_string()
     builder = UnicodeBuilder(len(string))
