@@ -1,4 +1,4 @@
-from pypy import conftest
+from rpython import conftest
 
 
 class o:
