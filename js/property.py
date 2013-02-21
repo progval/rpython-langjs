@@ -7,8 +7,6 @@ NOT_SET = -1
 
 # 8.6.1
 class Property(object):
-    _immutable_fields_ = ['value', 'writable', 'getter', 'setter', 'enumerable', 'configurable']
-
     def __init__(self, value=None, writable=NOT_SET, getter=None, setter=None, enumerable=NOT_SET, configurable=NOT_SET):
         self.value = value
         self.writable = writable
@@ -41,26 +39,18 @@ class DataProperty(Property):
         assert isinstance(desc, PropertyDescriptor)
 
         if desc.has_set_value():
-            value = desc.value
-        else:
-            value = self.value
+            self.value = desc.value
 
         if desc.has_set_writable():
-            writable = desc.writable
-        else:
-            writable = self.writable
+            self.writable = desc.writable
 
         if desc.has_set_enumerable():
-            enumerable = desc.enumerable
-        else:
-            enumerable = self.enumerable
+            self.enumerable = desc.enumerable
 
         if desc.has_set_configurable():
-            configurable = desc.configurable
-        else:
-            configurable = self.configurable
+            self.configurable = desc.configurable
 
-        return DataProperty(value, writable, enumerable, configurable)
+        return self
 
     def to_property_descriptor(self):
         return DataPropertyDescriptor(self.value, self.writable, self.enumerable, self.configurable)
@@ -77,26 +67,18 @@ class AccessorProperty(Property):
         assert isinstance(desc, PropertyDescriptor)
 
         if desc.has_set_getter():
-            getter = desc.getter
-        else:
-            getter = self.getter
+            self.getter = desc.getter
 
         if desc.has_set_setter():
-            setter = desc.setter
-        else:
-            setter = self.setter
+            self.setter = desc.setter
 
         if desc.has_set_enumerable():
-            enumerable = desc.enumerable
-        else:
-            enumerable = self.enumerable
+            self.enumerable = desc.enumerable
 
         if desc.has_set_configurable():
-            configurable = desc.configurable
-        else:
-            configurable = self.configurable
+            self.configurable = desc.configurable
 
-        return AccessorProperty(getter, setter, enumerable, configurable)
+        return self
 
     def to_property_descriptor(self):
         return AccessorPropertyDescriptor(self.getter, self.setter, self.enumerable, self.configurable)

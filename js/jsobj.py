@@ -2,7 +2,7 @@
 from rpython.rlib.rarithmetic import intmask
 from rpython.rlib.rfloat import isnan, isinf, NAN, formatd, INFINITY
 from rpython.rlib.objectmodel import enforceargs
-from rpython.rlib import jit
+from rpython.rlib import jit, debug
 
 from js.property_descriptor import PropertyDescriptor, DataPropertyDescriptor, AccessorPropertyDescriptor, is_data_descriptor, is_generic_descriptor, is_accessor_descriptor
 from js.property import DataProperty, AccessorProperty
@@ -179,7 +179,7 @@ class W_BasicObject(W_Root):
     def __init__(self):
         from js.object_space import newnull
         self._property_map_ = new_map()
-        self._property_slots_ = []
+        self._property_slots_ = debug.make_sure_not_resized([])
 
         self._prototype_ = newnull()
         W_BasicObject.define_own_property(self, u'__proto__', proto_desc)
@@ -242,7 +242,8 @@ class W_BasicObject(W_Root):
         if self._property_map_.not_found(idx):
             return
 
-        del(self._property_slots_[idx])
+        assert idx >= 0
+        self._property_slots_ = self._property_slots_[:idx] + self._property_slots_[idx + 1:]
         self._property_map_ = self._property_map_.delete(name)
 
     def _add_prop(self, name, value):
@@ -253,7 +254,7 @@ class W_BasicObject(W_Root):
             idx = self._property_map_.index
 
         if idx >= len(self._property_slots_):
-            self._property_slots_ += ([None] * (1 + idx - len(self._property_slots_)))
+            self._property_slots_ = self._property_slots_ + ([None] * (1 + idx - len(self._property_slots_)))
 
         self._property_slots_[idx] = value
 
@@ -479,7 +480,7 @@ class W_BasicObject(W_Root):
                     return reject(throw, p)
         # 12
         prop = self._get_prop(p)
-        self._set_prop(p, prop.update_with_descriptor(desc))
+        prop.update_with_descriptor(desc)
 
         # 13
         return True

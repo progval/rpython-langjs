@@ -62,6 +62,20 @@ class TestJtTrace(LLJitMixin):
 
         self.run(code, 100)
 
+    def test_simple_object_alloc_loop_in_func_loop(self):
+        code = """
+        function f() {
+            var i = 0;
+            while(i < 100) {
+                i = {foo: i}.foo + 1;
+            }
+            return x.i;
+        }
+        return f();
+        """
+
+        self.run(code, 100)
+
     def test_object_alloc_loop_in_func_loop(self):
         code = """
         function f() {
