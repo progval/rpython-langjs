@@ -7,7 +7,6 @@ class SymbolMap(object):
         self.functions = []
         self.variables = []
         self.parameters = []
-        self.next_index = 0
 
     def add_symbol(self, identifyer):
         idx = self.symbols.lookup(identifyer)
@@ -38,6 +37,28 @@ class SymbolMap(object):
         idx = self.add_symbol(f)
         self.parameters.append(f)
         return idx
+
+    def get_index(self, identifyer):
+        return self.symbols.lookup(identifyer)
+
+    def get_symbols(self):
+        return self.symbols.keys()
+
+    def len(self):
+        return self.symbols.len()
+
+    def finalize(self):
+        return FinalSymbolMap(self.symbols, self.functions, self.variables, self.parameters)
+
+
+class FinalSymbolMap(object):
+    _immutable_fields_ = ['symbols', 'functions[*]', 'variables[*]', 'parameters[*]']
+
+    def __init__(self, symbols, functions, variables, parameters):
+        self.symbols = symbols
+        self.functions = functions[:]
+        self.variables = variables[:]
+        self.parameters = parameters[:]
 
     def get_index(self, identifyer):
         return self.symbols.lookup(identifyer)

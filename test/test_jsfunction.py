@@ -47,10 +47,9 @@ class TestJsFunctionAndStuff(object):
 
     def test_foo3(self):
         symbol_map = SymbolMap()
-        var_idx = symbol_map.add_variable(u'a')
+        var_idx = symbol_map.add_parameter(u'a')
 
         code = JsCode(symbol_map)
-        code.parameters = [u'a']
         code.emit('LOAD_VARIABLE', var_idx, u'a')
         code.emit('RETURN')
 

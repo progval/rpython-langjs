@@ -320,7 +320,8 @@ class ASTBuilder(RPythonVisitor):
         pos = self.get_pos(node)
         body = self.dispatch(node.children[0])
         scope = self.current_scope()
-        return operations.Program(pos, body, scope)
+        final_scope = scope.finalize()
+        return operations.Program(pos, body, final_scope)
 
     def visit_variablestatement(self, node):
         pos = self.get_pos(node)
@@ -362,6 +363,7 @@ class ASTBuilder(RPythonVisitor):
             funcname = u''
 
         scope = self.current_scope()
+        final_scope = scope.finalize()
 
         self.exit_scope()
 
@@ -371,7 +373,7 @@ class ASTBuilder(RPythonVisitor):
             #assert isinstance(f, unicode)
             funcindex = self.declare_symbol(f)
 
-        funcobj = operations.FunctionStatement(pos, funcname, funcindex, functionbody, scope)
+        funcobj = operations.FunctionStatement(pos, funcname, funcindex, functionbody, final_scope)
 
         if declaration:
             self.declare_function(funcname, funcobj)

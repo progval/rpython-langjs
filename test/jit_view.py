@@ -126,6 +126,25 @@ class TestJtTrace(LLJitMixin):
         code = """
         (function () {
             var i = 0;
+            function g(b) {
+                return b + 1;
+            }
+            function f(a) {
+                return g(a);
+            }
+            while(i < 100) {
+                i = f(i);
+            }
+            return i;
+        })();
+        """
+
+        self.run(code, 100)
+
+    def test_double_nested_func_call_in_loop(self):
+        code = """
+        (function () {
+            var i = 0;
             function f(a) {
                 function g(b) {
                     return b + 1;

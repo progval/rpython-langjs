@@ -28,7 +28,7 @@ class AlreadyRun(Exception):
     pass
 
 from js.symbol_map import SymbolMap
-empty_symbols = SymbolMap()
+empty_symbols = SymbolMap().finalize()
 
 
 class JsCode(object):
@@ -60,9 +60,8 @@ class JsCode(object):
     def symbols(self):
         return self._symbols.get_symbols()
 
-    @jit.unroll_safe
     def params(self):
-        return [p for p in self.parameters]
+        return self._symbols.parameters
 
     @jit.elidable
     def estimated_stack_size(self):
