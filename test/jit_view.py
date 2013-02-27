@@ -286,3 +286,87 @@ class TestJtTrace(LLJitMixin):
         """
 
         self.run(code, 'aaaaaaaaaa')
+
+    def test_array_fill(self):
+        code = """
+        (function () {
+            var i = 0;
+            var j = [];
+            while(i < 10) {
+                j[i] = i;
+                i += 1;
+            }
+            return j;
+        })();
+        """
+
+        self.run(code, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+    def test_array_fill_2x(self):
+        code = """
+        (function () {
+            var i = 0;
+            var j = [];
+            while(i < 10) {
+                j[i] = null;
+                i += 1;
+            }
+            i = 0;
+            while(i < 10) {
+                j[i] = i;
+                i += 1;
+            }
+            return j;
+        })();
+        """
+
+        self.run(code, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+    def test_array_sum(self):
+        code = """
+        (function () {
+            var i = 0;
+            var j = [];
+            while(i < 10) {
+                j[i] = i;
+                i += 1;
+            }
+            i = 0;
+            var k = 0;
+            while(i < j.length) {
+                k += j[i];
+                i += 1;
+            }
+            return k;
+        })();
+        """
+
+        self.run(code, 45)
+
+    def test_array_fill_2x_sum(self):
+        code = """
+        (function () {
+            var i = 0;
+            var j = [];
+            while(i < 10) {
+                j[i] = null;
+                i += 1;
+            }
+
+            i = 0;
+            while(i < 10) {
+                j[i] = i;
+                i += 1;
+            }
+
+            i = 0;
+            var k = 0;
+            while(i < j.length) {
+                k += j[i];
+                i += 1;
+            }
+            return k;
+        })();
+        """
+
+        self.run(code, 45)
