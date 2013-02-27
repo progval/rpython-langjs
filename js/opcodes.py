@@ -255,8 +255,9 @@ class LOAD_MEMBER(Opcode):
 
     def eval(self, ctx):
         w_obj = ctx.stack_pop().ToObject()
-        name = ctx.stack_pop().to_string()
-        value = w_obj.get(name)
+        w_name = ctx.stack_pop()
+        value = w_obj.w_get(w_name)
+
         ctx.stack_append(value)
 
     def __str__(self):
@@ -502,14 +503,12 @@ class STORE_MEMBER(Opcode):
 
     def eval(self, ctx):
         left = ctx.stack_pop()
-        member = ctx.stack_pop()
-        name = member.to_string()
-        #assert isinstance(name, unicode)
+        w_name = ctx.stack_pop()
 
         value = ctx.stack_pop()
 
         l_obj = left.ToObject()
-        l_obj.put(name, value)
+        l_obj.w_put(w_name, value)
 
         ctx.stack_append(value)
 
