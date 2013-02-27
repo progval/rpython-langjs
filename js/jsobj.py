@@ -18,6 +18,14 @@ def is_array_index(p):
 NOT_ARRAY_INDEX = -1
 
 
+class Descr(object):
+    def __init__(self, can_put, own, inherited, prop):
+        self.can_put = can_put
+        self.own = own
+        self.inherited = inherited
+        self.prop = prop
+
+
 def _get_from_desc(desc, this):
     from js.object_space import newundefined
     if desc is None:
@@ -1393,46 +1401,64 @@ class W__Array(W_BasicObject):
         if isinstance(w_p, W_IntNumber):
             idx = w_p.ToInteger()
             if idx >= 0:
-                if not self._can_idx_put(idx):
-                    if throw:
-                        raise JsTypeError(u"can't put %s" % (str(idx), ))
-                    else:
-                        return
+                self._idx_put(idx, v, throw)
+                return
 
-                own_desc = self._get_own_idx_property(idx)
-                if is_data_descriptor(own_desc) is True:
-                    value_desc = PropertyDescriptor(value=v)
-                    self._define_own_idx_property(idx, value_desc, throw)
-                    return
+        W_BasicObject.w_put(self, w_p, v, throw)
 
-                desc = self._get_idx_property(idx)
-                if is_accessor_descriptor(desc) is True:
-                    setter = desc.setter
-                    assert setter is not None
-                    setter.Call(this=self, args=[v])
+    def _idx_put(self, idx, v, throw):
+        d = self._can_idx_put(idx)
+        can_put = d.can_put
+        own_desc = d.own
+        inherited_desc = d.inherited
+        prop = d.prop
 
-                else:
-                    new_desc = DataPropertyDescriptor(v, True, True, True)
-                    self._define_own_idx_property(idx, new_desc, throw)
+        if not can_put:
+            if throw:
+                raise JsTypeError(u"can't put %s" % (str(idx), ))
+            else:
+                return
 
+        if is_data_descriptor(own_desc):
+            value_desc = PropertyDescriptor(value=v)
+            self._define_own_idx_property(idx, value_desc, throw, own_desc, prop)
+            return
+
+        if own_desc is None:
+            desc = inherited_desc
         else:
-            W_BasicObject.w_put(self, w_p, v, throw)
+            desc = own_desc
+
+        if is_accessor_descriptor(desc):
+            setter = desc.setter
+            assert setter is not None
+            setter.Call(this=self, args=[v])
+        else:
+            new_desc = DataPropertyDescriptor(v, True, True, True)
+            self._define_own_idx_property(idx, new_desc, throw)
 
     def _can_idx_put(self, idx):
         from js.object_space import isundefined, isnull_or_undefined
-        desc = self._get_own_idx_property(idx)
+        prop = self._get_iprop(idx)
+
+        if prop is None:
+            desc = None
+        else:
+            desc = prop.to_property_descriptor()
+
+        #desc = self._get_own_idx_property(idx)
         if desc is not None:
             if is_accessor_descriptor(desc) is True:
                 if isundefined(desc.setter):
-                    return False
+                    return Descr(False, desc, None, prop)
                 else:
-                    return True
-            return desc.writable
+                    return Descr(True, desc, None, prop)
+            return Descr(desc.writable, desc, None, prop)
 
         proto = self.prototype()
 
         if isnull_or_undefined(proto):
-            return self.extensible()
+            return Descr(self.extensible(), None, None, prop)
 
         assert isinstance(proto, W_BasicObject)
 
@@ -1443,20 +1469,20 @@ class W__Array(W_BasicObject):
             inherited = proto.get_property(p)
 
         if inherited is None:
-            return self.extensible()
+            return Descr(self.extensible(), None, None, prop)
 
         if is_accessor_descriptor(inherited) is True:
             if isundefined(inherited.setter):
-                return False
+                return Descr(False, None, inherited, prop)
             else:
-                return True
+                return Descr(True, None, inherited, prop)
         else:
             if self.extensible() is False:
-                return False
+                return Descr(False, None, inherited, prop)
             else:
-                return inherited.writable
+                return Descr(inherited.writable, None, inherited, prop)
 
-    def _define_own_idx_property(self, idx, desc, throw=False):
+    def _define_own_idx_property(self, idx, desc, throw=False, current_desc=None, prop=None):
         from js.object_space import _w
         old_len_desc = self.get_own_property(u'length')
         assert old_len_desc is not None
@@ -1469,7 +1495,7 @@ class W__Array(W_BasicObject):
             return _ireject(throw, idx)
 
         # c
-        succeeded = self._define_own_int_property(idx, desc, False)
+        succeeded = self._define_own_int_property(idx, desc, False, current_desc, prop)
         # d
         if succeeded is False:
             return _ireject(throw, idx)
@@ -1482,8 +1508,8 @@ class W__Array(W_BasicObject):
         # f
         return True
 
-    def _define_own_int_property(self, idx, desc, throw=False):
-        current = self._get_own_idx_property(idx)
+    def _define_own_int_property(self, idx, desc, throw, current_desc, prop):
+        current = current_desc
         extensible = self.extensible()
 
         # 3.
@@ -1568,7 +1594,6 @@ class W__Array(W_BasicObject):
                 if desc.has_set_getter() and desc.getter != current.getter:
                     return _ireject(throw, idx)
         # 12
-        prop = self._get_iprop(idx)
         prop.update_with_descriptor(desc)
 
         # 13
