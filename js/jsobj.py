@@ -1015,13 +1015,13 @@ class W_ArrayConstructor(W_BasicFunction):
             else:
                 length = 1
                 array = object_space.new_array(_w(length))
-                array.put(u'0', _len)
+                array._idx_put(0, _len, False)
 
             return array
         else:
             array = object_space.new_array()
             for index, obj in enumerate(args):
-                array.put(unicode(str(index)), obj)
+                array._idx_put(index, obj, False)
             return array
 
     def Construct(self, args=[]):
