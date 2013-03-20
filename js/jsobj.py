@@ -956,6 +956,7 @@ class W_Arguments(W__Object):
         from js.object_space import object_space
         _map = object_space.new_obj()
         mapped_names = new_map()
+        jit.promote(_len)
         indx = _len - 1
         while indx >= 0:
             val = args[indx]
