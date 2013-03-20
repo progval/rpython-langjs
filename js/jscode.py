@@ -10,7 +10,10 @@ from js.jsobj import W_String
 def get_printable_location(pc, debug, jscode):
     if pc < jscode._opcode_count():
         opcode = jscode._get_opcode(pc)
-        return '%d: %s' % (pc, str(opcode))
+        if jscode._function_name_ is not None:
+            return '%d: %s function: %s' % (pc, str(opcode), str(jscode._function_name_))
+        else:
+            return '%d: %s' % (pc, str(opcode))
     else:
         return '%d: %s' % (pc, 'end of opcodes')
 
@@ -47,6 +50,7 @@ class JsCode(object):
         self._estimated_stack_size = -1
         self._symbols = symbol_map
         self.parameters = symbol_map.parameters[:]
+        self._function_name_ = None
 
     def variables(self):
         return self._symbols.variables

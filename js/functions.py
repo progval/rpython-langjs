@@ -160,6 +160,7 @@ class JsFunction(JsExecutableCode):
     def __init__(self, name, js_code):
         assert isinstance(name, unicode)
         JsExecutableCode.__init__(self, js_code)
+        js_code._function_name_ = name
         self._name_ = name
 
     def name(self):
