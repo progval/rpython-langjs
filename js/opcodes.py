@@ -264,6 +264,11 @@ class LOAD_MEMBER(Opcode):
         return 'LOAD_MEMBER'
 
 
+class LOAD_MEMBER_DOT(LOAD_MEMBER):
+    def __str__(self):
+        return 'LOAD_MEMBER_DOT'
+
+
 class COMMA(BaseUnaryOperation):
     def eval(self, ctx):
         one = ctx.stack_pop()

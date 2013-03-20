@@ -337,7 +337,7 @@ class MemberDot(Expression):
     def emit(self, bytecode):
         bytecode.emit_str(self.name)
         self.left.emit(bytecode)
-        bytecode.emit('LOAD_MEMBER')
+        bytecode.emit('LOAD_MEMBER_DOT')
 
 
 class FunctionStatement(Statement):
