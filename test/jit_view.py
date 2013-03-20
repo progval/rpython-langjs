@@ -48,6 +48,20 @@ class TestJtTrace(LLJitMixin):
 
         self.run(code, 100)
 
+    def test_float_loop(self):
+        code = """
+        function f() {
+            var i = 0;
+            while(i < 100) {
+                i += 0.1;
+            }
+            return i;
+        }
+        return f();
+        """
+
+        self.run(code, 100)
+
     def test_prop_loop_in_func(self):
         code = """
         function f() {
