@@ -1,7 +1,7 @@
 from rpython.rlib.rarithmetic import intmask
 from rpython.rlib import jit
 
-from js.object_space import _w
+from js.object_space import _w, isint
 from js.exception import JsTypeError
 from js.baseop import plus, sub, compare, AbstractEC, StrictEC,\
     compare_e, increment, decrement, mult, division, uminus, mod
@@ -328,7 +328,7 @@ class TYPEOF_VARIABLE(Opcode):
 
 class ADD(BaseBinaryOperation):
     def operation(self, ctx, left, right):
-        return plus(ctx, left, right)
+        return plus(left, right)
 
 
 class BITAND(BaseBinaryBitwiseOp):
@@ -424,8 +424,14 @@ class MOD(BaseBinaryOperation):
 class UPLUS(BaseUnaryOperation):
     def eval(self, ctx):
         expr = ctx.stack_pop()
-        num = expr.ToNumber()
-        res = _w(num)
+        res = None
+
+        if isint(expr):
+            res = expr
+        else:
+            num = expr.ToNumber()
+            res = _w(num)
+
         ctx.stack_append(res)
 
 
@@ -445,15 +451,21 @@ class NOT(BaseUnaryOperation):
 class INCR(BaseUnaryOperation):
     def eval(self, ctx):
         value = ctx.stack_pop()
-        num = _w(value.ToNumber())
-        newvalue = increment(ctx, num)
+        if isint(value):
+            num = value
+        else:
+            num = _w(value.ToNumber())
+        newvalue = increment(num)
         ctx.stack_append(newvalue)
 
 
 class DECR(BaseUnaryOperation):
     def eval(self, ctx):
         value = ctx.stack_pop()
-        num = _w(value.ToNumber())
+        if isint(value):
+            num = value
+        else:
+            num = _w(value.ToNumber())
         newvalue = decrement(ctx, num)
         ctx.stack_append(newvalue)
 

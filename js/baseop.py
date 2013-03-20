@@ -3,7 +3,7 @@
 """
 
 from js.jsobj import W_String, W_IntNumber, W_FloatNumber
-from js.object_space import _w
+from js.object_space import _w, isint
 
 from rpython.rlib.rarithmetic import ovfcheck
 from rpython.rlib.rfloat import isnan, isinf
@@ -13,7 +13,7 @@ import math
 
 
 # 11.6.1, 11.6.3
-def plus(ctx, lval, rval):
+def plus(lval, rval):
     lprim = lval.ToPrimitive()
     rprim = rval.ToPrimitive()
 
@@ -22,7 +22,7 @@ def plus(ctx, lval, rval):
         sright = rprim.to_string()
         return W_String(sleft + sright)
     # hot path
-    if isinstance(lprim, W_IntNumber) and isinstance(rprim, W_IntNumber):
+    if isint(lprim) and isint(rprim):
         ileft = lprim.ToInteger()
         iright = rprim.ToInteger()
         try:
@@ -35,11 +35,11 @@ def plus(ctx, lval, rval):
         return W_FloatNumber(fleft + fright)
 
 
-def increment(ctx, nleft, constval=1):
-    if isinstance(nleft, W_IntNumber):
+def increment(nleft, constval=1):
+    if isint(nleft):
         return W_IntNumber(nleft.ToInteger() + constval)
     else:
-        return plus(ctx, nleft, W_IntNumber(constval))
+        return plus(nleft, W_IntNumber(constval))
 
 
 def decrement(ctx, nleft, constval=1):
@@ -50,7 +50,7 @@ def decrement(ctx, nleft, constval=1):
 
 
 def sub(ctx, nleft, nright):
-    if isinstance(nleft, W_IntNumber) and isinstance(nright, W_IntNumber):
+    if isint(nleft) and isint(nright):
         # XXX fff
         ileft = nleft.ToInt32()
         iright = nright.ToInt32()
@@ -64,7 +64,7 @@ def sub(ctx, nleft, nright):
 
 
 def mult(ctx, nleft, nright):
-    if isinstance(nleft, W_IntNumber) and isinstance(nright, W_IntNumber):
+    if isint(nleft) and isint(nright):
         # XXXX test & stuff
         ileft = nleft.ToInteger()
         iright = nright.ToInteger()
@@ -115,7 +115,6 @@ def w_signed_inf(sign):
 
 # 11.5.2
 def division(ctx, nleft, nright):
-
     fleft = nleft.ToNumber()
     fright = nright.ToNumber()
     if isnan(fleft) or isnan(fright):
@@ -143,7 +142,7 @@ def division(ctx, nleft, nright):
 
 
 def compare(ctx, x, y):
-    if isinstance(x, W_IntNumber) and isinstance(y, W_IntNumber):
+    if isint(x) and isint(y):
         return x.ToInteger() > y.ToInteger()
     if isinstance(x, W_FloatNumber) and isinstance(y, W_FloatNumber):
         if isnan(x.ToNumber()) or isnan(y.ToNumber()):
@@ -164,7 +163,7 @@ def compare(ctx, x, y):
 
 
 def compare_e(ctx, x, y):
-    if isinstance(x, W_IntNumber) and isinstance(y, W_IntNumber):
+    if isint(x) and isint(y):
         return x.ToInteger() >= y.ToInteger()
     if isinstance(x, W_FloatNumber) and isinstance(y, W_FloatNumber):
         if isnan(x.ToNumber()) or isnan(y.ToNumber()):
@@ -190,7 +189,7 @@ def AbstractEC(ctx, x, y):
     Implements the Abstract Equality Comparison x == y
     trying to be fully to the spec
     """
-    if isinstance(x, W_IntNumber) and isinstance(y, W_IntNumber):
+    if isint(x) and isint(y):
         return x.ToInteger() == y.ToInteger()
     if isinstance(x, W_FloatNumber) and isinstance(y, W_FloatNumber):
         if isnan(x.ToNumber()) or isnan(y.ToNumber()):
@@ -275,7 +274,7 @@ def StrictEC(x, y):
 
 
 def uminus(obj, ctx):
-    if isinstance(obj, W_IntNumber):
+    if isint(obj):
         intval = obj.ToInteger()
         if intval == 0:
             return W_FloatNumber(-float(intval))

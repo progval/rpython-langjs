@@ -2,6 +2,11 @@ from rpython.rlib.objectmodel import specialize, enforceargs
 from rpython.rlib import jit
 
 
+def isint(w):
+    from js.jsobj import W_IntNumber
+    return isinstance(w, W_IntNumber)
+
+
 @enforceargs(int)
 def newint(i):
     from js.jsobj import W_IntNumber
