@@ -329,9 +329,21 @@ def inspect(this, args):
     pass
 
 
+def _make_version_string():
+    import subprocess
+    import time
+
+    repo_id = subprocess.check_output('hg id -i'.split()).strip()
+    current_time = time.asctime(time.gmtime())
+
+    return '1.0; Build: %s; %s' % (repo_id, current_time)
+
+_version_string = _make_version_string()
+
+
 @w_return
 def version(this, args):
-    return '1.0'
+    return _version_string
 
 
 # 15.1.2.1
