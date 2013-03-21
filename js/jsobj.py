@@ -1187,6 +1187,7 @@ MASK_16 = (2 ** 16) - 1
 
 
 @enforceargs(int)
+@jit.elidable
 def int32(n):
     if n & (1 << (32 - 1)):
         res = n | ~MASK_32
@@ -1197,11 +1198,13 @@ def int32(n):
 
 
 @enforceargs(int)
+@jit.elidable
 def uint32(n):
     return n & MASK_32
 
 
 @enforceargs(int)
+@jit.elidable
 def uint16(n):
     return n & MASK_16
 
