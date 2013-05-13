@@ -40,8 +40,6 @@ def setup(global_object):
     # 15.4.4.11
     put_native_function(w_ArrayPrototype, u'sort', sort)
 
-    put_native_function(w_ArrayPrototype, u'forEach', for_each)
-
 
 # 15.4.4.7
 @w_return
@@ -164,17 +162,10 @@ def reverse(this, args):
         lower = lower + 1
 
 
-@w_return
-def for_each(this):
-    obj = this
-    length = this.get(u'length').ToUInt32()
-    return this
-
-
 # 15.4.4.11
 @w_return
 def sort(this, args):
-    obj = this.ToObject()
+    obj = this
     length = this.get(u'length').ToUInt32()
 
     comparefn = get_arg(args, 0)
