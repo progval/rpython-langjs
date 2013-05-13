@@ -3,10 +3,12 @@
 """
 
 from js.jsobj import W_String, W_IntNumber, W_FloatNumber
-from js.object_space import _w, isint
+from js.object_space import _w, isint, isstr, isfloat
 
 from rpython.rlib.rarithmetic import ovfcheck
 from rpython.rlib.rfloat import isnan, isinf
+from rpython.rlib.objectmodel import specialize
+
 from js.builtins.number import w_NAN, w_POSITIVE_INFINITY, w_NEGATIVE_INFINITY
 
 import math
@@ -141,50 +143,56 @@ def division(ctx, nleft, nright):
     return W_FloatNumber(val)
 
 
-def compare(ctx, x, y):
-    if isint(x) and isint(y):
-        return x.ToInteger() > y.ToInteger()
-    if isinstance(x, W_FloatNumber) and isinstance(y, W_FloatNumber):
-        if isnan(x.ToNumber()) or isnan(y.ToNumber()):
-            return -1
-        return x.ToNumber() > y.ToNumber()
-    s1 = x.ToPrimitive('Number')
-    s2 = y.ToPrimitive('Number')
-    if not (isinstance(s1, W_String) and isinstance(s2, W_String)):
-        s4 = s1.ToNumber()
-        s5 = s2.ToNumber()
-        if isnan(s4) or isnan(s5):
-            return False
-        return s4 > s5
-    else:
-        s4 = s1.to_string()
-        s5 = s2.to_string()
-        return s4 > s5
+@specialize.argtype(0, 1)
+def _compare_gt(x, y):
+    return x > y
 
 
-def compare_e(ctx, x, y):
+@specialize.argtype(0, 1)
+def _compare_ge(x, y):
+    return x >= y
+
+
+def _base_compare(x, y, _compare):
     if isint(x) and isint(y):
-        return x.ToInteger() >= y.ToInteger()
-    if isinstance(x, W_FloatNumber) and isinstance(y, W_FloatNumber):
-        if isnan(x.ToNumber()) or isnan(y.ToNumber()):
-            return -1
-        return x.ToNumber() >= y.ToNumber()
-    s1 = x.ToPrimitive('Number')
-    s2 = y.ToPrimitive('Number')
-    if not (isinstance(s1, W_String) and isinstance(s2, W_String)):
-        s4 = s1.ToNumber()
-        s5 = s2.ToNumber()
-        if isnan(s4) or isnan(s5):
-            return False
-        return s4 >= s5
+        return _compare(x.ToInteger(), y.ToInteger())
+
+    if isfloat(x) and isfloat(y):
+        n1 = x.ToNumber()
+        n2 = x.ToNumber()
+        return _compare(n1, n2)
+
+    p1 = x.ToPrimitive('Number')
+    p2 = y.ToPrimitive('Number')
+
+    if not (isstr(p1) and isstr(p2)):
+        n1 = p1.ToNumber()
+        n2 = p2.ToNumber()
+        return _compare(n1, n2)
     else:
-        s4 = s1.to_string()
-        s5 = s2.to_string()
-        return s4 >= s5
+        s1 = p1.to_string()
+        s2 = p2.to_string()
+        return _compare(s1, s2)
+
+
+def compare_gt(x, y):
+    return _base_compare(x, y, _compare_gt)
+
+
+def compare_ge(x, y):
+    return _base_compare(x, y, _compare_ge)
+
+
+def compare_lt(x, y):
+    return _base_compare(y, x, _compare_gt)
+
+
+def compare_le(x, y):
+    return _base_compare(y, x, _compare_ge)
 
 
 # 11.9.3
-def AbstractEC(ctx, x, y):
+def AbstractEC(x, y):
     """
     Implements the Abstract Equality Comparison x == y
     trying to be fully to the spec
@@ -220,19 +228,19 @@ def AbstractEC(ctx, x, y):
                 (type1 == "null" and type2 == "undefined"):
             return True
         if type1 == "number" and type2 == "string":
-            return AbstractEC(ctx, x, W_FloatNumber(y.ToNumber()))
+            return AbstractEC(x, W_FloatNumber(y.ToNumber()))
         if type1 == "string" and type2 == "number":
-            return AbstractEC(ctx, W_FloatNumber(x.ToNumber()), y)
+            return AbstractEC(W_FloatNumber(x.ToNumber()), y)
         if type1 == "boolean":
-            return AbstractEC(ctx, W_FloatNumber(x.ToNumber()), y)
+            return AbstractEC(W_FloatNumber(x.ToNumber()), y)
         if type2 == "boolean":
-            return AbstractEC(ctx, x, W_FloatNumber(y.ToNumber()))
+            return AbstractEC(x, W_FloatNumber(y.ToNumber()))
         if (type1 == "string" or type1 == "number") and \
                 type2 == "object":
-            return AbstractEC(ctx, x, y.ToPrimitive())
+            return AbstractEC(x, y.ToPrimitive())
         if (type2 == "string" or type2 == "number") and \
                 type1 == "object":
-            return AbstractEC(ctx, x.ToPrimitive(), y)
+            return AbstractEC(x.ToPrimitive(), y)
         return False
 
     objtype = x.GetValue().type()

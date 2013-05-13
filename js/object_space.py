@@ -7,6 +7,16 @@ def isint(w):
     return isinstance(w, W_IntNumber)
 
 
+def isstr(w):
+    from js.jsobj import W_String
+    return isinstance(w, W_String)
+
+
+def isfloat(w):
+    from js.jsobj import W_FloatNumber
+    return isinstance(w, W_FloatNumber)
+
+
 @enforceargs(int)
 def newint(i):
     from js.jsobj import W_IntNumber
@@ -79,7 +89,7 @@ def isnull_or_undefined(obj):
 
 @enforceargs(bool)
 def newbool(val):
-    if val is True:
+    if val:
         return w_True
     return w_False
 

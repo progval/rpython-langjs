@@ -3,8 +3,7 @@ from rpython.rlib import jit
 
 from js.object_space import _w, isint
 from js.exception import JsTypeError
-from js.baseop import plus, sub, compare, AbstractEC, StrictEC,\
-    compare_e, increment, decrement, mult, division, uminus, mod
+from js.baseop import plus, sub, AbstractEC, StrictEC, increment, decrement, mult, division, uminus, mod
 from js.jsobj import put_property
 
 
@@ -35,12 +34,10 @@ class BaseBinaryComparison(Opcode):
         from js.object_space import newbool
         s4 = ctx.stack_pop()
         s2 = ctx.stack_pop()
-        res = self.decision(ctx, s2, s4)
-        # XXX mimik behaviour of old newbool
-        res_true = res is True
-        ctx.stack_append(newbool(res_true))
+        res = self.decision(s2, s4)
+        ctx.stack_append(newbool(res))
 
-    def decision(self, ctx, op1, op2):
+    def decision(self, op1, op2):
         raise NotImplementedError
 
 
@@ -369,16 +366,17 @@ class URSH(BaseBinaryBitwiseOp):
         rnum = rval.ToUInt32()
         lnum = lval.ToUInt32()
 
-        from rpython.rlib.rarithmetic import ovfcheck_float_to_int
+        #from rpython.rlib.rarithmetic import ovfcheck_float_to_int
 
         shift_count = rnum & 0x1F
         res = lnum >> shift_count
+        w_res = _w(res)
 
-        try:
-            ovfcheck_float_to_int(res)
-            w_res = _w(res)
-        except OverflowError:
-            w_res = _w(float(res))
+        #try:
+            #ovfcheck_float_to_int(res)
+            #w_res = _w(res)
+        #except OverflowError:
+            #w_res = _w(float(res))
 
         ctx.stack_append(w_res)
 
@@ -476,42 +474,50 @@ class DECR(BaseUnaryOperation):
 
 
 class GT(BaseBinaryComparison):
-    def decision(self, ctx, op1, op2):
-        return compare(ctx, op1, op2)
+    def decision(self, op1, op2):
+        from js.baseop import compare_gt
+        res = compare_gt(op1, op2)
+        return res
 
 
 class GE(BaseBinaryComparison):
-    def decision(self, ctx, op1, op2):
-        return compare_e(ctx, op1, op2)
+    def decision(self, op1, op2):
+        from js.baseop import compare_ge
+        res = compare_ge(op1, op2)
+        return res
 
 
 class LT(BaseBinaryComparison):
-    def decision(self, ctx, op1, op2):
-        return compare(ctx, op2, op1)
+    def decision(self, op1, op2):
+        from js.baseop import compare_lt
+        res = compare_lt(op1, op2)
+        return res
 
 
 class LE(BaseBinaryComparison):
-    def decision(self, ctx, op1, op2):
-        return compare_e(ctx, op2, op1)
+    def decision(self, op1, op2):
+        from js.baseop import compare_le
+        res = compare_le(op1, op2)
+        return res
 
 
 class EQ(BaseBinaryComparison):
-    def decision(self, ctx, op1, op2):
-        return AbstractEC(ctx, op1, op2)
+    def decision(self, op1, op2):
+        return AbstractEC(op1, op2)
 
 
 class NE(BaseBinaryComparison):
-    def decision(self, ctx, op1, op2):
-        return not AbstractEC(ctx, op1, op2)
+    def decision(self, op1, op2):
+        return not AbstractEC(op1, op2)
 
 
 class IS(BaseBinaryComparison):
-    def decision(self, ctx, op1, op2):
+    def decision(self, op1, op2):
         return StrictEC(op1, op2)
 
 
 class ISNOT(BaseBinaryComparison):
-    def decision(self, ctx, op1, op2):
+    def decision(self, op1, op2):
         return not StrictEC(op1, op2)
 
 
