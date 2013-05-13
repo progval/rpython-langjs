@@ -1,6 +1,12 @@
 from test.test_interp import assertv, assertp
 
 
+def test_sort(capsys):
+    assertp("var x = [5,2]; print(x.sort());", '2,5', capsys)
+    assertp("var x = [1,2,3]; print(x.sort());", '1,2,3', capsys)
+    assertp("var x = [4,3,2,1]; print(x.sort());", '1,2,3,4', capsys)
+
+
 def test_array_push(capsys):
     assertv("var x = []; x.push(42); x.length;", 1)
     assertv("var x = []; x.push(42); x[0];", 42)

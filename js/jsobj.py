@@ -324,7 +324,7 @@ class W_BasicObject(W_Root):
 
         own_desc = self.get_own_property(p)
         if is_data_descriptor(own_desc) is True:
-            value_desc = PropertyDescriptor(value=v)
+            value_desc = PropertyDescriptor(value=v, writable=True)
             self.define_own_property(p, value_desc, throw)
             return
 

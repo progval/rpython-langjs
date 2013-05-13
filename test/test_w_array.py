@@ -3,6 +3,14 @@ from js.property import DataProperty
 from js.object_space import _w
 
 
+def test_array_put_change_index():
+    a = W__Array()
+    a.put(u'0', 42)
+    assert a.get(u'0') == 42
+    a.put(u'0', 43)
+    assert a.get(u'0') == 43
+
+
 def test_array_get():
     a = W__Array()
     a._set_prop(u'23', DataProperty(42, True, True, True))
