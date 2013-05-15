@@ -1,6 +1,18 @@
 from test.test_interp import assertv, assertp
 
 
+def test_array_index_of(capsys):
+    assertp("var a = [1,2,3]; print(a.indexOf(1));", "0", capsys)
+    assertp("var a = [1,2,3]; print(a.indexOf(3));", "2", capsys)
+    assertp("var a = [1,2,3]; print(a.indexOf(5));", "-1", capsys)
+    assertp("var a = [1,2,3,1]; print(a.indexOf(1,2));", "3", capsys)
+    assertp("var a = [1,2,3,1]; print(a.indexOf(1,5));", "-1", capsys)
+
+
+def test_array_foreach(capsys):
+    assertp("var a = [1,2,3]; var b = []; a.forEach(function(v){b.push(v*2)}); print(b);", "2,4,6", capsys)
+
+
 def test_sort(capsys):
     assertp("var x = [5,2]; print(x.sort());", '2,5', capsys)
     assertp("var x = [1,2,3]; print(x.sort());", '1,2,3', capsys)

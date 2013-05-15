@@ -40,6 +40,10 @@ def setup(global_object):
     # 15.4.4.11
     put_native_function(w_ArrayPrototype, u'sort', sort)
 
+    put_native_function(w_ArrayPrototype, u'forEach', for_each)
+
+    put_native_function(w_ArrayPrototype, u'indexOf', index_of)
+
 
 # 15.4.4.7
 @w_return
@@ -160,6 +164,34 @@ def reverse(this, args):
             o.put(upper_p, lower_value)
 
         lower = lower + 1
+
+
+@w_return
+def index_of(this, args):
+    obj = this
+    length = this.get(u'length').ToUInt32()
+    elem = get_arg(args, 0)
+    from_index = get_arg(args, 1).ToUInt32()
+
+    from js.jsobj import W_IntNumber
+    for i in xrange(from_index, length):
+        y = obj.get(unicode(i))
+        if elem == y:
+            return W_IntNumber(i)
+    return W_IntNumber(-1)
+
+
+def for_each(this, args):
+    obj = this
+    length = this.get(u'length').ToUInt32()
+
+    callback = get_arg(args, 0)
+    from js.jsobj import W_BasicFunction
+    assert isinstance(callback, W_BasicFunction)
+
+    for i in xrange(length):
+        x = obj.get(unicode(str(i)))
+        callback.Call(args=[x], this=newundefined())
 
 
 # 15.4.4.11
