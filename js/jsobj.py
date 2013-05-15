@@ -1484,6 +1484,9 @@ class W__Array(W_BasicObject):
                 return Descr(inherited.writable, None, inherited, prop)
 
     def _define_own_idx_property(self, idx, desc, throw=False, current_desc=None, prop=None):
+        if current_desc is None:
+            current_desc = self._get_idx_property(idx)
+
         from js.object_space import _w
         old_len_desc = self.get_own_property(u'length')
         assert old_len_desc is not None
@@ -1595,6 +1598,7 @@ class W__Array(W_BasicObject):
                 if desc.has_set_getter() and desc.getter != current.getter:
                     return _ireject(throw, idx)
         # 12
+        prop = self._get_iprop(idx)
         prop.update_with_descriptor(desc)
 
         # 13
@@ -1612,12 +1616,13 @@ class W__Array(W_BasicObject):
     # 15.4.5.1
     def define_own_property(self, p, desc, throw=False):
         from js.object_space import _w
-        old_len_desc = self.get_own_property(u'length')
-        assert old_len_desc is not None
-        old_len = old_len_desc.value.ToUInt32()
 
         # 3
         if p == u'length':
+            old_len_desc = self.get_own_property(u'length')
+            assert old_len_desc is not None
+            old_len = old_len_desc.value.ToUInt32()
+
             if desc.has_set_value() is False:
                 return W_BasicObject.define_own_property(self, u'length', desc, throw)
             new_len_desc = desc.copy()
