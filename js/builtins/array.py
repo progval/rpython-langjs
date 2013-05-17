@@ -44,6 +44,8 @@ def setup(global_object):
 
     put_native_function(w_ArrayPrototype, u'indexOf', index_of)
 
+    put_native_function(w_ArrayPrototype, u'lastIndexOf', last_index_of)
+
 
 # 15.4.4.7
 @w_return
@@ -164,6 +166,28 @@ def reverse(this, args):
             o.put(upper_p, lower_value)
 
         lower = lower + 1
+
+
+@w_return
+def last_index_of(this, args):
+    obj = this
+    elem = get_arg(args, 0)
+    length = this.get(u'length').ToUInt32()
+    from_index = length
+
+    if len(args) > 1:
+        findex = get_arg(args, 1).ToInt32()
+        if findex < 0:
+            from_index = length + findex
+        else:
+            from_index = findex
+
+    from js.jsobj import W_IntNumber
+    for i in xrange(from_index, -1, -1):
+        y = obj.get(unicode(i))
+        if elem == y:
+            return W_IntNumber(i)
+    return W_IntNumber(-1)
 
 
 @w_return
