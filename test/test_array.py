@@ -1,7 +1,7 @@
 from test.test_interp import assertv, assertp
 
 
-def test_arrya_last_index_of(capsys):
+def test_array_last_index_of(capsys):
     assertp("var a = [2, 5, 9, 2]; print(a.lastIndexOf(2));", "3", capsys)
     assertp("var a = [2, 5, 9, 2]; print(a.lastIndexOf(7));", "-1", capsys)
     assertp("var a = [2, 5, 9, 2]; print(a.lastIndexOf(2, 3));", "3", capsys)
