@@ -59,10 +59,8 @@ def slice(this, args):
 
     n = []
 
-    i = 0
     for k in xrange(from_index, to_index):
         n.append(o.get(unicode(str(k))))
-        i += 1
 
     return _w(n)
 
