@@ -1,6 +1,10 @@
 from test.test_interp import assertv, assertp
 
 
+def test_array_slice(capsys):
+    assertp("var a = [2, 5, 9, 2]; print(a.slice(1,3));", "5,9", capsys)
+
+
 def test_array_shift(capsys):
     assertp("var a = [2, 5, 9, 2]; print(a.shift());", "2", capsys)
     assertp("var a = [2, 5, 9, 2]; a.shift(); print(a);", "5,9,2", capsys)

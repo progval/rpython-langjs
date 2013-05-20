@@ -48,6 +48,24 @@ def setup(global_object):
 
     put_native_function(w_ArrayPrototype, u'shift', shift)
 
+    put_native_function(w_ArrayPrototype, u'slice', slice)
+
+
+@w_return
+def slice(this, args):
+    o = this.ToObject()
+    from_index = get_arg(args, 0).ToUInt32()
+    to_index = get_arg(args, 1).ToUInt32()
+
+    n = []
+
+    i = 0
+    for k in xrange(from_index, to_index):
+        n.append(o.get(unicode(str(k))))
+        i += 1
+
+    return _w(n)
+
 
 # 15.4.4.7
 @w_return
