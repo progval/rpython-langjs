@@ -1,6 +1,12 @@
 from test.test_interp import assertv, assertp
 
 
+def test_array_shift(capsys):
+    assertp("var a = [2, 5, 9, 2]; print(a.shift());", "2", capsys)
+    assertp("var a = [2, 5, 9, 2]; a.shift(); print(a);", "5,9,2", capsys)
+    assertp("var a = [2, 5, 9, 2]; a.shift(); print(a.length);", "3", capsys)
+
+
 def test_array_last_index_of(capsys):
     assertp("var a = [2, 5, 9, 2]; print(a.lastIndexOf(2));", "3", capsys)
     assertp("var a = [2, 5, 9, 2]; print(a.lastIndexOf(7));", "-1", capsys)

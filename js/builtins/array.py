@@ -46,6 +46,8 @@ def setup(global_object):
 
     put_native_function(w_ArrayPrototype, u'lastIndexOf', last_index_of)
 
+    put_native_function(w_ArrayPrototype, u'shift', shift)
+
 
 # 15.4.4.7
 @w_return
@@ -133,6 +135,25 @@ def pop(this, args):
         element = o.get(indxs)
         o.delete(indxs, True)
         o.put(u'length', _w(indx))
+        return element
+
+
+@w_return
+def shift(this, args):
+    o = this.ToObject()
+    l = o.get(u'length').ToUInt32()
+
+    if l == 0:
+        o.put(u'length', _w(0))
+        return newundefined()
+    else:
+        new_length = l - 1
+        element = o.get(u"0")
+        for i in xrange(0, new_length):
+            indx = unicode(str(i))
+            next_indx = unicode(str(i + 1))
+            o.put(indx, o.get(next_indx))
+        o.put(u'length', _w(new_length))
         return element
 
 
