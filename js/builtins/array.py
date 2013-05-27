@@ -56,12 +56,9 @@ def slice(this, args):
     o = this.ToObject()
     from_index = get_arg(args, 0).ToUInt32()
     to_index = get_arg(args, 1).ToUInt32()
-
     n = []
-
     for k in xrange(from_index, to_index):
         n.append(o.get(unicode(str(k))))
-
     return _w(n)
 
 
@@ -221,7 +218,7 @@ def last_index_of(this, args):
 
     from js.jsobj import W_IntNumber
     for i in xrange(from_index, -1, -1):
-        y = obj.get(unicode(i))
+        y = obj.get(unicode(str(i)))
         if elem == y:
             return W_IntNumber(i)
     return W_IntNumber(-1)
@@ -236,7 +233,7 @@ def index_of(this, args):
 
     from js.jsobj import W_IntNumber
     for i in xrange(from_index, length):
-        y = obj.get(unicode(i))
+        y = obj.get(unicode(str(i)))
         if elem == y:
             return W_IntNumber(i)
     return W_IntNumber(-1)
