@@ -56,10 +56,14 @@ def slice(this, args):
     o = this.ToObject()
     from_index = get_arg(args, 0).ToUInt32()
     to_index = get_arg(args, 1).ToUInt32()
-    n = []
-    for k in xrange(from_index, to_index):
-        n.append(o.get(unicode(str(k))))
-    return _w(n)
+    from js.object_space import object_space
+    n = object_space.new_array(length=_w(to_index-from_index))
+    from js.jsobj import put_property
+    index = 0
+    for item in xrange(from_index, to_index):
+        put_property(n, unicode(str(index)), o.get(unicode(str(item))))
+        index += 1
+    return n
 
 
 # 15.4.4.7
