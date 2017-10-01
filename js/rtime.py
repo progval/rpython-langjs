@@ -3,7 +3,7 @@ import os
 
 from rpython.rtyper.lltypesystem import rffi, lltype
 from rpython.rlib.rarithmetic import intmask
-from pypy.module.rctime.interp_time import c_gmtime, c_localtime, c_mktime, glob_buf, _POSIX, _CYGWIN, _WIN, c_tzset, c_strftime
+from pypy.module.time.interp_time import c_gmtime, c_localtime, c_mktime, glob_buf, _POSIX, _CYGWIN, _WIN, c_tzset, c_strftime
 
 tmYEAR = 0
 tmMONTH = 1

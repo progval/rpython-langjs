@@ -235,10 +235,10 @@ class JsCode(object):
                 result = NormalCompletion()
 
             if isinstance(opcode, BaseJump):
-                new_pc = opcode.do_jump(ctx, pc)
-                if new_pc < pc:
+                old_pc = pc
+                pc = opcode.do_jump(ctx, pc)
+                if pc < old_pc:
                     jitdriver.can_enter_jit(pc=pc, debug=debug, self=self, ctx=ctx, result=result)
-                pc = new_pc
                 continue
             else:
                 pc += 1
