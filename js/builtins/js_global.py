@@ -333,7 +333,11 @@ def _make_version_string():
     import subprocess
     import time
 
-    repo_id = subprocess.check_output('hg id -i'.split()).strip()
+    try:
+        repo_id = 'hg' + subprocess.check_output('hg id -i'.split()).strip()
+    except subprocess.CalledProcessError:
+        repo_id = 'git' + subprocess.check_output(
+                'git rev-parse --verify HEAD'.split()).strip()
     current_time = time.asctime(time.gmtime())
 
     return '1.0; Build: %s; %s' % (repo_id, current_time)
